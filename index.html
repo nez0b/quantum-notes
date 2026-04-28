@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quantum Notes</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1a1a1a;
+    --muted: #6a6a6a;
+    --accent: #6c4cf1;
+    --card: #ffffff;
+    --border: #e7e5e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14141a;
+      --fg: #ececec;
+      --muted: #9a9aa6;
+      --accent: #a594ff;
+      --card: #1c1c24;
+      --border: #2a2a34;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+  }
+  header { margin-bottom: 2.5rem; }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+  ul.notes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+  ul.notes a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+    transition: transform 0.08s ease, border-color 0.15s ease;
+  }
+  ul.notes a:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 0 0.2rem;
+  }
+  .desc {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin: 0;
+  }
+  footer {
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Quantum Notes</h1>
+    <p class="sub">Interactive notebooks from QIS 2026 Spring.</p>
+  </header>
+
+  <ul class="notes">
+    <li><a href="grovers.html">
+      <p class="title">Grover's Algorithm</p>
+      <p class="desc">Amplitude amplification and quantum search.</p>
+    </a></li>
+    <li><a href="shors.html">
+      <p class="title">Shor's Algorithm</p>
+      <p class="desc">Period finding and integer factoring.</p>
+    </a></li>
+    <li><a href="simulation.html">
+      <p class="title">Quantum Simulation</p>
+      <p class="desc">Hamiltonian simulation and Trotterization.</p>
+    </a></li>
+    <li><a href="study-guide.html">
+      <p class="title">Final Review — Topic Guide</p>
+      <p class="desc">Prioritized review topics with variants and extensions.</p>
+    </a></li>
+  </ul>
+
+  <footer>
+    Source: <a href="https://github.com/nez0b/quantum-notes">github.com/nez0b/quantum-notes</a>
+  </footer>
+</main>
+</body>
+</html>

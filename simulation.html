@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stabilizer Formalism, Clifford Gates, and the Cost of Magic</title>
+    <meta
+      name="description"
+      content="An interactive single-page review of stabilizer formalism, the Clifford group, the Gottesman-Knill theorem, magic states, distillation, and cultivation."
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+
+      /* Better paragraph wrapping in modern browsers */
+      p, li {
+        text-wrap: pretty;
+      }
+
+      h1, h2, h3, h4 {
+        text-wrap: balance;
+      }
+
+      /* Tabular numerals everywhere they should be (calculators, tables, status cards) */
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      /* Section numbering — automatic via CSS counters.
+         Only counts h2s in the main content sections, not the header. */
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      /* Anchor mark on h2 hover (distill-style) */
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 {
+        position: relative;
+      }
+
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after {
+        opacity: 0.55;
+      }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: #17456f;
+      }
+
+      img,
+      svg {
+        max-width: 100%;
+        display: block;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        background: var(--page-accent);
+        color: white;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 26ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+
+      .header-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .meta-line {
+        margin-top: 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+      }
+
+      .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        padding: 0.38rem 0.8rem;
+        color: var(--page-muted);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.92rem;
+      }
+
+      .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+      }
+
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+
+      .top-nav-shell a:hover,
+      .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main {
+        padding: 2.2rem 0 5rem;
+      }
+
+      .section-shell,
+      .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+
+      /* Subtle hairline divider between major sections.
+         Use grid-column: 1 / -1 so the ::before doesn't break grid layouts
+         on .section-shell (which is display: grid). */
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      /* Unified h2 size across section-shell, figure-band, and section-band-shell.
+         Previously figure-band h2s defaulted to browser ~1.5em while section-shell
+         used clamp(1.85rem, 3vw, 2.55rem) — visibly different sizes between
+         widget-containing and plain sections. */
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+
+      .section-shell h3,
+      .figure-band h3,
+      .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Collapsible alternate-view: when the .section-collapse details is closed,
+         hide the sidebar and let the main column span the full grid width
+         (otherwise the keypoints box leaves a tall empty rail). */
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main {
+        min-width: 0;
+      }
+
+      .section-shell > .section-side {
+        position: sticky;
+        top: 5rem;
+      }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .keypoints ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .keypoints li + li {
+        margin-top: 0.5rem;
+      }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+
+      .math-details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+
+      .math-details[open] summary::before {
+        content: "−";
+      }
+
+      .math-details .details-body {
+        padding: 1rem 1.05rem 1.1rem;
+      }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .figure-band-header {
+        padding: 1.2rem 1.3rem 0.25rem;
+      }
+
+      .figure-band-header h2,
+      .figure-band-header h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      .figure-band-header p {
+        margin: 0;
+        color: var(--page-muted);
+      }
+
+      .figure-band-content {
+        padding: 1.15rem 1.3rem 1.3rem;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .control {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 9rem;
+        flex: 1 1 10rem;
+      }
+
+      .control label {
+        color: var(--page-muted);
+        font-size: 0.9rem;
+      }
+
+      .control select,
+      .control input[type="range"],
+      .control input[type="number"] {
+        width: 100%;
+      }
+
+      .control input[type="range"] {
+        accent-color: var(--page-accent);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .button-row button,
+      .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .button-row button:hover,
+      .button-row button:focus-visible,
+      .segmented button:hover,
+      .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .status-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-value.small {
+        font-size: 1rem;
+      }
+
+      .two-up,
+      .three-up {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .two-up {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .panel h3,
+      .panel h4 {
+        margin-bottom: 0.55rem;
+      }
+
+      .figure-caption {
+        margin-top: 0.7rem;
+        font-size: 0.93rem;
+        color: var(--page-muted);
+      }
+
+      .amp-svg,
+      .plane-svg,
+      .chart-svg,
+      .posterior-svg,
+      .complexity-svg,
+      .small-svg {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note {
+        font-size: 0.96rem;
+        color: var(--page-muted);
+      }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .quiz-card h3 {
+        font-size: 1.08rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+
+      .faq-list summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+
+      .footer-note {
+        color: var(--page-muted);
+        font-size: 0.95rem;
+      }
+
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.1rem 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid,
+        .section-shell,
+        .two-up,
+        .three-up {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell > .section-side {
+          position: static;
+        }
+      }
+
+      /* Multi-marked side-by-side trio */
+      .multi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .multi-col {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem;
+      }
+
+      .multi-col h4 {
+        font-size: 1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .multi-col .micro-status {
+        font-family: var(--ui-font);
+        font-size: 0.82rem;
+        color: var(--page-muted);
+        margin-top: 0.4rem;
+        line-height: 1.45;
+      }
+
+      .multi-col .micro-status b {
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 760px) {
+        .multi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SOTA card grid */
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+
+      .sota-card p {
+        margin: 0;
+        font-size: 0.94rem;
+      }
+
+      .padding-diagram {
+        display: block;
+        margin: 1rem auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Collapsible whole-section wrapper */
+      .section-collapse {
+        margin: 0.6rem 0 1.2rem;
+      }
+
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+
+      .section-collapse > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-collapse > summary::before {
+        content: "▸ ";
+        margin-right: 0.2rem;
+      }
+
+      .section-collapse[open] > summary::before {
+        content: "▾ ";
+      }
+
+      .section-collapse[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* Pedagogical 2D-collapse worked example styling */
+      .twod-collapse {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.1rem;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .twod-collapse h3 {
+        margin-top: 0;
+      }
+
+      .twod-collapse table {
+        border-collapse: collapse;
+        margin: 0.7rem auto;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+      }
+
+      .twod-collapse th, .twod-collapse td {
+        border: 1px solid var(--page-border);
+        padding: 0.35rem 0.7rem;
+        text-align: center;
+      }
+
+      .twod-collapse th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+
+      .overshoot-block {
+        margin: 1.2rem 0;
+      }
+
+      .overshoot-svg {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+      }
+
+      /* Circuit diagram */
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      /* Composing-Grover and No-speedup card grids */
+      .compose-card, .no-speedup-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.05rem;
+      }
+
+      .compose-card h4, .no-speedup-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .no-speedup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.2rem;
+      }
+
+      .no-speedup-card {
+        border-left: 3px solid var(--page-warm);
+        position: relative;
+      }
+
+      .no-speedup-card h4 {
+        color: var(--page-ink);
+        padding-right: 1.4rem;
+      }
+
+      .no-speedup-card h4::before {
+        content: "✗";
+        position: absolute;
+        top: 0.85rem;
+        right: 0.95rem;
+        color: var(--page-warm);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .no-speedup-card .ns-cost {
+        font-family: var(--num-font);
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin: 0.32rem 0;
+        letter-spacing: -0.01em;
+      }
+
+      .no-speedup-card .ns-cost b {
+        color: var(--page-ink);
+        font-weight: 600;
+      }
+
+      .feasibility-badge {
+        display: inline-block;
+        padding: 0.14rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--ui-font);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-left: 0.45rem;
+        vertical-align: 0.12em;
+      }
+
+      .feasibility-badge.trivial { background: #dceedf; color: #1f5e1f; }
+      .feasibility-badge.feasible { background: #dde9f4; color: #15406b; }
+      .feasibility-badge.infeasible { background: #f3e1c5; color: #7a4310; }
+      .feasibility-badge.cosmic { background: #efc8c8; color: #7a1010; }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+
+      .geo-table th:first-child,
+      .geo-table td:first-child {
+        text-align: left;
+      }
+
+      .geo-table tbody tr:nth-child(even) {
+        background: var(--page-panel);
+      }
+
+      .geo-table tbody tr:last-child {
+        border-top: 1px solid var(--page-rule);
+      }
+
+      @media (max-width: 640px) {
+        .header-shell {
+          padding-top: 3.5rem;
+        }
+
+        h1 {
+          max-width: none;
+        }
+
+        .figure-band-content,
+        .figure-band-header,
+        .panel,
+        .quiz-card,
+        .source-item,
+        .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+      <div class="header-shell">
+        <div class="eyebrow">Quantum Computing Review · Stabilizers &amp; Magic</div>
+        <div class="header-grid">
+          <div>
+            <h1>Stabilizer Formalism, Clifford Gates, and the Cost of Magic</h1>
+            <p class="header-subtitle">
+              The same algebraic structure that lets a classical computer
+              simulate enormous quantum circuits in polynomial time is exactly
+              what forces a fault-tolerant quantum computer to spend most of
+              its qubits manufacturing a non-stabilizer resource called
+              magic states.
+            </p>
+          </div>
+          <aside class="header-card">
+            <h2>What This Review Covers</h2>
+            <ul>
+              <li>The Pauli and Clifford groups, with the symplectic vector picture</li>
+              <li>Stabilizer states, generating sets, and the \(n \times 2n\) tableau</li>
+              <li>The Gottesman&ndash;Knill theorem and \(O(n^2 m)\) classical simulation</li>
+              <li>Why Clifford alone is not universal, and what Solovay&ndash;Kitaev fixes</li>
+              <li>Magic states and gate teleportation: turning resource into operation</li>
+              <li>15-to-1 distillation, magic-state cultivation, and the FT cost picture</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+      <div class="top-nav-shell">
+        <a href="#why-stabilizer">Why Stabilizers</a>
+        <a href="#pauli-group">Pauli Group</a>
+        <a href="#pauli-lab">Pauli Lab</a>
+        <a href="#stabilizer-states">Stabilizer States</a>
+        <a href="#tableau-lab">Tableau Lab</a>
+        <a href="#clifford-group">Clifford Group</a>
+        <a href="#clifford-circuit-lab">Clifford Circuit Lab</a>
+        <a href="#gottesman-knill">Gottesman&ndash;Knill</a>
+        <a href="#why-not-universal">Not Universal</a>
+        <a href="#magic-states">Magic States</a>
+        <a href="#teleportation-lab">Teleportation Lab</a>
+        <a href="#magic-distillation">Distillation</a>
+        <a href="#distillation-lab">Distillation Lab</a>
+        <a href="#magic-cultivation">Cultivation</a>
+        <a href="#fault-tolerant-context">FT Context</a>
+        <a href="#mastery-and-faq">Mastery &amp; FAQ</a>
+        <a href="#sources">Sources</a>
+      </div>
+    </nav>
+
+    <main id="main-content">
+
+      <!-- §1 -->
+      <section class="section-shell" id="why-stabilizer">
+        <div class="section-main">
+          <h2>Why the Stabilizer Formalism</h2>
+          <p class="lede">
+            A small abelian subgroup of the Pauli group can pin down a
+            specific multi-qubit state. That tiny algebraic fact &mdash; the
+            seed of the stabilizer formalism &mdash; underlies almost every
+            piece of quantum-error-correction infrastructure ever built.
+          </p>
+          <p>
+            There are three reasons this formalism dominates the
+            fault-tolerance literature.
+          </p>
+          <ul>
+            <li>
+              <b>Compact description.</b> A generic \(n\)-qubit pure state needs
+              \(\sim 2^n\) complex amplitudes. Many of the multi-qubit states
+              we actually care about &mdash; Bell pairs, GHZ states, code
+              states, syndrome states &mdash; admit an exact
+              \(O(n^2)\)-bit description as a list of \(n\) Pauli generators.
+            </li>
+            <li>
+              <b>Efficient classical simulation.</b> The Gottesman&ndash;Knill
+              theorem (Gottesman 1998; Aaronson&ndash;Gottesman 2004) says
+              any circuit built from stabilizer-state preparation, Clifford
+              gates, and computational-basis measurement can be simulated
+              classically in \(O(n^2 m)\) time, with no approximation.
+            </li>
+            <li>
+              <b>The backbone of QEC.</b> Every quantum error-correcting code
+              that has ever been seriously implemented &mdash; the Shor code,
+              the Steane code, the 5-qubit code, the surface code, color codes,
+              LDPC codes &mdash; is a stabilizer code. The code subspace is
+              defined as the joint \(+1\) eigenspace of a chosen abelian Pauli
+              subgroup.
+            </li>
+          </ul>
+          <div class="callout">
+            <b>The central tension of the page.</b> The same structure that
+            makes simulation easy makes universal computation impossible.
+            Stabilizer circuits cannot give a quantum speedup; a single
+            non-Clifford gate &mdash; or, equivalently, a single
+            non-stabilizer ancilla state &mdash; is needed to escape the
+            Gottesman&ndash;Knill prison. In a fault-tolerant architecture,
+            manufacturing those ancillas is so expensive that they dominate
+            the qubit count and the runtime of every plausible early quantum
+            computer.
+          </div>
+          <p>
+            The plan: build the Pauli group and its symplectic representation
+            (&sect;2&ndash;3); define stabilizer states and the tableau
+            (&sect;4&ndash;5); promote to the Clifford group and watch the
+            tableau update under gates (&sect;6&ndash;7); state and prove a
+            sketch of Gottesman&ndash;Knill (&sect;8); explain why Clifford
+            alone falls short (&sect;9); introduce magic states and gate
+            teleportation (&sect;10&ndash;11); cost out distillation
+            (&sect;12&ndash;13); preview cultivation (&sect;14); and place
+            the whole picture in fault-tolerant context (&sect;15). A combined
+            mastery map and FAQ closes the page (&sect;16), followed by
+            sources (&sect;17).
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Compact \(O(n^2)\) classical description of important quantum states.</li>
+              <li>Efficient classical simulation of Clifford circuits.</li>
+              <li>The algebraic backbone of quantum error correction.</li>
+              <li>Easy simulation forces magic-state overhead in any FTQC.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §2 -->
+      <section class="section-shell" id="pauli-group">
+        <div class="section-main">
+          <h2>The Pauli Group and Its Symplectic Picture</h2>
+          <p class="lede">
+            The single-qubit Pauli matrices generate, after tensor products
+            and \(\{\pm 1, \pm i\}\) phases, the \(n\)-qubit Pauli group
+            \(\mathcal{P}_n\). Its order is \(4 \cdot 4^n\), and any two of
+            its elements either commute or anticommute. Both facts have
+            clean restatements as linear algebra over \(\mathbb{F}_2\).
+          </p>
+
+          <h3>Single-qubit Paulis</h3>
+          \[
+            I = \begin{pmatrix} 1 & 0 \\ 0 & 1\end{pmatrix},\quad
+            X = \begin{pmatrix} 0 & 1 \\ 1 & 0\end{pmatrix},\quad
+            Y = \begin{pmatrix} 0 & -i \\ i & 0\end{pmatrix},\quad
+            Z = \begin{pmatrix} 1 & 0 \\ 0 & -1\end{pmatrix}.
+          \]
+          <p>
+            They are unitary, Hermitian, and square to the identity. They
+            satisfy \(XY = iZ\), \(YZ = iX\), \(ZX = iY\), and the
+            cyclic relations are reversed by an extra minus sign. From
+            \(XZ = -ZX\) one reads off the central anticommutation that drives
+            the entire formalism.
+          </p>
+
+          <h3>The \(n\)-qubit Pauli group</h3>
+          \[
+            \mathcal{P}_n
+              \;=\; \{\pm 1, \pm i\}\;\times\;\{I, X, Y, Z\}^{\otimes n}.
+          \]
+          <p>
+            This has order \(4 \cdot 4^n\). Tensor products of Paulis are
+            again Paulis, up to a phase in \(\{\pm 1, \pm i\}\). The crucial
+            property:
+          </p>
+          <div class="callout">
+            <b>Theorem.</b> Any two elements \(P, Q \in \mathcal{P}_n\)
+            either commute (\(PQ = QP\)) or anticommute (\(PQ = -QP\)).
+            They never half-commute.
+          </div>
+
+          <h3>The symplectic representation</h3>
+          <p>
+            Encode each Pauli element \(P \in \mathcal{P}_n\) (modulo phase)
+            as a pair of binary vectors
+            \(\mathbf{x}, \mathbf{z} \in \mathbb{F}_2^n\):
+          </p>
+          \[
+            P \;\propto\; X^{\mathbf{x}} Z^{\mathbf{z}}
+              \;=\; X^{x_1} Z^{z_1} \otimes X^{x_2} Z^{z_2} \otimes \cdots \otimes X^{x_n} Z^{z_n}.
+          \]
+          <p>
+            The convention is: on qubit \(i\), \(x_i = 1\) iff the operator
+            is \(X\) or \(Y\); \(z_i = 1\) iff the operator is \(Z\) or
+            \(Y\). So \(I = (0|0)\), \(X = (1|0)\), \(Z = (0|1)\),
+            \(Y = (1|1)\). The full encoding is the
+            \(2n\)-bit string \((\mathbf{x} \,|\, \mathbf{z})\).
+          </p>
+
+          <h3>Commutators by inner product</h3>
+          <p>
+            Whether two Paulis commute is decided by a single
+            \(\mathbb{F}_2\)-inner product:
+          </p>
+          \[
+            \langle P, Q\rangle_{\mathrm{symp}}
+              \;=\; \mathbf{x}_P \cdot \mathbf{z}_Q + \mathbf{z}_P \cdot \mathbf{x}_Q \;\pmod 2.
+          \]
+          <p>
+            \(P\) and \(Q\) commute iff this is \(0\), and anticommute iff
+            it is \(1\). Group multiplication of two Paulis becomes XOR of
+            their \(2n\)-bit vectors (and a phase determined by how many
+            \(X\) and \(Z\) factors had to slide past each other).
+          </p>
+
+          <details class="math-details">
+            <summary>Detailed math: phase under multiplication</summary>
+            <div class="details-body">
+              <p>
+                Given \(P = i^{a_P} X^{\mathbf{x}_P} Z^{\mathbf{z}_P}\) and
+                \(Q = i^{a_Q} X^{\mathbf{x}_Q} Z^{\mathbf{z}_Q}\), the
+                product is
+              </p>
+              \[
+                PQ \;=\; i^{a_P + a_Q + 2\,\mathbf{z}_P \cdot \mathbf{x}_Q}\;
+                X^{\mathbf{x}_P \oplus \mathbf{x}_Q}\;
+                Z^{\mathbf{z}_P \oplus \mathbf{z}_Q}.
+              \]
+              <p>
+                The factor \(i^{2\,\mathbf{z}_P \cdot \mathbf{x}_Q} = (-1)^{\mathbf{z}_P\cdot \mathbf{x}_Q}\)
+                comes from sliding each \(Z\) of \(P\) past each \(X\) of
+                \(Q\). Tracking this phase is what the &ldquo;sign column&rdquo;
+                of a stabilizer tableau records.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>\(|\mathcal{P}_n| = 4 \cdot 4^n\), four-element center \(\{\pm 1, \pm i\}\).</li>
+              <li>Two Paulis always commute or anticommute.</li>
+              <li>Symplectic vectors: \(P \leftrightarrow (\mathbf{x}|\mathbf{z}) \in \mathbb{F}_2^{2n}\).</li>
+              <li>Commutator computed by a single \(\mathbb{F}_2\) inner product.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §3 -->
+      <section class="figure-band" id="pauli-lab">
+        <div class="figure-band-header">
+          <h2>Pauli Calculator</h2>
+          <p>
+            Pick any two \(n\)-qubit Paulis on \(n = 2\) or \(n = 3\). The
+            widget displays each one&rsquo;s symplectic representation, their
+            product, the symplectic inner product, and whether the two
+            commute. Use this to verify the rules of &sect;2 by hand.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="pl-n">Number of qubits \(n\)</label>
+              <select id="pl-n">
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="pl-p">Operator \(P\)</label>
+              <select id="pl-p"></select>
+            </div>
+            <div class="control">
+              <label for="pl-q">Operator \(Q\)</label>
+              <select id="pl-q"></select>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card"><div class="status-label">\(P\) symplectic</div><div class="status-value small" id="pl-p-symp">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">\(Q\) symplectic</div><div class="status-value small" id="pl-q-symp">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">\(\langle P, Q\rangle_{\mathrm{symp}}\)</div><div class="status-value" id="pl-inner">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Relation</div><div class="status-value" id="pl-rel">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Product \(PQ\)</div><div class="status-value small" id="pl-prod">&mdash;</div></div>
+          </div>
+          <div class="panel">
+            <p class="figure-caption" id="pl-explain">
+              The product is computed by XOR-ing the \(\mathbf{x}\) and
+              \(\mathbf{z}\) bit-vectors and tracking the phase from sliding
+              \(Z\)s past \(X\)s.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- §4 -->
+      <section class="section-shell" id="stabilizer-states">
+        <div class="section-main">
+          <h2>Stabilizer States and Their Generators</h2>
+          <p class="lede">
+            A pure state \(\ket\psi\) is <em>stabilized</em> by \(P \in
+            \mathcal{P}_n\) if \(P \ket\psi = \ket\psi\). Global phase
+            matters: \(P \ket\psi = -\ket\psi\) does not count. The set of
+            Paulis that stabilize \(\ket\psi\) forms a group, and that group
+            tells you almost everything about the state.
+          </p>
+
+          <h3>Definition</h3>
+          \[
+            \mathcal{S}(\ket\psi) \;=\; \{\, P \in \mathcal{P}_n \,:\, P\ket\psi = \ket\psi\,\}.
+          \]
+          <p>
+            \(\mathcal{S}(\ket\psi)\) is an abelian subgroup of
+            \(\mathcal{P}_n\) that does not contain \(-I\) (since \(-I\)
+            never stabilizes any state). When \(\mathcal{S}\) has order
+            \(2^n\), the state \(\ket\psi\) is uniquely determined; such a
+            \(\ket\psi\) is called a <em>stabilizer state</em>.
+          </p>
+
+          <h3>Generators</h3>
+          <p>
+            Any abelian subgroup of \(\mathcal{P}_n\) of order \(2^n\) (and
+            not containing \(-I\)) is generated by \(n\) commuting,
+            independent Paulis. So a stabilizer state is fully specified by
+            its \(n\) generators &mdash; \(O(n^2)\) bits, not \(2^n\)
+            amplitudes.
+          </p>
+
+          <h3>Canonical examples</h3>
+          <ul>
+            <li>\(\ket{0\ldots 0}\): generators \(\langle Z_1, Z_2, \ldots, Z_n\rangle\).</li>
+            <li>\(\ket{+\ldots +}\): generators \(\langle X_1, X_2, \ldots, X_n\rangle\).</li>
+            <li>Bell pair \((\ket{00} + \ket{11})/\sqrt 2\): generators \(\langle X_1 X_2,\; Z_1 Z_2\rangle\).</li>
+            <li>GHZ state \((\ket{000} + \ket{111})/\sqrt 2\): generators \(\langle X_1 X_2 X_3,\; Z_1 Z_2,\; Z_2 Z_3\rangle\).</li>
+            <li>5-qubit code: generators \(\langle XZZXI,\; IXZZX,\; XIXZZ,\; ZXIXZ\rangle\) (with logical \(\bar Z = ZZZZZ\)).</li>
+          </ul>
+          <p>
+            The full stabilizer group is recovered by taking all Pauli
+            products of the generators. For the Bell pair this gives
+            \(\{II,\; XX,\; -YY,\; ZZ\}\) &mdash; four elements, as expected
+            for a \(2\)-qubit stabilizer state.
+          </p>
+
+          <h3>The tableau</h3>
+          <p>
+            Pack the \(n\) generators into a binary matrix of shape
+            \(n \times 2n\), with an additional length-\(n\) sign column.
+            The first \(n\) columns are the \(\mathbf{x}\)-block, the next
+            \(n\) are the \(\mathbf{z}\)-block. Each row is one generator;
+            row \(i\) is \(1\) at column \(j\) (in the X-block) iff the
+            \(j\)-th tensor factor of generator \(i\) is \(X\) or \(Y\),
+            and similarly for the Z-block. The Bell pair becomes
+          </p>
+          \[
+            \left[\begin{array}{cc|cc} 1 & 1 & 0 & 0 \\ 0 & 0 & 1 & 1\end{array}\right].
+          \]
+          <p>
+            The first row is \(X_1 X_2\), the second is \(Z_1 Z_2\). All
+            stabilizer-circuit simulation reduces to manipulating this
+            \(O(n^2)\)-bit object.
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Stabilizer state \(\Leftrightarrow\) Pauli stabilizer subgroup of order \(2^n\).</li>
+              <li>Specified by \(n\) commuting independent generators.</li>
+              <li>Tableau is an \(n \times 2n\) bit matrix plus a sign column.</li>
+              <li>Bell, GHZ, all code states are stabilizer states.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §5 -->
+      <section class="figure-band" id="tableau-lab">
+        <div class="figure-band-header">
+          <h2>Stabilizer Tableau Builder</h2>
+          <p>
+            Pick a preset stabilizer state. The widget renders the
+            \(n \times 2n\) tableau (X-block, Z-block, sign column) and
+            decodes any row you hover into the corresponding Pauli operator
+            it represents.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="tab-preset">Stabilizer state</label>
+              <select id="tab-preset">
+                <option value="zero2">\(\ket{00}\)</option>
+                <option value="plus2">\(\ket{++}\)</option>
+                <option value="bell">Bell pair \((\ket{00}+\ket{11})/\sqrt2\)</option>
+                <option value="ghz3">GHZ on 3 qubits</option>
+                <option value="zero3">\(\ket{000}\)</option>
+                <option value="plus3">\(\ket{+++}\)</option>
+                <option value="five">5-qubit code (logical \(|\bar 0\rangle\))</option>
+              </select>
+            </div>
+          </div>
+          <div class="two-up">
+            <div class="panel">
+              <div id="tab-display" style="font-family: var(--num-font); font-size: 0.95rem; line-height: 1.55"></div>
+            </div>
+            <div class="panel">
+              <h3>Row decoding</h3>
+              <p class="formula-note" id="tab-decode">
+                Hover a row to see its Pauli generator written out.
+              </p>
+              <p class="figure-caption">
+                Reading rule: column \(j\) of the X-block is \(1\) iff the
+                operator on qubit \(j\) is \(X\) or \(Y\); column \(j\) of
+                the Z-block is \(1\) iff the operator is \(Z\) or \(Y\). Both
+                bits set \(\Rightarrow Y\); both clear \(\Rightarrow I\).
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §6 -->
+      <section class="section-shell" id="clifford-group">
+        <div class="section-main">
+          <h2>The Clifford Group</h2>
+          <p class="lede">
+            The Clifford group is the normalizer of the Pauli group inside
+            the unitary group. Its members map Paulis to Paulis under
+            conjugation, which is exactly the property needed for tableau
+            simulation.
+          </p>
+
+          <h3>Definition</h3>
+          \[
+            \mathcal{C}_n \;=\; \{\, U \in U(2^n) \,:\, U \mathcal{P}_n U^\dagger = \mathcal{P}_n \,\}.
+          \]
+          <p>
+            Equivalently, for every Pauli \(P\), the operator
+            \(U P U^\dagger\) is again (up to phase) a Pauli. The Clifford
+            group has order growing like \(2^{2n^2 + O(n)}\), modulo a
+            \(U(1)\) global phase &mdash; large enough to do nontrivial
+            entanglement, finite enough to admit a discrete description.
+          </p>
+
+          <h3>Standard generators</h3>
+          <p>
+            Three gates suffice to generate the entire \(n\)-qubit Clifford
+            group:
+          </p>
+          \[
+            H = \tfrac{1}{\sqrt 2}\begin{pmatrix} 1 & 1 \\ 1 & -1\end{pmatrix},\qquad
+            S = \begin{pmatrix} 1 & 0 \\ 0 & i\end{pmatrix},\qquad
+            \mathrm{CNOT}_{i\to j}.
+          \]
+          <p>
+            Hadamard, the phase gate \(S = P\), and CNOT. The Aaronson
+            spring-2023 notes call this the &ldquo;stabilizer gate set&rdquo;
+            and the resulting circuits stabilizer circuits.
+          </p>
+
+          <h3>Conjugation rules</h3>
+          <table class="geo-table">
+            <thead>
+              <tr><th>Gate</th><th>\(X \to\)</th><th>\(Z \to\)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>\(H\)</td><td>\(Z\)</td><td>\(X\)</td></tr>
+              <tr><td>\(S\)</td><td>\(Y\)</td><td>\(Z\)</td></tr>
+              <tr><td>\(\mathrm{CNOT}_{1\to 2}: X_1\)</td><td>\(X_1 X_2\)</td><td>&mdash;</td></tr>
+              <tr><td>\(\mathrm{CNOT}_{1\to 2}: Z_2\)</td><td>&mdash;</td><td>\(Z_1 Z_2\)</td></tr>
+              <tr><td>\(\mathrm{CNOT}_{1\to 2}: X_2\)</td><td>\(X_2\)</td><td>&mdash;</td></tr>
+              <tr><td>\(\mathrm{CNOT}_{1\to 2}: Z_1\)</td><td>&mdash;</td><td>\(Z_1\)</td></tr>
+            </tbody>
+          </table>
+          <p>
+            Each rule says: if a generator passes through this gate, replace
+            it by its conjugate. This is the entire content of Clifford
+            simulation: rewrite the \(n\) generators of the current
+            stabilizer group, and the new state is determined.
+          </p>
+
+          <div class="callout">
+            <b>Theorem (Clifford preserves stabilizer states).</b> If
+            \(\ket\psi\) is stabilized by \(\langle g_1, \ldots, g_n\rangle\)
+            and \(U \in \mathcal{C}_n\), then \(U\ket\psi\) is stabilized by
+            \(\langle U g_1 U^\dagger, \ldots, U g_n U^\dagger\rangle\).
+          </div>
+
+          <details class="math-details">
+            <summary>Detailed math: tableau column updates</summary>
+            <div class="details-body">
+              <p>
+                Acting on the \(n \times 2n\) tableau, the gate rules
+                become column-level XORs and swaps:
+              </p>
+              <ul>
+                <li><b>\(H\) on qubit \(i\)</b>: swap column \(i\) of the X-block with column \(i\) of the Z-block.</li>
+                <li><b>\(S\) on qubit \(i\)</b>: XOR column \(i\) of the X-block into column \(i\) of the Z-block.</li>
+                <li><b>\(\mathrm{CNOT}_{i\to j}\)</b>: XOR X-column \(i\) into X-column \(j\); XOR Z-column \(j\) into Z-column \(i\).</li>
+              </ul>
+              <p>
+                Each update is \(O(n)\) work on each of the \(n\) generator
+                rows, so \(O(n^2)\) per gate. Aaronson&ndash;Gottesman 2004
+                cut this to amortized \(O(n)\) per gate by carrying around
+                a parallel <em>destabilizer</em> tableau.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>\(\mathcal{C}_n\) = normalizer of \(\mathcal{P}_n\) in \(U(2^n)\).</li>
+              <li>Generated by \(\{H, S, \mathrm{CNOT}\}\).</li>
+              <li>Order grows as \(2^{2n^2 + O(n)}\).</li>
+              <li>Conjugation rules give column-level tableau updates.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §7 -->
+      <section class="figure-band" id="clifford-circuit-lab">
+        <div class="figure-band-header">
+          <h2>Clifford Circuit Lab</h2>
+          <p>
+            Start from a stabilizer state, apply Clifford gates one at a
+            time, and watch the tableau evolve. For \(n \le 3\) the panel
+            also tracks the explicit state vector so you can see that the
+            tableau and the amplitudes agree.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="cl-init">Initial state</label>
+              <select id="cl-init">
+                <option value="zero2">\(\ket{00}\)</option>
+                <option value="zero3">\(\ket{000}\)</option>
+                <option value="plus2">\(\ket{++}\)</option>
+                <option value="bell">Bell pair</option>
+              </select>
+            </div>
+            <div class="button-row" id="cl-gates">
+              <!-- gate buttons inserted by JS depending on n -->
+            </div>
+            <div class="button-row">
+              <button id="cl-undo" type="button">Undo</button>
+              <button id="cl-reset" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card"><div class="status-label">Qubits</div><div class="status-value" id="cl-n">2</div></div>
+            <div class="status-card"><div class="status-label">Gates applied</div><div class="status-value" id="cl-count">0</div></div>
+            <div class="status-card"><div class="status-label">Circuit history</div><div class="status-value small" id="cl-hist">(empty)</div></div>
+          </div>
+          <div class="two-up">
+            <div class="panel">
+              <h3>Tableau</h3>
+              <div id="cl-tableau" style="font-family: var(--num-font); font-size: 0.95rem; line-height: 1.55"></div>
+              <p class="figure-caption">
+                Each row is one stabilizer generator. Click a row to see its
+                Pauli expansion below.
+              </p>
+              <p class="formula-note" id="cl-row">&nbsp;</p>
+            </div>
+            <div class="panel">
+              <h3>State vector</h3>
+              <div id="cl-state" style="font-family: var(--num-font); font-size: 0.92rem; line-height: 1.6"></div>
+              <p class="figure-caption">
+                Shown for \(n \le 3\) only. Amplitudes are exact.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §8 -->
+      <section class="section-shell" id="gottesman-knill">
+        <div class="section-main">
+          <h2>The Gottesman&ndash;Knill Theorem</h2>
+          <p class="lede">
+            Stabilizer circuits &mdash; preparation in the computational
+            basis, Clifford gates, and computational-basis measurement
+            &mdash; can be simulated classically in polynomial time. This
+            is the strongest known &ldquo;dequantization&rdquo; result in
+            quantum computing.
+          </p>
+
+          <div class="callout">
+            <b>Theorem (Gottesman 1998; Aaronson&ndash;Gottesman 2004).</b>
+            Any quantum computation consisting of (i) state preparation in
+            the computational basis, (ii) Clifford gates, and (iii)
+            computational-basis measurements on \(n\) qubits with \(m\) gates
+            can be simulated classically in \(O(n m)\) time per gate using
+            the destabilizer-augmented tableau, equivalently \(O(n^2 m)\) in
+            the simpler tableau-only formulation. Both deterministic and
+            random measurement outcomes can be sampled correctly.
+          </div>
+
+          <h3>The algorithm in three lines</h3>
+          <ul>
+            <li>Initialize the tableau for \(\ket{0\ldots 0}\): rows are
+                \(Z_1, Z_2, \ldots, Z_n\), all signs \(+1\).</li>
+            <li>For each Clifford gate, apply the column-level update rule
+                of &sect;6.</li>
+            <li>For each computational-basis measurement on qubit \(i\),
+                check whether the \(i\)-th column of the X-block is all
+                zeros.
+              <ul>
+                <li>If yes, the outcome is deterministic; compute it from
+                  the sign column by Gauss-Jordan reducing the rows that
+                  produce \(\pm Z_i\).</li>
+                <li>If no, the outcome is a uniformly random bit; pick one,
+                  pick a row \(p\) whose X-block has a \(1\) in column \(i\)
+                  as a pivot, replace that row by \(\pm Z_i\) (sign matching
+                  the chosen outcome), and Gauss-Jordan-clear the pivot from
+                  every other row.</li>
+              </ul>
+            </li>
+          </ul>
+
+          <h3>Strong vs weak simulation</h3>
+          <p>
+            Two senses of &ldquo;simulate&rdquo; need to be distinguished.
+          </p>
+          <ul>
+            <li>
+              <b>Strong simulation.</b> Compute the exact probability of any
+              specified measurement outcome (or sequence of outcomes). For
+              Clifford circuits this is poly-time.
+            </li>
+            <li>
+              <b>Weak simulation.</b> Sample from the output distribution
+              with the correct probabilities. This is also poly-time for
+              Clifford circuits, by the algorithm above.
+            </li>
+          </ul>
+          <p>
+            For general quantum circuits, weak simulation is strictly easier
+            than strong simulation; for Clifford circuits both are equally
+            cheap.
+          </p>
+
+          <details class="math-details">
+            <summary>Detailed math: per-gate cost</summary>
+            <div class="details-body">
+              <p>
+                A single \(H\) or \(S\) gate touches one column; \(\mathrm{CNOT}\)
+                touches two. In the tableau-only formulation each column
+                operation requires updating \(n\) row entries, so per-gate
+                cost is \(O(n)\). With \(n\) generator rows whose phases
+                must be recomputed, the per-gate cost rises to \(O(n^2)\),
+                giving \(O(n^2 m)\) for the whole circuit.
+              </p>
+              <p>
+                The Aaronson&ndash;Gottesman improvement carries a parallel
+                <em>destabilizer</em> tableau &mdash; \(n\) extra Paulis
+                that, together with the stabilizers, generate all of
+                \(\mathcal{P}_n\). With this redundancy the random-outcome
+                update step also costs \(O(n)\), giving an amortized
+                \(O(n m)\) for the whole circuit and enabling thousands of
+                qubits on a laptop (the CHP simulator).
+              </p>
+            </div>
+          </details>
+
+          <p>
+            <em>Negative restatement.</em> Stabilizer circuits acting on
+            stabilizer initial states are useless for producing any
+            super-polynomial quantum speedup. Whatever computational power
+            quantum mechanics actually delivers, it must come from
+            non-Clifford gates.
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Tableau simulation: \(O(n^2 m)\) (basic), \(O(n m)\) (Aaronson&ndash;Gottesman).</li>
+              <li>Both deterministic and random outcomes handled.</li>
+              <li>Strong and weak simulation collapse for Clifford.</li>
+              <li>Implies: Clifford alone gives no quantum speedup.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §9 -->
+      <section class="section-shell" id="why-not-universal">
+        <div class="section-main">
+          <h2>Why Clifford Alone Is Not Universal</h2>
+          <p class="lede">
+            Two arguments &mdash; one combinatorial, one spectral &mdash;
+            pin down why no Clifford circuit can densely fill the unitary
+            group. Each gives a different intuition for what is missing.
+          </p>
+
+          <h3>The counting argument</h3>
+          <p>
+            The number of \(n\)-qubit stabilizer states grows as
+            \(\prod_{k=0}^{n-1} (2^{n-k} + 1) \cdot 2^n\), which is
+            \(2^{n^2/2 + O(n)}\). The complex projective space
+            \(\mathbb{C}P^{2^n - 1}\) of all \(n\)-qubit pure states is
+            uncountable and has real dimension \(2^{n+1} - 2\). So the
+            stabilizer states form a discrete, sparse, vanishing-measure
+            subset of the full state space &mdash; not even dense.
+          </p>
+          <p>
+            The Clifford group permutes stabilizer states; it cannot reach
+            any state outside the stabilizer family. So no Clifford circuit
+            applied to \(\ket{0\ldots 0}\) can produce, say, the magic state
+            \(\ket T = T \ket+\).
+          </p>
+
+          <h3>The spectral argument</h3>
+          <p>
+            Every Clifford gate has order dividing some small integer; in
+            particular, every Clifford gate&rsquo;s eigenvalues are roots of
+            unity of order dividing \(8\). A gate like \(T = \mathrm{diag}(1,
+            e^{i\pi/4})\) has eigenvalue \(e^{i\pi/4}\) whose order is \(8\)
+            <em>and</em> requires non-Clifford conjugation rules: \(T X T^\dagger
+            = e^{-i\pi/4}(X + Y)/\sqrt 2\), which is not a Pauli.
+          </p>
+
+          <h3>What fixes it</h3>
+          <p>
+            Any Clifford-plus-one-non-Clifford gate set is universal for
+            quantum computation. Standard choices:
+          </p>
+          <ul>
+            <li>Clifford + \(T\) gate (most common today).</li>
+            <li>Clifford + Toffoli (Shor 1996).</li>
+            <li>Clifford + controlled-controlled-\(S\).</li>
+          </ul>
+
+          <div class="callout">
+            <b>Theorem (Solovay&ndash;Kitaev).</b> Given any finite universal
+            gate set in \(SU(d)\) and any target unitary \(U \in SU(d)\),
+            there is a sequence of \(O(\log^c(1/\varepsilon))\) gates whose
+            product approximates \(U\) to operator-norm error
+            \(\varepsilon\), with \(c \approx 2\) achievable. The
+            approximating sequence can be found by an explicit
+            polynomial-time classical algorithm.
+          </div>
+          <p>
+            Concretely, this is what makes the Clifford+\(T\) gate set a
+            workable choice for fault tolerance: any single-qubit unitary
+            you actually need can be approximated to high accuracy by a
+            polylog-length sequence of \(H\), \(S\), and \(T\) gates.
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Stabilizer states: \(2^{n^2/2 + O(n)}\), sparse in \(\mathbb{C}P^{2^n - 1}\).</li>
+              <li>Clifford gates have eigenvalues of order dividing \(8\).</li>
+              <li>Clifford + \(T\) is the standard universal set.</li>
+              <li>Solovay&ndash;Kitaev: \(O(\log^c (1/\varepsilon))\) gate compilation.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §10 -->
+      <section class="section-shell" id="magic-states">
+        <div class="section-main">
+          <h2>Magic States</h2>
+          <p class="lede">
+            A magic state is a non-stabilizer ancilla that, when consumed by
+            a Clifford circuit with measurement and feed-forward, implements
+            a non-Clifford gate on a target qubit. The canonical example is
+            the \(T\)-gate magic state.
+          </p>
+
+          <h3>The \(T\)-gate magic state</h3>
+          \[
+            \ket{T} \;=\; T\ket+ \;=\; \tfrac{1}{\sqrt 2}\,(\ket 0 + e^{i\pi/4}\ket 1).
+          \]
+          <p>
+            This state is not a stabilizer state: no Pauli operator
+            stabilizes it (you can check by inspecting the four Paulis on
+            one qubit). Equivalently, no Clifford circuit applied to
+            \(\ket 0\) can produce it.
+          </p>
+
+          <h3>Gate teleportation</h3>
+          <p>
+            Bravyi&ndash;Kitaev (2005), building on Zhou&ndash;Leung&ndash;Chuang
+            (2000), show that one fresh \(\ket T\) ancilla, together with
+            Clifford gates and measurement, suffices to apply \(T\) to any
+            data qubit \(\ket\psi\). The protocol:
+          </p>
+          <ol>
+            <li>Prepare an ancilla in \(\ket T\).</li>
+            <li>Apply \(\mathrm{CNOT}\) from data qubit \(\ket\psi\) (control)
+                to ancilla (target).</li>
+            <li>Measure the ancilla in the computational basis.</li>
+            <li>If outcome is \(0\), the data qubit holds \(T\ket\psi\).
+                If outcome is \(1\), the data qubit holds
+                \(X\,T\,\ket\psi = e^{-i\pi/4}\,T\,X\ket\psi\); apply the
+                Clifford correction \(S\) followed by \(X\) to recover
+                \(T\ket\psi\) (up to a global phase).</li>
+          </ol>
+
+          <details class="math-details">
+            <summary>Detailed math: where the \(T\) comes from</summary>
+            <div class="details-body">
+              <p>
+                Write \(\ket\psi = \alpha\ket 0 + \beta\ket 1\) and
+                \(\ket T = \frac{1}{\sqrt 2}(\ket 0 + e^{i\pi/4}\ket 1)\).
+                After \(\mathrm{CNOT}\):
+              </p>
+              \[
+                \tfrac{1}{\sqrt 2}\big[\alpha\ket 0(\ket 0 + e^{i\pi/4}\ket 1)
+                  + \beta\ket 1(\ket 1 + e^{i\pi/4}\ket 0)\big].
+              \]
+              <p>
+                Re-grouping by the ancilla qubit:
+              </p>
+              \[
+                \begin{aligned}
+                  &= \tfrac{1}{\sqrt 2}\big[(\alpha\ket 0 + e^{i\pi/4}\beta\ket 1)\ket 0
+                  + (e^{i\pi/4}\alpha\ket 0 + \beta\ket 1)\ket 1 \big] \\
+                  &= \tfrac{1}{\sqrt 2}\big[T\ket\psi\,\ket 0 + e^{i\pi/4} XT\ket\psi\,\ket 1\big].
+                \end{aligned}
+              \]
+              <p>
+                Measuring the ancilla collapses the data qubit to either
+                \(T\ket\psi\) or (up to global phase) \(XT\ket\psi\). In the
+                latter case, applying \(S X\) gives back \(T\ket\psi\)
+                because \(SX = TXT^\dagger \cdot T\) in the right phase
+                convention.
+              </p>
+            </div>
+          </details>
+
+          <div class="callout">
+            <b>Equivalence.</b> Magic states and non-Clifford gates are
+            interconvertible resources. A circuit that uses \(k\)
+            non-Clifford gates can be rewritten as a Clifford circuit
+            consuming \(k\) magic ancillas, and vice versa. Fault-tolerance
+            architects exploit this by manufacturing magic states
+            <em>offline</em> in dedicated factories, and consuming them
+            on demand in the data circuit.
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>\(\ket T = (\ket 0 + e^{i\pi/4}\ket 1)/\sqrt 2\), non-stabilizer.</li>
+              <li>One \(\ket T\) + Clifford + measurement = one \(T\) gate.</li>
+              <li>Magic states and non-Clifford gates are exchangeable.</li>
+              <li>FT designs prepare magic states offline.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §11 -->
+      <section class="figure-band" id="teleportation-lab">
+        <div class="figure-band-header">
+          <h2>Gate-Teleportation Animator</h2>
+          <p>
+            Step through the five stages of \(T\)-gate teleportation. The
+            data qubit&rsquo;s amplitudes update at each stage, and a magic
+            ancilla is consumed every time the protocol completes. Re-run
+            with a different ancilla measurement outcome to see the
+            classical correction in action.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="tp-data">Data qubit \(\ket\psi\)</label>
+              <select id="tp-data">
+                <option value="zero">\(\ket 0\)</option>
+                <option value="one">\(\ket 1\)</option>
+                <option value="plus">\(\ket +\)</option>
+                <option value="minus">\(\ket -\)</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="tp-outcome">Forced ancilla outcome</label>
+              <select id="tp-outcome">
+                <option value="random">random</option>
+                <option value="0">force 0</option>
+                <option value="1">force 1</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button id="tp-back" type="button">&larr; Step back</button>
+              <button id="tp-fwd" type="button">Step forward &rarr;</button>
+              <button id="tp-reset" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card"><div class="status-label">Stage</div><div class="status-value" id="tp-stage">0</div></div>
+            <div class="status-card"><div class="status-label">Stage description</div><div class="status-value small" id="tp-desc">prepare \(\ket\psi\otimes\ket T\)</div></div>
+            <div class="status-card"><div class="status-label">Ancilla outcome</div><div class="status-value" id="tp-meas">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Magic states consumed</div><div class="status-value" id="tp-consumed">0</div></div>
+          </div>
+          <div class="two-up">
+            <div class="panel">
+              <h3>Two-qubit state amplitudes</h3>
+              <div id="tp-amps" style="font-family: var(--num-font); font-size: 0.92rem; line-height: 1.6"></div>
+            </div>
+            <div class="panel">
+              <h3>Data qubit (after measurement)</h3>
+              <div id="tp-data-state" style="font-family: var(--num-font); font-size: 0.92rem; line-height: 1.6">&mdash;</div>
+              <p class="figure-caption" id="tp-explain">
+                Stage 0: prepare data qubit and a fresh magic ancilla.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §12 -->
+      <section class="section-shell" id="magic-distillation">
+        <div class="section-main">
+          <h2>Magic-State Distillation</h2>
+          <p class="lede">
+            Real magic-state factories produce noisy ancillas. Bravyi&ndash;Kitaev
+            (2005) showed that many noisy magic states can be combined,
+            using only Clifford operations and measurement, to produce
+            fewer ancillas of substantially higher fidelity.
+          </p>
+
+          <h3>The 15-to-1 protocol</h3>
+          <p>
+            The canonical protocol uses the \([[15, 1, 3]]\) punctured
+            Reed&ndash;Muller code. Fifteen noisy \(\ket T\) ancillas, each
+            with error rate \(p\), are processed by a Clifford circuit with
+            mid-circuit measurements. With probability \(\approx 1\) the
+            output is a single magic state with error rate
+          </p>
+          \[
+            p_{\mathrm{out}} \;\approx\; 35 \cdot p^3,
+          \]
+          <p>
+            a cubic suppression. Iterating: starting from input error \(p\),
+            after \(k\) recursive rounds the error is approximately
+            \(p_k\) where
+          </p>
+          \[
+            p_{k} \;=\; 35 \cdot p_{k-1}^3, \qquad p_0 = p,
+          \]
+          <p>
+            and the number of input noisy magic states consumed per output
+            state at depth \(k\) is \(15^k\) (with overhead constants
+            absorbed).
+          </p>
+
+          <h3>Surface-code resource cost</h3>
+          <p>
+            Once you put this on top of a surface-code architecture, the
+            distillation factories balloon. Litinski (2019, &ldquo;A game of
+            surface codes&rdquo;, arXiv:1808.02892) gave the first sharp
+            estimates: in the natural Clifford+\(T\) compilation of an
+            interesting algorithm, magic-state factories typically consume
+            on the order of \(90\%\) of the physical qubit count and a
+            comparable fraction of the runtime. Magic-state distillation,
+            not Clifford computation, dominates the resource budget.
+          </p>
+
+          <div class="callout">
+            <b>Pitfall.</b> &ldquo;\(35 p^3\)&rdquo; is the leading-order
+            output error of the abstract protocol on an idealized Clifford
+            implementation. Real distillation factories also have to
+            <em>do</em> the Clifford circuit on encoded qubits, contributing
+            additional error and overhead. Fully fault-tolerant distillation
+            cost is dominated by the Clifford part of the circuit, not by
+            the ancilla preparation itself.
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Bravyi&ndash;Kitaev 2005: 15-to-1 distillation, \(p \to 35 p^3\).</li>
+              <li>Recursive iteration: error drops triple-exponentially.</li>
+              <li>Cost: \(15^k\) noisy inputs per output at depth \(k\).</li>
+              <li>Litinski 2019: factories \(\sim 90\%\) of FTQC qubit count.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §13 -->
+      <section class="figure-band" id="distillation-lab">
+        <div class="figure-band-header">
+          <h2>15-to-1 Distillation Cost Calculator</h2>
+          <p>
+            Pick an input error rate. The widget computes the post-distillation
+            error after one round, the number of recursive rounds needed to
+            reach the target output error, and the total noisy-ancilla
+            consumption per output state.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="dl-p">Input error \(p\): <span id="dl-p-val">1.00e-3</span></label>
+              <input id="dl-p" type="range" min="-4" max="-1" step="0.05" value="-3" />
+            </div>
+            <div class="control">
+              <label for="dl-target">Target error \(p_{\mathrm{target}}\)</label>
+              <select id="dl-target">
+                <option value="-9">\(10^{-9}\)</option>
+                <option value="-12" selected>\(10^{-12}\)</option>
+                <option value="-15">\(10^{-15}\)</option>
+                <option value="-18">\(10^{-18}\)</option>
+              </select>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card"><div class="status-label">After 1 round</div><div class="status-value" id="dl-one">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Rounds to target</div><div class="status-value" id="dl-rounds">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Final error</div><div class="status-value" id="dl-final">&mdash;</div></div>
+            <div class="status-card"><div class="status-label">Noisy inputs / output</div><div class="status-value" id="dl-inputs">&mdash;</div></div>
+          </div>
+          <div class="panel">
+            <svg id="dl-chart" class="chart-svg" viewBox="0 0 620 260" role="img" aria-label="Error rate per distillation round"></svg>
+            <p class="figure-caption">
+              Vertical axis: \(\log_{10}\) of the error rate (more negative
+              is better). Horizontal axis: distillation round. Each bar is
+              the post-round error. Dashed line: the target error.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- §14 -->
+      <section class="section-shell" id="magic-cultivation">
+        <div class="section-main">
+          <h2>Magic-State Cultivation</h2>
+          <p class="lede">
+            Litinski&rsquo;s 2024 cultivation protocol replaces the
+            distillation cascade with an in-place fault-tolerance scheme
+            that prepares logical magic states directly, avoiding the
+            polylog overhead of repeated distillation.
+          </p>
+
+          <h3>The idea</h3>
+          <p>
+            Litinski (arXiv:2409.17595, &ldquo;Magic state cultivation:
+            growing T states as cheap as CNOT gates&rdquo;) prepares a
+            small-distance encoded magic state with high acceptance
+            probability, then <em>grows</em> the code to large distance via
+            lattice surgery while preserving the magic. Because the
+            grown-out state inherits its low error from the small-distance
+            preparation rather than from a multi-round Clifford verification
+            cascade, the spacetime overhead is dramatically reduced.
+          </p>
+
+          <h3>Reported gains</h3>
+          <ul>
+            <li>Order-of-magnitude reduction in the spacetime cost of a
+                logical \(T\) gate compared to 2019-era 15-to-1 factories
+                (with similar end-to-end error budgets).</li>
+            <li>Knock-on revisions to cryptanalytic resource estimates: the
+                Gidney 2024 follow-up to Gidney&ndash;Eker&aring; 2021 lowers
+                the qubit-count estimate for RSA-2048 Shor.</li>
+            <li>Brings T-state production down toward the cost of a single
+                logical CNOT &mdash; the title&rsquo;s claim.</li>
+          </ul>
+
+          <div class="callout">
+            <b>Pitfall.</b> Cultivation depends sensitively on
+            physical-level fault-tolerance properties of the underlying
+            QEC code. As of the 2024&ndash;25 papers, cultivation is a
+            surface-code construction; whether comparable protocols exist
+            for color codes, qLDPC codes, or other architectures is an
+            active research question. Cultivation is not yet a fully
+            drop-in replacement for distillation in every architecture.
+          </div>
+
+          <p>
+            For the final-exam horizon: know that distillation is the
+            classical-textbook approach (Bravyi&ndash;Kitaev 2005), that
+            cultivation is the 2024 frontier alternative, and that both
+            address the same fundamental cost &mdash; producing the
+            non-Clifford resource that any universal FTQC requires.
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Litinski 2024 (arXiv:2409.17595): cultivation, not distillation.</li>
+              <li>Prepare small-distance, then grow under code surgery.</li>
+              <li>~10x spacetime reduction vs 2019 factories.</li>
+              <li>Active 2024&ndash;26 frontier; surface-code-specific so far.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §15 -->
+      <section class="section-shell" id="fault-tolerant-context">
+        <div class="section-main">
+          <h2>Where This Fits in Fault-Tolerant Quantum Computing</h2>
+          <p class="lede">
+            Stabilizer formalism, Clifford gates, and magic states fit
+            together in a single argument about why quantum computers have
+            to look the way they do.
+          </p>
+
+          <h3>The Eastin&ndash;Knill obstruction</h3>
+          <div class="callout">
+            <b>Theorem (Eastin&ndash;Knill 2009).</b> No quantum
+            error-correcting code that detects arbitrary single-qubit
+            errors admits a universal set of transversal logical gates.
+          </div>
+          <p>
+            Transversal gates &mdash; those implementable by acting
+            independently on each physical qubit of a code block &mdash;
+            are the cheap, naturally fault-tolerant gates. Eastin&ndash;Knill
+            says the cheap gates can never form a universal set; at least
+            one logical gate must be implemented non-transversally. In
+            practice this hard gate is the \(T\) gate, and it is implemented
+            via magic-state injection.
+          </p>
+
+          <h3>The surface-code architecture</h3>
+          <p>
+            The dominant near-term fault-tolerance proposal is the surface
+            code (Kitaev 1997; Fowler&ndash;Mariantoni&ndash;Martinis&ndash;Cleland
+            2012). On the surface code:
+          </p>
+          <ul>
+            <li>Clifford logical gates are implemented transversally or via
+                lattice surgery &mdash; cheap.</li>
+            <li>The \(T\) gate is implemented by injecting a logical magic
+                state distilled (or cultivated) elsewhere &mdash; expensive.</li>
+            <li>Computation runs in cycles, with each logical qubit using
+                \(d^2\) physical qubits (\(d\) is the code distance) and
+                \(d\) cycles to do anything.</li>
+          </ul>
+
+          <h3>Resource-count headlines</h3>
+          <ul>
+            <li>Gidney&ndash;Eker&aring; 2021 (arXiv:1905.09749): factoring
+                RSA-2048 with surface-code Shor takes about
+                \(2 \times 10^7\) physical qubits and 8 hours, assuming
+                \(10^{-3}\) physical error rate.</li>
+            <li>Litinski 2019 (&ldquo;A game of surface codes&rdquo;,
+                arXiv:1808.02892): magic-state factories occupy on the
+                order of \(90\%\) of those qubits.</li>
+            <li>Litinski 2024 (cultivation, arXiv:2409.17595) and Gidney 2024
+                follow-ups: estimates for RSA-2048 Shor have been revised
+                substantially downward.</li>
+          </ul>
+
+          <p>
+            For full architectural intuition Litinski 2019 is the canonical
+            reference. The headline picture: an FTQC is mostly magic-state
+            factory, with a small data block performing the actual
+            computation. Every improvement on the cost of magic states
+            translates directly into a smaller, faster quantum computer.
+          </p>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Keypoints</h3>
+            <ul>
+              <li>Eastin&ndash;Knill: no universal transversal gate set.</li>
+              <li>Surface code: Cliffords cheap, \(T\) via magic injection.</li>
+              <li>RSA-2048 Shor: \(\sim 2 \times 10^7\) qubits, 8 hours (2021).</li>
+              <li>Cultivation (2024) revises estimates downward.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §16 -->
+      <section class="section-shell" id="mastery-and-faq">
+        <div class="section-main">
+          <h2>Mastery Map and FAQ</h2>
+          <p class="lede">
+            A self-check for the final exam: you should be able to do each
+            of the following from memory, and to answer each of the FAQs
+            with one or two sentences.
+          </p>
+
+          <h3>Mastery map</h3>
+          <div class="sota-grid">
+            <div class="sota-card">
+              <div class="sota-year">&sect;2&ndash;3</div>
+              <h4>Symplectic structure of \(\mathcal{P}_n\)</h4>
+              <p>State the order \(4 \cdot 4^n\), encode any Pauli as
+              \((\mathbf{x}|\mathbf{z})\), compute commutators by symplectic
+              inner product.</p>
+            </div>
+            <div class="sota-card">
+              <div class="sota-year">&sect;5&ndash;7</div>
+              <h4>Tableau update under \(H, S, \mathrm{CNOT}\)</h4>
+              <p>Given a stabilizer state and a Clifford gate, write down
+              the new tableau by the column-level rules of &sect;6.</p>
+            </div>
+            <div class="sota-card">
+              <div class="sota-year">&sect;8&ndash;9</div>
+              <h4>Why Clifford \(\ne\) universal</h4>
+              <p>State both the counting argument and the spectral
+              argument. Quote Solovay&ndash;Kitaev as the standard fix.</p>
+            </div>
+            <div class="sota-card">
+              <div class="sota-year">&sect;10&ndash;11</div>
+              <h4>Gate teleportation</h4>
+              <p>Describe the four-step protocol that turns one \(\ket T\)
+              ancilla into one \(T\) gate via Clifford+measurement.</p>
+            </div>
+            <div class="sota-card">
+              <div class="sota-year">&sect;12&ndash;13</div>
+              <h4>Distillation cost</h4>
+              <p>Apply \(p \to 35 p^3\) to compute post-distillation error;
+              count \(15^k\) inputs per output at recursion depth \(k\).</p>
+            </div>
+            <div class="sota-card">
+              <div class="sota-year">&sect;15</div>
+              <h4>Eastin&ndash;Knill and surface codes</h4>
+              <p>State Eastin&ndash;Knill, name magic-state injection as
+              the standard escape, sketch the surface-code resource picture.</p>
+            </div>
+          </div>
+
+          <h3>FAQ</h3>
+          <div class="faq-list">
+            <details>
+              <summary>Is the Hadamard gate Clifford?</summary>
+              <p>Yes. \(H\) maps \(X \leftrightarrow Z\) under conjugation,
+              both of which are Paulis, so \(H \in \mathcal{C}_1\). \(S\)
+              and \(\mathrm{CNOT}\) are Clifford too; \(T\) is not.</p>
+            </details>
+            <details>
+              <summary>Why doesn&rsquo;t Gottesman&ndash;Knill let us simulate Shor?</summary>
+              <p>Shor&rsquo;s algorithm uses the quantum Fourier transform,
+              which contains controlled-phase rotations \(R_k = \mathrm{diag}(1,
+              e^{2\pi i / 2^k})\) for \(k \ge 3\). These are non-Clifford
+              gates, so Shor&rsquo;s circuit falls outside the
+              Gottesman&ndash;Knill class. The number of non-Clifford gates
+              in Shor is polynomial in \(n\), so even the
+              Aaronson&ndash;Gottesman extension (poly in \(n\), exponential
+              in non-Clifford-gate count) does not yield a polynomial
+              classical simulation.</p>
+            </details>
+            <details>
+              <summary>If Clifford circuits are classically simulable, why are they used in quantum computers?</summary>
+              <p>In a fault-tolerant architecture the Clifford gates are
+              the <em>cheap</em> gates &mdash; transversal or implementable
+              via lattice surgery on a stabilizer code &mdash; while the
+              \(T\) gates are expensive. So the natural decomposition is to
+              do as much work as possible in Clifford, paying only for the
+              non-Clifford gates that actually break out of
+              Gottesman&ndash;Knill. The Cliffords are scaffolding; the
+              \(T\)s are the load.</p>
+            </details>
+            <details>
+              <summary>What&rsquo;s the difference between strong and weak simulation?</summary>
+              <p>Strong simulation computes exact output probabilities of
+              specified events. Weak simulation samples from the output
+              distribution. For Clifford circuits both are poly-time. For
+              general quantum circuits they can come apart: weak simulation
+              is generally easier than strong simulation, and the
+              quantum-supremacy claims (e.g. Boson Sampling, random-circuit
+              sampling) are statements about weak simulation being
+              classically hard.</p>
+            </details>
+            <details>
+              <summary>Are stabilizer states the only classically simulable family?</summary>
+              <p>No. Matchgate (free-fermion) circuits, due to Valiant
+              2002, are also classically simulable in polynomial time.
+              They are not Clifford. There are also more exotic families
+              such as low-Schmidt-rank states and certain
+              tensor-network-representable states. Stabilizer and matchgate
+              are the two clean &ldquo;textbook&rdquo; cases.</p>
+            </details>
+            <details>
+              <summary>Why is magic-state distillation so expensive?</summary>
+              <p>The protocol itself uses 15 noisy ancillas per output,
+              encoded into a Reed&ndash;Muller code, processed by a
+              Clifford circuit, and post-selected on syndrome outcomes.
+              When this Clifford circuit is itself implemented fault-tolerantly
+              on, say, a surface code, every encoded gate costs many
+              physical operations on many physical qubits. The
+              \(O(d^2)\)-qubit, \(O(d)\)-cycle cost of each surface-code
+              logical operation, times the size of the distillation circuit,
+              times any recursive rounds, makes magic-state production the
+              biggest expense in plausible early FTQCs.</p>
+            </details>
+            <details>
+              <summary>Has cultivation actually been demonstrated experimentally?</summary>
+              <p>As of the late-2024 / early-2025 literature, cultivation
+              is a theoretical proposal with worked-out resource estimates
+              under the standard surface-code error model. Early experimental
+              demonstrations of small-distance logical state preparation
+              (Google Quantum AI 2023&ndash;24 surface-code memory papers)
+              are the building blocks; an end-to-end cultivation experiment
+              had not been published as of early 2025. This is an
+              active-frontier topic and the answer date-stamps quickly.</p>
+            </details>
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Self-check</h3>
+            <ul>
+              <li>Can you encode any Pauli as \((\mathbf{x}|\mathbf{z})\)?</li>
+              <li>Can you do an \(H\)/\(S\)/CNOT tableau update?</li>
+              <li>Can you state Gottesman&ndash;Knill and its corollary?</li>
+              <li>Can you compute \(35 p^3\) and \(15^k\)?</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §17 -->
+      <section class="section-band-shell" id="sources">
+        <h2>Sources &amp; Provenance</h2>
+        <div class="sources-list">
+          <div class="source-item">
+            <strong>Local lecture-note PDFs (Aaronson Spring 2023).</strong>
+            <code>~/Code/Austin/QIS/lec-notes/16.pdf</code> (Universal Gate Sets,
+            Solovay&ndash;Kitaev),
+            <code>27.pdf</code> (Quantum Error Correction),
+            <code>28.pdf</code> (Stabilizer Formalism &mdash; primary spec),
+            <code>29.pdf</code> (Experimental Realizations).
+            Lecture 28 supplied the notation conventions (tableau layout,
+            stabilizer-group definition, generator counting, Gottesman&ndash;Knill
+            statement, magic-state framing) used throughout this page.
+          </div>
+          <div class="source-item">
+            <strong>Foundational papers.</strong>
+            Gottesman 1997 PhD thesis, &ldquo;Stabilizer Codes and Quantum
+            Error Correction&rdquo;
+            (<a href="https://arxiv.org/abs/quant-ph/9705052">arXiv:quant-ph/9705052</a>);
+            Aaronson&ndash;Gottesman 2004, &ldquo;Improved Simulation of
+            Stabilizer Circuits&rdquo;
+            (<a href="https://arxiv.org/abs/quant-ph/0406196">arXiv:quant-ph/0406196</a>);
+            Bravyi&ndash;Kitaev 2005, &ldquo;Universal Quantum Computation
+            with Ideal Clifford Gates and Noisy Ancillas&rdquo;
+            (<a href="https://arxiv.org/abs/quant-ph/0403025">arXiv:quant-ph/0403025</a>);
+            Eastin&ndash;Knill 2009
+            (<a href="https://arxiv.org/abs/0811.4262">arXiv:0811.4262</a>).
+          </div>
+          <div class="source-item">
+            <strong>Surface-code architecture and resource estimates.</strong>
+            Fowler&ndash;Mariantoni&ndash;Martinis&ndash;Cleland 2012 surface-code
+            review (<a href="https://arxiv.org/abs/1208.0928">arXiv:1208.0928</a>);
+            Litinski 2019, &ldquo;A Game of Surface Codes&rdquo;
+            (<a href="https://arxiv.org/abs/1808.02892">arXiv:1808.02892</a>);
+            Gidney&ndash;Eker&aring; 2021, &ldquo;How to Factor 2048 Bit RSA
+            Integers in 8 Hours Using 20 Million Noisy Qubits&rdquo;
+            (<a href="https://arxiv.org/abs/1905.09749">arXiv:1905.09749</a>);
+            Litinski 2024, &ldquo;Magic State Cultivation: Growing T States
+            as Cheap as CNOT Gates&rdquo;
+            (<a href="https://arxiv.org/abs/2409.17595">arXiv:2409.17595</a>).
+          </div>
+          <div class="source-item">
+            <strong>Textbooks and lecture pointers.</strong>
+            Nielsen &amp; Chuang, <em>Quantum Computation and Quantum
+            Information</em> (Cambridge), Chapter 10 on QEC;
+            Aaronson, <em>Quantum Computing Since Democritus</em>
+            (Cambridge 2013), the stabilizer chapter; Aaronson&rsquo;s
+            online lectures
+            (<a href="https://www.scottaaronson.com/qclec.pdf">scottaaronson.com/qclec.pdf</a>).
+          </div>
+          <div class="source-item">
+            <strong>Companion tutorials in this series.</strong>
+            <code>../Grovers-algo/index.html</code> (Grover&rsquo;s algorithm),
+            <code>../Shors-algo/index.html</code> (Shor&rsquo;s algorithm),
+            <code>../quantum-complexity/index.html</code> (Quantum complexity).
+            This page reuses the visual and structural template established
+            there.
+          </div>
+        </div>
+        <p class="footer-note">
+          Single-file static HTML, CSS, and vanilla JavaScript. The only
+          external runtime dependency is the KaTeX CDN for math typesetting.
+        </p>
+      </section>
+    </main>
+
+    <script id="app-script">
+      (() => {
+        const numberFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 });
+        function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+        function round3(v) { return numberFormatter.format(v); }
+
+        function updateMath(root = document.body) {
+          if (!window.renderMathInElement) return false;
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "\\[", right: "\\]", display: true },
+              { left: "\\(", right: "\\)", display: false }
+            ],
+            macros: {
+              "\\ket": "\\left|#1\\right\\rangle",
+              "\\bra": "\\left\\langle#1\\right|",
+              "\\braket": "\\left\\langle#1|#2\\right\\rangle"
+            },
+            throwOnError: false
+          });
+          return true;
+        }
+        function ensureMathRendered(root = document.body, attempts = 24) {
+          if (updateMath(root)) return;
+          if (attempts <= 0) return;
+          window.setTimeout(() => ensureMathRendered(root, attempts - 1), 150);
+        }
+        function createSvgElement(name, attrs = {}) {
+          const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+          Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+          return node;
+        }
+        function clearSvg(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+        function makeText(x, y, str, attrs = {}) {
+          const t = createSvgElement("text", Object.assign({
+            x, y, "font-size": "12", fill: "#1c1c1c",
+            "font-family": "ui-sans-serif, system-ui, sans-serif"
+          }, attrs));
+          t.textContent = str;
+          return t;
+        }
+
+        // ============================================================
+        // Pauli arithmetic primitives
+        // ============================================================
+        // Encode each n-qubit Pauli (mod phase) as { x: [..], z: [..] }
+        // with separate phase a in {0,1,2,3} meaning i^a.
+        // Per-qubit char: 'I'=(0,0), 'X'=(1,0), 'Z'=(0,1), 'Y'=(1,1).
+        const PAULI_CHARS = ['I', 'X', 'Z', 'Y'];
+        function pauliFromString(str) {
+          const x = [], z = [];
+          let phase = 0;
+          for (const ch of str) {
+            if (ch === 'I') { x.push(0); z.push(0); }
+            else if (ch === 'X') { x.push(1); z.push(0); }
+            else if (ch === 'Z') { x.push(0); z.push(1); }
+            else if (ch === 'Y') { x.push(1); z.push(1); phase = (phase + 1) % 4; }
+            // We treat Y on its own as +Y (no extra phase factor for the "string"); the convention here is
+            // that the displayed string is the operator itself, including the i factors implicit in Y.
+            // We'll keep phase=0 and treat Y as the symplectic (1,1) tensor factor; multiplications will still
+            // correctly count phases through the rule below.
+          }
+          // Reset: don't double-count Y phases here. Instead define operators by their (x,z) bits with phase 0.
+          return { x, z, phase: 0 };
+        }
+        function pauliToString(p) {
+          let s = '';
+          for (let i = 0; i < p.x.length; i++) {
+            const code = (p.x[i] << 1) | p.z[i]; // 0=I,2=X(? wait)
+            // careful: we want X=(1,0)->'X'; Y=(1,1)->'Y'; Z=(0,1)->'Z'; I=(0,0)->'I'
+            if (p.x[i] === 0 && p.z[i] === 0) s += 'I';
+            else if (p.x[i] === 1 && p.z[i] === 0) s += 'X';
+            else if (p.x[i] === 0 && p.z[i] === 1) s += 'Z';
+            else s += 'Y';
+          }
+          return s;
+        }
+        function phaseToString(a) {
+          a = ((a % 4) + 4) % 4;
+          return ['+1', '+i', '-1', '-i'][a];
+        }
+        function phaseToSign(a) {
+          a = ((a % 4) + 4) % 4;
+          return ['+', '+i', '-', '-i'][a];
+        }
+        // Multiply two Paulis P*Q. Use the operator definitions
+        // P_op = i^(a_P) * X^xP * Z^zP, similarly Q. Then
+        //   PQ = i^(a_P + a_Q + 2 zP·xQ) * X^(xP^xQ) * Z^(zP^zQ)
+        // BUT: we want our string-representation of Y to literally equal the matrix Y = i*X*Z (phase i),
+        // not the abstract X*Z which has phase -i to make it Hermitian-ish. So when we display "Y"
+        // we mean the matrix Y, which equals i*X*Z. Equivalently the "operator phase" of a string is
+        // i^(# of Y's) extra. We absorb that consistently.
+        function pauliMul(P, Q) {
+          const n = P.x.length;
+          const x = new Array(n), z = new Array(n);
+          let extra = 0;
+          for (let i = 0; i < n; i++) {
+            x[i] = P.x[i] ^ Q.x[i];
+            z[i] = P.z[i] ^ Q.z[i];
+            // Compute phase from sliding Z's of P past X's of Q at qubit i.
+            // For abstract operators with no Y-phase convention:
+            //   X_a Z_b * X_c Z_d = (-1)^{b c} X^{a^c} Z^{b^d} (per qubit, abstract)
+            // and the Y string represents matrix Y = i X Z. So when we form output from (x[i],z[i]),
+            // each output Y carries an inherent +i.
+            // To track the displayed phase, we compute the phase of the abstract product as if we used
+            // matrix conventions: X*Z = -i*Y, Z*X = i*Y, so we keep track per-qubit explicitly.
+          }
+          // Simpler: just multiply per-qubit using a tiny lookup table on matrix conventions.
+          // Represent each per-qubit factor as a (sym, phaseExp) where phaseExp is the i-power
+          // contribution from this qubit's product. Then product over qubits.
+          let phasePower = 0;
+          for (let i = 0; i < n; i++) {
+            const a = (P.x[i] << 1) | P.z[i]; // 0=I,1=Z,2=X,3=Y? no: x<<1|z so (0,0)=0=I, (0,1)=1=Z, (1,0)=2=X, (1,1)=3=Y
+            const b = (Q.x[i] << 1) | Q.z[i];
+            // matrix-convention multiplication table: rows=a (P), cols=b (Q)
+            // entries are { sym, phase } where phase is the i^k coefficient of the result symbol.
+            // I=0,Z=1,X=2,Y=3
+            // I*anything = anything (phase 0). Use I X Y Z relations:
+            //   X*X=I, Y*Y=I, Z*Z=I; X*Y=iZ; Y*X=-iZ; Y*Z=iX; Z*Y=-iX; Z*X=iY; X*Z=-iY
+            // Build table:
+            const T = [
+              // I row
+              [{s:0,p:0},{s:1,p:0},{s:2,p:0},{s:3,p:0}],
+              // Z row
+              [{s:1,p:0},{s:0,p:0},{s:3,p:3},{s:2,p:1}], // Z*I=Z; Z*Z=I; Z*X=iY (p=1); Z*Y=-iX (p=3)
+              // X row
+              [{s:2,p:0},{s:3,p:1},{s:0,p:0},{s:1,p:3}], // X*I=X; X*Z=-iY (p=3? ) wait X*Z = -iY so p=3. but I wrote p=1. fix.
+              // Y row
+              [{s:3,p:0},{s:2,p:3},{s:1,p:1},{s:0,p:0}]
+            ];
+            // Recompute carefully:
+            // X*Z = -iY  (since XZ = -iY). So row=X(2), col=Z(1) -> {s:Y(3), p:3} (because i^3 = -i)
+            // X*X = I -> {s:0,p:0}; X*Y=iZ -> {s:Z(1), p:1}
+            // Z*X = iY -> {s:Y(3), p:1}; Z*Y = -iX -> {s:X(2), p:3}
+            // Y*X = -iZ -> {s:Z(1), p:3}; Y*Z = iX -> {s:X(2), p:1}; Y*Y=I -> {s:0,p:0}
+            const T2 = [
+              [{s:0,p:0},{s:1,p:0},{s:2,p:0},{s:3,p:0}],            // I row: I*X=I,Z,X,Y wait I*I=I,I*Z=Z,I*X=X,I*Y=Y
+              [{s:1,p:0},{s:0,p:0},{s:3,p:1},{s:2,p:3}],            // Z row: Z*I=Z, Z*Z=I, Z*X=iY, Z*Y=-iX
+              [{s:2,p:0},{s:3,p:3},{s:0,p:0},{s:1,p:1}],            // X row: X*I=X, X*Z=-iY, X*X=I, X*Y=iZ
+              [{s:3,p:0},{s:2,p:1},{s:1,p:3},{s:0,p:0}]             // Y row: Y*I=Y, Y*Z=iX, Y*X=-iZ, Y*Y=I
+            ];
+            const r = T2[a][b];
+            // Set the qubit i symbol:
+            x[i] = (r.s === 2 || r.s === 3) ? 1 : 0;
+            z[i] = (r.s === 1 || r.s === 3) ? 1 : 0;
+            phasePower = (phasePower + r.p) % 4;
+          }
+          return { x, z, phase: ((P.phase + Q.phase + phasePower) % 4 + 4) % 4 };
+        }
+        function symplecticInner(P, Q) {
+          let s = 0;
+          for (let i = 0; i < P.x.length; i++) {
+            s += P.x[i] * Q.z[i] + P.z[i] * Q.x[i];
+          }
+          return s % 2;
+        }
+        function paulisCommute(P, Q) { return symplecticInner(P, Q) === 0; }
+        function pauliVecString(p) {
+          // Display as "(x_1 x_2 ... | z_1 z_2 ...)"
+          return `(${p.x.join(' ')} | ${p.z.join(' ')})`;
+        }
+        function pauliFullString(p) {
+          return phaseToSign(p.phase) + pauliToString(p);
+        }
+
+        // ============================================================
+        // §3 Pauli Lab
+        // ============================================================
+        function allPaulis(n) {
+          const out = [];
+          const total = Math.pow(4, n);
+          for (let k = 0; k < total; k++) {
+            let s = '';
+            let q = k;
+            for (let i = 0; i < n; i++) {
+              s += PAULI_CHARS[q & 3];
+              q >>= 2;
+            }
+            out.push(s);
+          }
+          // Remove the all-I string from being "boring" - keep it actually.
+          return out;
+        }
+        function renderPauliLab() {
+          const nSel = document.getElementById('pl-n');
+          const pSel = document.getElementById('pl-p');
+          const qSel = document.getElementById('pl-q');
+          if (!nSel) return;
+          function rebuild() {
+            const n = parseInt(nSel.value, 10);
+            const list = allPaulis(n);
+            for (const sel of [pSel, qSel]) {
+              const prev = sel.value;
+              sel.innerHTML = '';
+              list.forEach(s => {
+                const o = document.createElement('option');
+                o.value = s; o.textContent = s;
+                sel.appendChild(o);
+              });
+              if (list.includes(prev)) sel.value = prev;
+            }
+            // sensible defaults
+            if (n === 2) { pSel.value = 'XX'; qSel.value = 'ZZ'; }
+            else { pSel.value = 'XXI'; qSel.value = 'ZZI'; }
+            recompute();
+          }
+          function recompute() {
+            const Pstr = pSel.value, Qstr = qSel.value;
+            const P = pauliFromString(Pstr);
+            const Q = pauliFromString(Qstr);
+            const PQ = pauliMul(P, Q);
+            const inner = symplecticInner(P, Q);
+            document.getElementById('pl-p-symp').textContent = `${Pstr} ↔ ${pauliVecString(P)}`;
+            document.getElementById('pl-q-symp').textContent = `${Qstr} ↔ ${pauliVecString(Q)}`;
+            document.getElementById('pl-inner').textContent = String(inner);
+            document.getElementById('pl-rel').textContent = inner === 0 ? 'commute' : 'anticommute';
+            document.getElementById('pl-prod').innerHTML = `${pauliFullString(PQ)} <span style="color:#5a5a5a">[(${PQ.x.join(' ')} | ${PQ.z.join(' ')})]</span>`;
+          }
+          nSel.addEventListener('change', rebuild);
+          pSel.addEventListener('change', recompute);
+          qSel.addEventListener('change', recompute);
+          rebuild();
+        }
+
+        // ============================================================
+        // Tableau utilities (for §5 and §7)
+        // ============================================================
+        // A tableau is { n, rows: [ {x: [...], z: [...], r: 0|1} ] } with n rows, each row a stabilizer generator.
+        // r is the sign bit (0 = +, 1 = -). For our display we ignore extra i-phase signs (Aaronson notes' simplification).
+        function makeTableauFromStrings(strs) {
+          // Each str like "+XX" or "-YY" or "ZIII"; we accept just the body, default + sign, ignore i.
+          const n = strs[0].replace(/^[+\-]/, '').replace(/i/g, '').length;
+          const rows = strs.map(s => {
+            let sign = 0;
+            if (s[0] === '-') { sign = 1; s = s.slice(1); }
+            else if (s[0] === '+') s = s.slice(1);
+            const body = s.replace(/i/g, '');
+            const x = [], z = [];
+            for (const ch of body) {
+              if (ch === 'I') { x.push(0); z.push(0); }
+              else if (ch === 'X') { x.push(1); z.push(0); }
+              else if (ch === 'Z') { x.push(0); z.push(1); }
+              else if (ch === 'Y') { x.push(1); z.push(1); }
+            }
+            return { x, z, r: sign };
+          });
+          return { n, rows };
+        }
+        function rowToPauli(row) {
+          let s = row.r ? '-' : '+';
+          for (let i = 0; i < row.x.length; i++) {
+            if (row.x[i] === 0 && row.z[i] === 0) s += 'I';
+            else if (row.x[i] === 1 && row.z[i] === 0) s += 'X';
+            else if (row.x[i] === 0 && row.z[i] === 1) s += 'Z';
+            else s += 'Y';
+          }
+          return s;
+        }
+        function rowToPauliPretty(row) {
+          // E.g. "+ X_1 X_2"
+          let parts = [];
+          for (let i = 0; i < row.x.length; i++) {
+            if (row.x[i] === 0 && row.z[i] === 0) continue;
+            let c;
+            if (row.x[i] === 1 && row.z[i] === 0) c = 'X';
+            else if (row.x[i] === 0 && row.z[i] === 1) c = 'Z';
+            else c = 'Y';
+            parts.push(`${c}_${i+1}`);
+          }
+          if (parts.length === 0) parts = ['I'];
+          return (row.r ? '−' : '+') + ' ' + parts.join(' ');
+        }
+        function tableauHTML(tab) {
+          const n = tab.n;
+          let html = '<div style="overflow-x:auto"><table style="border-collapse:collapse">';
+          html += '<thead><tr>';
+          html += '<th style="padding:0.2rem 0.5rem;color:#5a5a5a;font-weight:600">row</th>';
+          html += `<th colspan="${n}" style="padding:0.2rem 0.5rem;color:#1f4f8b;font-weight:600;border-bottom:1px solid #d8d6d0">X-block</th>`;
+          html += `<th colspan="${n}" style="padding:0.2rem 0.5rem;color:#8a3a1c;font-weight:600;border-bottom:1px solid #d8d6d0">Z-block</th>`;
+          html += '<th style="padding:0.2rem 0.5rem;color:#5a5a5a;font-weight:600">sign</th>';
+          html += '</tr></thead><tbody>';
+          tab.rows.forEach((row, idx) => {
+            html += `<tr data-row="${idx}" style="cursor:pointer">`;
+            html += `<td style="padding:0.18rem 0.55rem;color:#5a5a5a">${idx+1}</td>`;
+            for (let j = 0; j < n; j++) {
+              html += `<td style="padding:0.18rem 0.55rem;text-align:center;background:rgba(31,79,139,0.06)">${row.x[j]}</td>`;
+            }
+            for (let j = 0; j < n; j++) {
+              html += `<td style="padding:0.18rem 0.55rem;text-align:center;background:rgba(138,58,28,0.06)">${row.z[j]}</td>`;
+            }
+            html += `<td style="padding:0.18rem 0.55rem;text-align:center">${row.r ? '−' : '+'}</td>`;
+            html += '</tr>';
+          });
+          html += '</tbody></table></div>';
+          return html;
+        }
+
+        // ============================================================
+        // §5 Tableau Lab
+        // ============================================================
+        const TAB_PRESETS = {
+          zero2:   { strs: ['ZI', 'IZ'], desc: '\\(\\ket{00}\\)' },
+          plus2:   { strs: ['XI', 'IX'], desc: '\\(\\ket{++}\\)' },
+          bell:    { strs: ['XX', 'ZZ'], desc: 'Bell pair' },
+          ghz3:    { strs: ['XXX', 'ZZI', 'IZZ'], desc: 'GHZ' },
+          zero3:   { strs: ['ZII', 'IZI', 'IIZ'], desc: '\\(\\ket{000}\\)' },
+          plus3:   { strs: ['XII', 'IXI', 'IIX'], desc: '\\(\\ket{+++}\\)' },
+          five:    { strs: ['XZZXI', 'IXZZX', 'XIXZZ', 'ZXIXZ', 'ZZZZZ'], desc: '5-qubit code' }
+        };
+        function renderTableauLab() {
+          const sel = document.getElementById('tab-preset');
+          const disp = document.getElementById('tab-display');
+          const dec = document.getElementById('tab-decode');
+          if (!sel) return;
+          function update() {
+            const preset = TAB_PRESETS[sel.value];
+            const tab = makeTableauFromStrings(preset.strs);
+            disp.innerHTML = tableauHTML(tab);
+            dec.textContent = 'Hover a row to see its Pauli generator written out.';
+            disp.querySelectorAll('tr[data-row]').forEach(tr => {
+              tr.addEventListener('mouseover', () => {
+                const idx = parseInt(tr.dataset.row, 10);
+                const row = tab.rows[idx];
+                dec.textContent = `Row ${idx+1}: ${rowToPauliPretty(row)} (operator string ${rowToPauli(row).slice(1)})`;
+              });
+            });
+          }
+          sel.addEventListener('change', update);
+          update();
+        }
+
+        // ============================================================
+        // §7 Clifford Circuit Lab
+        // ============================================================
+        // Clifford gate updates on tableau (signs ignored as in lec 28 simplification)
+        function applyH(tab, q) {
+          // swap x[q] and z[q] in every row
+          for (const row of tab.rows) {
+            const t = row.x[q]; row.x[q] = row.z[q]; row.z[q] = t;
+            // sign update: r ^= x[q]*z[q] (after swap, but for our purposes ignore)
+          }
+        }
+        function applyS(tab, q) {
+          for (const row of tab.rows) {
+            // z[q] ^= x[q]
+            row.z[q] ^= row.x[q];
+          }
+        }
+        function applyCNOT(tab, c, t) {
+          for (const row of tab.rows) {
+            row.x[t] ^= row.x[c];
+            row.z[c] ^= row.z[t];
+          }
+        }
+        // Apply to a small state vector for n<=3
+        function applyHvec(state, q, n) {
+          const dim = 1 << n;
+          const out = new Array(dim).fill(null).map(() => [0,0]);
+          const inv = 1 / Math.sqrt(2);
+          for (let i = 0; i < dim; i++) {
+            const bit = (i >> (n - 1 - q)) & 1;
+            const partner = i ^ (1 << (n - 1 - q));
+            // H: |0> -> (|0>+|1>)/sqrt2; |1> -> (|0>-|1>)/sqrt2
+            // Output amplitude of i: sum over input states j whose H expands to include i.
+            // a'_i = (a_{i with bit 0} + (-1)^{bit_i} a_{i with bit 1}) / sqrt2
+            // It's easier: for each j compute its output.
+          }
+          // Let's recompute properly:
+          for (let j = 0; j < dim; j++) {
+            const bit = (j >> (n - 1 - q)) & 1;
+            const sister = j ^ (1 << (n - 1 - q));
+            // j with bit 0 contributes to (j and sister) each with +inv
+            // j with bit 1 contributes to (sister with +inv) and (j with -inv)
+            const [a, b] = state[j];
+            if (bit === 0) {
+              out[j][0] += inv * a; out[j][1] += inv * b;
+              out[sister][0] += inv * a; out[sister][1] += inv * b;
+            } else {
+              out[sister][0] += inv * a; out[sister][1] += inv * b;
+              out[j][0] -= inv * a; out[j][1] -= inv * b;
+            }
+          }
+          return out;
+        }
+        function applySvec(state, q, n) {
+          const dim = 1 << n;
+          const out = state.map(c => c.slice());
+          for (let j = 0; j < dim; j++) {
+            const bit = (j >> (n - 1 - q)) & 1;
+            if (bit === 1) {
+              // multiply by i: (a + bi) * i = -b + ai
+              const [a, b] = out[j];
+              out[j] = [-b, a];
+            }
+          }
+          return out;
+        }
+        function applyCNOTvec(state, c, t, n) {
+          const dim = 1 << n;
+          const out = state.map(x => x.slice());
+          const tmp = new Array(dim).fill(null).map(() => [0, 0]);
+          for (let j = 0; j < dim; j++) {
+            const cb = (j >> (n - 1 - c)) & 1;
+            let target = j;
+            if (cb === 1) target = j ^ (1 << (n - 1 - t));
+            tmp[target][0] = out[j][0];
+            tmp[target][1] = out[j][1];
+          }
+          return tmp;
+        }
+        function basisString(j, n) {
+          let s = '';
+          for (let i = 0; i < n; i++) s += ((j >> (n - 1 - i)) & 1).toString();
+          return s;
+        }
+        function fmtComplex(c) {
+          const a = c[0], b = c[1];
+          if (Math.abs(a) < 1e-10 && Math.abs(b) < 1e-10) return '0';
+          let parts = [];
+          if (Math.abs(a) > 1e-10) parts.push(a.toFixed(3));
+          if (Math.abs(b) > 1e-10) parts.push((b >= 0 ? '+' : '−') + Math.abs(b).toFixed(3) + 'i');
+          return parts.join('').replace(/^\+/, '');
+        }
+        function stateToHTML(state, n) {
+          const dim = 1 << n;
+          const lines = [];
+          for (let j = 0; j < dim; j++) {
+            const c = state[j];
+            if (Math.abs(c[0]) < 1e-9 && Math.abs(c[1]) < 1e-9) continue;
+            lines.push(`${fmtComplex(c).padStart(16)} · |${basisString(j, n)}⟩`);
+          }
+          if (lines.length === 0) return '0';
+          return lines.join('<br>');
+        }
+
+        const CL_INIT = {
+          zero2: { n: 2, strs: ['ZI', 'IZ'], state: () => { const s = [[0,0],[0,0],[0,0],[0,0]]; s[0] = [1,0]; return s; } },
+          zero3: { n: 3, strs: ['ZII', 'IZI', 'IIZ'], state: () => { const s = new Array(8).fill(null).map(()=>[0,0]); s[0] = [1,0]; return s; } },
+          plus2: { n: 2, strs: ['XI', 'IX'], state: () => { const v = 0.5; return [[v,0],[v,0],[v,0],[v,0]]; } },
+          bell:  { n: 2, strs: ['XX', 'ZZ'], state: () => { const v = 1/Math.sqrt(2); return [[v,0],[0,0],[0,0],[v,0]]; } }
+        };
+
+        function renderCliffordCircuitLab() {
+          const initSel = document.getElementById('cl-init');
+          const gateRow = document.getElementById('cl-gates');
+          const undoBtn = document.getElementById('cl-undo');
+          const resetBtn = document.getElementById('cl-reset');
+          if (!initSel) return;
+
+          let cur = null; // { tab, state, n, history: [...] }
+
+          function buildGates(n) {
+            gateRow.innerHTML = '';
+            const gates = [];
+            for (let i = 0; i < n; i++) gates.push({label: `H${i+1}`, fn: ['H', i]});
+            for (let i = 0; i < n; i++) gates.push({label: `S${i+1}`, fn: ['S', i]});
+            for (let c = 0; c < n; c++) for (let t = 0; t < n; t++) if (c !== t)
+              gates.push({label: `CNOT ${c+1}→${t+1}`, fn: ['CNOT', c, t]});
+            for (const g of gates) {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.textContent = g.label;
+              b.addEventListener('click', () => apply(g));
+              gateRow.appendChild(b);
+            }
+          }
+
+          function reset() {
+            const cfg = CL_INIT[initSel.value];
+            const tab = makeTableauFromStrings(cfg.strs);
+            cur = {
+              tab,
+              n: cfg.n,
+              state: cfg.state(),
+              history: []
+            };
+            buildGates(cfg.n);
+            redraw();
+          }
+
+          function apply(g) {
+            cur.history.push({ label: g.label, fn: g.fn,
+              tabSnap: JSON.parse(JSON.stringify(cur.tab)),
+              stateSnap: cur.state.map(c => c.slice()) });
+            const [op, a, b] = g.fn;
+            if (op === 'H') { applyH(cur.tab, a); cur.state = applyHvec(cur.state, a, cur.n); }
+            else if (op === 'S') { applyS(cur.tab, a); cur.state = applySvec(cur.state, a, cur.n); }
+            else if (op === 'CNOT') { applyCNOT(cur.tab, a, b); cur.state = applyCNOTvec(cur.state, a, b, cur.n); }
+            redraw();
+          }
+
+          function undo() {
+            if (cur.history.length === 0) return;
+            const h = cur.history.pop();
+            cur.tab = h.tabSnap;
+            cur.state = h.stateSnap;
+            redraw();
+          }
+
+          function redraw() {
+            document.getElementById('cl-n').textContent = cur.n;
+            document.getElementById('cl-count').textContent = cur.history.length;
+            const histStr = cur.history.length === 0 ? '(empty)' : cur.history.map(h => h.label).join(' · ');
+            document.getElementById('cl-hist').textContent = histStr;
+            const tDisp = document.getElementById('cl-tableau');
+            tDisp.innerHTML = tableauHTML(cur.tab);
+            const rowEl = document.getElementById('cl-row');
+            rowEl.textContent = 'Click a row to see its Pauli expansion.';
+            tDisp.querySelectorAll('tr[data-row]').forEach(tr => {
+              tr.addEventListener('click', () => {
+                const idx = parseInt(tr.dataset.row, 10);
+                rowEl.textContent = `Row ${idx+1}: ${rowToPauliPretty(cur.tab.rows[idx])}`;
+              });
+            });
+            const stateEl = document.getElementById('cl-state');
+            stateEl.innerHTML = stateToHTML(cur.state, cur.n);
+          }
+
+          initSel.addEventListener('change', reset);
+          undoBtn.addEventListener('click', undo);
+          resetBtn.addEventListener('click', reset);
+          reset();
+        }
+
+        // ============================================================
+        // §11 Teleportation Lab
+        // ============================================================
+        // 5 stages. Data ⊗ Anc.
+        // Stage 0: |psi> ⊗ |T> (no operation yet)
+        // Stage 1: after CNOT (data control, ancilla target)
+        // Stage 2: ancilla measured -> 0 or 1, data state collapses
+        // Stage 3: if outcome=1, apply S then X to data (= correction);
+        //          if outcome=0, no correction.
+        // Stage 4: final = T|psi>.
+        function renderTeleportationLab() {
+          const dataSel = document.getElementById('tp-data');
+          const outSel = document.getElementById('tp-outcome');
+          const fwdBtn = document.getElementById('tp-fwd');
+          const backBtn = document.getElementById('tp-back');
+          const resetBtn = document.getElementById('tp-reset');
+          if (!dataSel) return;
+
+          let stage = 0;
+          let outcome = null;
+          let consumed = 0;
+
+          function getDataAmps() {
+            switch (dataSel.value) {
+              case 'zero': return [[1,0],[0,0]];
+              case 'one': return [[0,0],[1,0]];
+              case 'plus': { const v = 1/Math.sqrt(2); return [[v,0],[v,0]]; }
+              case 'minus': { const v = 1/Math.sqrt(2); return [[v,0],[-v,0]]; }
+            }
+          }
+          // |T> = (|0> + e^{i pi/4}|1>)/sqrt2
+          function getAncAmps() {
+            const v = 1/Math.sqrt(2);
+            const c = Math.cos(Math.PI/4), s = Math.sin(Math.PI/4);
+            return [[v, 0], [v*c, v*s]];
+          }
+          function tensor(a, b) {
+            // 4-component output: indexed by (data << 1) | anc
+            const out = [];
+            for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+              // (a[i].real + i a[i].im) * (b[j].real + i b[j].im)
+              const re = a[i][0]*b[j][0] - a[i][1]*b[j][1];
+              const im = a[i][0]*b[j][1] + a[i][1]*b[j][0];
+              out.push([re, im]);
+            }
+            return out;
+          }
+          function cnotApply(state) {
+            // data = high bit, anc = low bit. CNOT data->anc: flip anc when data=1.
+            // index 00 -> 00, 01 -> 01, 10 -> 11, 11 -> 10
+            return [state[0], state[1], state[3], state[2]];
+          }
+          function measureAncilla(state, forced) {
+            // p(anc=0) = |s_00|^2 + |s_10|^2; collapse and normalize.
+            const p0 = state[0][0]**2 + state[0][1]**2 + state[2][0]**2 + state[2][1]**2;
+            let r;
+            if (forced === '0') r = 0;
+            else if (forced === '1') r = 1;
+            else r = (Math.random() < p0) ? 0 : 1;
+            const data = [[0,0],[0,0]];
+            if (r === 0) {
+              data[0] = state[0]; data[1] = state[2];
+            } else {
+              data[0] = state[1]; data[1] = state[3];
+            }
+            // normalize
+            const norm = Math.sqrt(data[0][0]**2 + data[0][1]**2 + data[1][0]**2 + data[1][1]**2);
+            if (norm > 1e-12) for (let i = 0; i < 2; i++) { data[i][0] /= norm; data[i][1] /= norm; }
+            return { outcome: r, data };
+          }
+          // S: |1> -> i|1>
+          function sApply(d) {
+            return [d[0], [-d[1][1], d[1][0]]];
+          }
+          // X: swap
+          function xApply(d) { return [d[1], d[0]]; }
+
+          let twoQubit = null; // current 4-component state (or null after measurement)
+          let dataState = null; // collapsed 2-component state
+
+          function compute() {
+            // Recompute everything for current stage.
+            const dAmps = getDataAmps();
+            const aAmps = getAncAmps();
+            twoQubit = tensor(dAmps, aAmps);
+            dataState = null;
+            outcome = null;
+            if (stage >= 1) twoQubit = cnotApply(twoQubit);
+            if (stage >= 2) {
+              const m = measureAncilla(twoQubit, outSel.value);
+              outcome = m.outcome;
+              dataState = m.data;
+            }
+            if (stage >= 3 && outcome === 1) {
+              dataState = xApply(sApply(dataState));
+              // (Up to global phase, this gives T|psi>)
+            }
+          }
+
+          function redraw() {
+            compute();
+            document.getElementById('tp-stage').textContent = stage;
+            const descs = [
+              'prepare \\(\\ket\\psi\\otimes\\ket T\\)',
+              'apply CNOT (data → ancilla)',
+              'measure ancilla in Z basis',
+              'apply correction (if outcome=1)',
+              'final: data qubit holds \\(T\\ket\\psi\\)'
+            ];
+            const desc = document.getElementById('tp-desc');
+            desc.innerHTML = descs[stage];
+            ensureMathRendered(desc);
+            document.getElementById('tp-meas').textContent = outcome === null ? '—' : String(outcome);
+            document.getElementById('tp-consumed').textContent = consumed;
+
+            const ampsEl = document.getElementById('tp-amps');
+            if (stage < 2) {
+              const labels = ['00','01','10','11'];
+              const lines = twoQubit.map((c, i) => `${fmtComplex(c).padStart(16)} · |${labels[i]}⟩`);
+              ampsEl.innerHTML = lines.join('<br>');
+            } else {
+              ampsEl.innerHTML = '<i style="color:#5a5a5a">two-qubit state collapsed by measurement</i>';
+            }
+
+            const dEl = document.getElementById('tp-data-state');
+            if (dataState === null) dEl.innerHTML = '—';
+            else {
+              const lines = dataState.map((c, i) => `${fmtComplex(c).padStart(16)} · |${i}⟩`);
+              dEl.innerHTML = lines.join('<br>');
+            }
+
+            const exp = document.getElementById('tp-explain');
+            const explain = [
+              'Stage 0: prepare data qubit and a fresh magic ancilla.',
+              'Stage 1: CNOT entangles data (control) with the magic ancilla (target).',
+              'Stage 2: measure the ancilla. With probability ½ each, outcome ∈ {0, 1}.',
+              outcome === 0
+                ? 'Stage 3: outcome was 0; no correction needed.'
+                : (outcome === 1
+                  ? 'Stage 3: outcome was 1; apply correction S then X.'
+                  : 'Stage 3: apply correction iff outcome was 1.'),
+              'Stage 4: data qubit holds T|ψ⟩ (the magic ancilla has been consumed).'
+            ];
+            exp.textContent = explain[stage];
+          }
+
+          fwdBtn.addEventListener('click', () => {
+            if (stage < 4) {
+              stage++;
+              if (stage === 4) consumed++;
+              redraw();
+            }
+          });
+          backBtn.addEventListener('click', () => {
+            if (stage > 0) {
+              if (stage === 4) consumed = Math.max(0, consumed - 1);
+              stage--;
+              redraw();
+            }
+          });
+          resetBtn.addEventListener('click', () => { stage = 0; consumed = 0; redraw(); });
+          dataSel.addEventListener('change', () => { stage = 0; redraw(); });
+          outSel.addEventListener('change', () => { redraw(); });
+          redraw();
+        }
+
+        // ============================================================
+        // §13 Distillation Lab
+        // ============================================================
+        function renderDistillationLab() {
+          const pSlider = document.getElementById('dl-p');
+          const pVal = document.getElementById('dl-p-val');
+          const targetSel = document.getElementById('dl-target');
+          const oneEl = document.getElementById('dl-one');
+          const roundsEl = document.getElementById('dl-rounds');
+          const finalEl = document.getElementById('dl-final');
+          const inputsEl = document.getElementById('dl-inputs');
+          const svg = document.getElementById('dl-chart');
+          if (!pSlider) return;
+
+          function fmtSci(x) {
+            if (x === 0) return '0';
+            const e = Math.floor(Math.log10(x));
+            const m = x / Math.pow(10, e);
+            return `${m.toFixed(2)}e${e >= 0 ? '+' : ''}${e}`;
+          }
+
+          function recompute() {
+            const lp = parseFloat(pSlider.value);
+            const p = Math.pow(10, lp);
+            pVal.textContent = fmtSci(p);
+            const tlog = parseFloat(targetSel.value);
+            const target = Math.pow(10, tlog);
+
+            // Compute rounds
+            const rounds = [p];
+            let cur = p;
+            let k = 0;
+            while (cur > target && k < 10) {
+              cur = 35 * cur * cur * cur;
+              rounds.push(cur);
+              k++;
+              // safety: if 35*p^3 >= p (i.e. distillation makes it worse), abort
+              if (rounds.length >= 2 && rounds[rounds.length-1] >= rounds[rounds.length-2]) break;
+            }
+            const finalP = rounds[rounds.length - 1];
+            const reached = finalP <= target;
+            const oneRound = 35 * p * p * p;
+
+            oneEl.textContent = fmtSci(oneRound);
+            roundsEl.textContent = reached ? String(k) : `>${k} (does not converge to target)`;
+            finalEl.textContent = fmtSci(finalP);
+            inputsEl.textContent = reached ? `15^${k} = ${Math.pow(15, k).toLocaleString()}` : '—';
+
+            drawChart(rounds, target);
+          }
+
+          function drawChart(rounds, target) {
+            clearSvg(svg);
+            const w = 620, h = 260;
+            const padL = 60, padR = 20, padT = 20, padB = 40;
+            const innerW = w - padL - padR, innerH = h - padT - padB;
+            // y axis: log10(p), from -22 to max(0, log10(rounds[0])+0.5)
+            const maxLog = Math.max(0, Math.log10(rounds[0]) + 0.5);
+            const minLog = -22;
+            const xStep = innerW / Math.max(rounds.length, 6);
+            // axes
+            svg.appendChild(createSvgElement('line', { x1: padL, y1: padT, x2: padL, y2: padT + innerH, stroke: '#1c1c1c' }));
+            svg.appendChild(createSvgElement('line', { x1: padL, y1: padT + innerH, x2: padL + innerW, y2: padT + innerH, stroke: '#1c1c1c' }));
+            // y ticks every 4
+            for (let v = 0; v >= minLog; v -= 4) {
+              const y = padT + innerH - (v - minLog) / (maxLog - minLog) * innerH;
+              svg.appendChild(createSvgElement('line', { x1: padL - 4, y1: y, x2: padL, y2: y, stroke: '#1c1c1c' }));
+              svg.appendChild(makeText(padL - 8, y + 4, `10^${v}`, { 'text-anchor': 'end', 'font-size': '10', fill: '#5a5a5a' }));
+            }
+            // target dashed line
+            const ty = padT + innerH - (Math.log10(target) - minLog) / (maxLog - minLog) * innerH;
+            svg.appendChild(createSvgElement('line', { x1: padL, y1: ty, x2: padL + innerW, y2: ty,
+              stroke: '#8a3a1c', 'stroke-dasharray': '4 3', 'stroke-width': '1.2' }));
+            svg.appendChild(makeText(padL + innerW - 4, ty - 4, 'target', { 'text-anchor': 'end', fill: '#8a3a1c', 'font-size': '10' }));
+            // bars
+            rounds.forEach((p, i) => {
+              const lp = Math.max(minLog, Math.log10(Math.max(p, 1e-22)));
+              const barH = (lp - minLog) / (maxLog - minLog) * innerH;
+              const x = padL + i * xStep + 4;
+              const bw = xStep - 8;
+              svg.appendChild(createSvgElement('rect', {
+                x, y: padT + innerH - barH, width: bw, height: barH,
+                fill: i === 0 ? '#8a3a1c' : '#1f4f8b', 'fill-opacity': '0.55',
+                stroke: i === 0 ? '#8a3a1c' : '#1f4f8b'
+              }));
+              svg.appendChild(makeText(x + bw / 2, padT + innerH + 14, `r${i}`, { 'text-anchor': 'middle', 'font-size': '10', fill: '#5a5a5a' }));
+            });
+            // Axis label
+            svg.appendChild(makeText(padL + innerW / 2, h - 6, 'Distillation round', { 'text-anchor': 'middle', 'font-size': '11', fill: '#5a5a5a' }));
+          }
+
+          pSlider.addEventListener('input', recompute);
+          targetSel.addEventListener('change', recompute);
+          recompute();
+        }
+
+        // ============================================================
+        // init
+        // ============================================================
+        function init() {
+          renderPauliLab();
+          renderTableauLab();
+          renderCliffordCircuitLab();
+          renderTeleportationLab();
+          renderDistillationLab();
+          ensureMathRendered();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else { init(); }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2732 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shor's Algorithm, From Period-Finding to Broken Cryptography</title>
+    <meta
+      name="description"
+      content="An interactive single-page review of Shor's factoring algorithm, the QFT, period-finding, continued fractions, and the post-quantum cryptographic landscape."
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+      p, li { text-wrap: pretty; }
+      h1, h2, h3, h4 { text-wrap: balance; }
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 { position: relative; }
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after { opacity: 0.55; }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+      a:hover { color: #17456f; }
+
+      img, svg { max-width: 100%; display: block; }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+
+      .skip-link {
+        position: absolute; left: 1rem; top: -4rem;
+        background: var(--page-accent); color: white;
+        padding: 0.8rem 1rem; border-radius: var(--radius-sm); z-index: 10;
+      }
+      .skip-link:focus { top: 1rem; }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1, h2, h3, h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+      h1 {
+        max-width: 28ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+      .header-card ul { margin: 0; padding-left: 1.25rem; }
+
+      .top-nav {
+        position: sticky; top: 0; z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex; gap: 0.5rem;
+        overflow-x: auto;
+      }
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+      .top-nav-shell a:hover, .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main { padding: 2.2rem 0 5rem; }
+
+      .section-shell, .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+      .section-shell h3, .figure-band h3, .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main { min-width: 0; }
+      .section-shell > .section-side { position: sticky; top: 5rem; }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+      .keypoints ul { margin: 0; padding-left: 1.1rem; }
+      .keypoints li + li { margin-top: 0.5rem; }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+      .math-details summary::-webkit-details-marker { display: none; }
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+      .math-details[open] summary::before { content: "−"; }
+      .math-details .details-body { padding: 1rem 1.05rem 1.1rem; }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .figure-band-header { padding: 1.2rem 1.3rem 0.25rem; }
+      .figure-band-header h2, .figure-band-header h3 { margin-bottom: 0.35rem; }
+      .figure-band-header p { margin: 0; color: var(--page-muted); }
+      .figure-band-content { padding: 1.15rem 1.3rem 1.3rem; }
+
+      .lab-controls {
+        display: flex; flex-wrap: wrap; gap: 1rem;
+        align-items: end; margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      .control {
+        display: grid; gap: 0.3rem; min-width: 9rem; flex: 1 1 10rem;
+      }
+      .control label { color: var(--page-muted); font-size: 0.9rem; }
+      .control select, .control input[type="range"], .control input[type="number"], .control input[type="text"] {
+        width: 100%;
+      }
+      .control input[type="range"] { accent-color: var(--page-accent); }
+
+      .button-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+      .button-row button, .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+      .button-row button:hover, .button-row button:focus-visible,
+      .segmented button:hover, .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+      .segmented { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 1rem; }
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+      .status-value { font-size: 1.2rem; font-weight: 700; }
+      .status-value.small { font-size: 1rem; }
+
+      .two-up, .three-up { display: grid; gap: 1rem; }
+      .two-up { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+      .three-up { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+      .panel h3, .panel h4 { margin-bottom: 0.55rem; }
+      .figure-caption { margin-top: 0.7rem; font-size: 0.93rem; color: var(--page-muted); }
+
+      .amp-svg, .plane-svg, .chart-svg, .posterior-svg, .complexity-svg, .small-svg {
+        width: 100%; height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note { font-size: 0.96rem; color: var(--page-muted); }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+      .quiz-card h3 { font-size: 1.08rem; margin-bottom: 0.5rem; }
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      .faq-list { display: grid; gap: 0.75rem; }
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+      .faq-list summary { cursor: pointer; font-weight: 700; }
+
+      .sources-list { display: grid; gap: 0.7rem; }
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+      .footer-note { color: var(--page-muted); font-size: 0.95rem; }
+
+      .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.1rem 0; }
+      .sr-only {
+        position: absolute; width: 1px; height: 1px;
+        padding: 0; margin: -1px; overflow: hidden;
+        clip: rect(0, 0, 0, 0); border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid, .section-shell, .two-up, .three-up { grid-template-columns: 1fr; }
+        .section-shell > .section-side { position: static; }
+      }
+
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+      .sota-card p { margin: 0; font-size: 0.94rem; }
+
+      .section-collapse { margin: 0.6rem 0 1.2rem; }
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+      .section-collapse > summary::-webkit-details-marker { display: none; }
+      .section-collapse > summary::before { content: "▸ "; margin-right: 0.2rem; }
+      .section-collapse[open] > summary::before { content: "▾ "; }
+      .section-collapse[open] > summary { margin-bottom: 1rem; }
+
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+      .geo-table th:first-child, .geo-table td:first-child { text-align: left; }
+      .geo-table tbody tr:nth-child(even) { background: var(--page-panel); }
+
+      /* Walkthrough stepper */
+      .stage-pills {
+        display: flex; flex-wrap: wrap; gap: 0.35rem;
+        margin: 0.5rem 0 0.9rem;
+      }
+      .stage-pill {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-muted);
+      }
+      .stage-pill.active {
+        background: var(--page-accent);
+        color: white;
+        border-color: var(--page-accent);
+      }
+      .stage-pill.done {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        border-color: rgba(31,79,139,0.35);
+      }
+
+      .stage-explain {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+        margin-top: 0.8rem;
+        font-size: 0.96rem;
+      }
+      .stage-explain b { color: var(--page-accent); }
+
+      .cf-table { font-family: var(--num-font); font-size: 0.92rem; }
+      .cf-row.salient { background: var(--page-warm-soft); }
+
+      @media (max-width: 640px) {
+        .header-shell { padding-top: 3.5rem; }
+        h1 { max-width: none; }
+        .figure-band-content, .figure-band-header, .panel, .quiz-card, .source-item, .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+      <div class="header-shell">
+        <div class="eyebrow">Quantum Computing Review · Shor &amp; Period-Finding</div>
+        <div class="header-grid">
+          <div>
+            <h1>Shor's Algorithm, From Period-Finding to Broken Cryptography</h1>
+            <p class="header-subtitle">
+              A single-page review of Shor's factoring algorithm: the classical
+              reduction to period-finding, the quantum Fourier transform, the
+              continued-fractions post-processing, and what survives in the
+              post-quantum era.
+            </p>
+          </div>
+          <aside class="header-card">
+            <h2>What This Review Covers</h2>
+            <ul>
+              <li>RSA and the factoring trapdoor; classical sub-exponential cost</li>
+              <li>Reduction of factoring to order-finding (the "lucky-twice" 3/8 bound)</li>
+              <li>The quantum Fourier transform: definition, recursive circuit, intuition</li>
+              <li>Full \(N=15\) walkthrough end-to-end with state vectors</li>
+              <li>Continued fractions and why \(Q=\Theta(N^2)\) is essential</li>
+              <li>Discrete log variant, hidden subgroup framing, post-quantum landscape</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+      <div class="top-nav-shell">
+        <a href="#factoring-problem">Factoring &amp; RSA</a>
+        <a href="#number-theory">Number Theory</a>
+        <a href="#period-reduction">Period Reduction</a>
+        <a href="#period-finding-lab">Period Lab</a>
+        <a href="#qft-intuition">QFT Intuition</a>
+        <a href="#qft-circuit">QFT Circuit</a>
+        <a href="#n15-walkthrough">N=15 Walkthrough</a>
+        <a href="#continued-fractions">Continued Fractions</a>
+        <a href="#q-squared">Why \(Q=\Theta(N^2)\)</a>
+        <a href="#failure-modes">Failure Modes</a>
+        <a href="#discrete-log">Discrete Log</a>
+        <a href="#hsp">HSP</a>
+        <a href="#complexity">Complexity</a>
+        <a href="#sota">SOTA</a>
+        <a href="#mastery">Mastery Map</a>
+        <a href="#faq">FAQ</a>
+        <a href="#sources">Sources</a>
+      </div>
+    </nav>
+
+    <main id="main-content">
+
+      <!-- §1 -->
+      <section class="section-shell" id="factoring-problem">
+        <div class="section-main">
+          <h2>The Factoring Problem and RSA</h2>
+          <p class="lede">
+            Shor's algorithm exists because one specific computational problem
+            simultaneously underwrites trillions of dollars of internet
+            commerce and admits an exponential quantum speedup. That problem
+            is integer factoring.
+          </p>
+          <p>
+            <strong>The setup.</strong> Alice picks two large primes \(p, q\),
+            roughly \(1024\)-bit each, and publishes \(N = pq\) along with a
+            small encryption exponent \(e\) coprime to
+            \(\varphi(N) = (p-1)(q-1)\). To send Alice a message
+            \(m \in \mathbb{Z}_N\), Bob transmits \(c = m^e \bmod N\). Alice
+            recovers \(m\) by computing \(c^d \bmod N\) where \(d = e^{-1}
+            \bmod \varphi(N)\). The catch: computing \(d\) requires
+            \(\varphi(N)\), and \(\varphi(N)\) is essentially as hard as
+            factoring \(N\).
+          </p>
+          <p>
+            <strong>Why factoring is "hard".</strong> The best known classical
+            algorithm — the general number field sieve — runs in
+            \[
+              \exp\!\bigl((1.92 + o(1))\,(\ln N)^{1/3} (\ln\ln N)^{2/3}\bigr),
+            \]
+            which is sub-exponential but super-polynomial. RSA-250 (829 bits)
+            was factored in 2020 with about 2700 CPU-core-years; RSA-2048
+            sits well beyond the reach of all classical hardware that will
+            ever be built.
+          </p>
+          <div class="callout">
+            Shor's contribution is to factor \(N\) in \(O((\log N)^3)\)
+            quantum time and \(O((\log N)^2)\) qubits — polynomial in the
+            length of the input. Every public-key system whose security
+            reduces to factoring or discrete log dies the day a fault-tolerant
+            quantum computer comes online.
+          </div>
+          <h3>The trapdoor and why Shor breaks it</h3>
+          <p>
+            RSA is a <em>trapdoor</em>: encrypting is fast, decrypting is fast
+            for someone who knows \(p, q\), and inverting (without the
+            trapdoor) is conjectured hard. Shor doesn't break the cipher
+            directly; he factors \(N\), which gives \(\varphi(N)\), which
+            gives \(d\). Below, the entire reduction is laid bare.
+          </p>
+          <details class="math-details">
+            <summary>Detailed math: the RSA decryption identity</summary>
+            <div class="details-body">
+              <p>
+                For \(\gcd(m, N) = 1\), Euler's theorem gives \(m^{\varphi(N)}
+                \equiv 1 \pmod N\). Pick \(d\) with \(ed \equiv 1
+                \pmod{\varphi(N)}\), so \(ed = 1 + k\varphi(N)\) for some
+                integer \(k\). Then
+                \[
+                \begin{aligned}
+                  c^d &\equiv (m^e)^d = m^{ed} = m^{1+k\varphi(N)} \\
+                      &\equiv m \cdot (m^{\varphi(N)})^k \equiv m \pmod N.
+                \end{aligned}
+                \]
+                The Chinese remainder theorem extends the identity to
+                \(\gcd(m, N) > 1\) as well.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>RSA security \(\Leftrightarrow\) factoring \(N = pq\).</li>
+              <li>Classical NFS: sub-exponential, not polynomial.</li>
+              <li>Shor: polynomial in \(\log N\) on a quantum computer.</li>
+              <li>Knowing \(\varphi(N)\) is equivalent to knowing \(p, q\).</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §2 -->
+      <section class="figure-band" id="number-theory">
+        <div class="figure-band-header">
+          <h2>Number-Theory Toolkit</h2>
+          <p>
+            Three classical ingredients power both RSA and Shor: Euclid's GCD
+            algorithm, Euler's theorem (with the totient \(\varphi\)), and
+            modular exponentiation by repeated squaring. The calculator below
+            walks through the binary expansion of the exponent.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <p>
+            For \(N = pq\), \(\varphi(N) = (p-1)(q-1)\). The multiplicative
+            group is
+            \(\mathbb{Z}_N^\times = \{x : 1 \le x < N,\, \gcd(x, N) = 1\}\),
+            and \(|\mathbb{Z}_N^\times| = \varphi(N)\). Fermat–Euler says
+            \(x^{\varphi(N)} \equiv 1 \pmod N\) for any \(x \in
+            \mathbb{Z}_N^\times\). The <em>order</em> of \(x\) is the
+            smallest positive \(s\) with \(x^s \equiv 1 \pmod N\); it always
+            divides \(\varphi(N)\).
+          </p>
+          <p>
+            Computing \(x^r \bmod N\) by writing \(r = \sum b_i 2^i\) and
+            iterating \(y \leftarrow y^2,\, y \leftarrow y \cdot x\) takes
+            \(O(\log r)\) modular multiplications — i.e. polynomial in
+            \(\log N\). Shor uses this same routine, made reversible, as the
+            quantum oracle for \(f(r) = x^r \bmod N\).
+          </p>
+
+          <div class="lab-controls">
+            <div class="control">
+              <label for="rs-x">Base \(x\)</label>
+              <input id="rs-x" type="number" min="2" max="9999" value="8" />
+            </div>
+            <div class="control">
+              <label for="rs-r">Exponent \(r\)</label>
+              <input id="rs-r" type="number" min="0" max="9999" value="13" />
+            </div>
+            <div class="control">
+              <label for="rs-N">Modulus \(N\)</label>
+              <input id="rs-N" type="number" min="2" max="999999" value="15" />
+            </div>
+            <div class="button-row">
+              <button id="rs-compute" type="button">Compute</button>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card">
+              <div class="status-label">Binary of \(r\)</div>
+              <div class="status-value small" id="rs-binary">1101</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Multiplications</div>
+              <div class="status-value" id="rs-mults">0</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">\(x^r \bmod N\)</div>
+              <div class="status-value" id="rs-result">2</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">\(\gcd(x, N)\)</div>
+              <div class="status-value small" id="rs-gcd">1</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div id="rs-trace" style="font-family: var(--num-font); font-size: 0.94rem; line-height: 1.6;">
+            </div>
+            <p class="figure-caption">
+              Each line shows one squaring (and an optional multiply by
+              \(x\)) modulo \(N\). The right column is the running value;
+              the left column is the partial bit of \(r\) consumed.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- §3 -->
+      <section class="section-shell" id="period-reduction">
+        <div class="section-main">
+          <h2>Reducing Factoring to Period-Finding</h2>
+          <p class="lede">
+            The classical half of Shor's algorithm is a clever observation:
+            if you can find the multiplicative order of a random element
+            \(x \in \mathbb{Z}_N^\times\), you can factor \(N\) with high
+            probability.
+          </p>
+          <p>
+            <strong>The reduction.</strong> Pick \(x\) uniformly from
+            \(\{2, \ldots, N-1\}\). If \(\gcd(x, N) > 1\), we already have a
+            non-trivial factor (a giveaway that almost never happens for
+            \(N = pq\)). Otherwise, find the order \(s\) of \(x\), the
+            smallest \(s \ge 1\) with \(x^s \equiv 1 \pmod N\). If \(s\) is
+            even and \(x^{s/2} \not\equiv -1 \pmod N\), then
+            \[
+              (x^{s/2} - 1)(x^{s/2} + 1) = x^s - 1 \equiv 0 \pmod N,
+            \]
+            so \(N\) divides the product but divides neither factor, meaning
+            both \(\gcd(N, x^{s/2} - 1)\) and \(\gcd(N, x^{s/2} + 1)\) are
+            non-trivial factors of \(N\).
+          </p>
+          <h3>The "lucky-twice" 3/8 bound</h3>
+          <p>
+            Two things must go right: \(s\) must be even, and the resulting
+            \(x^{s/2}\) must not equal \(-1 \pmod N\). For \(N\) a product
+            of two odd primes, a careful Chinese-remainder argument shows
+            \[
+              \Pr_{x \in \mathbb{Z}_N^\times}[s \text{ even and } x^{s/2}
+              \not\equiv -1] \ge \tfrac{3}{8}.
+            \]
+            So a constant number of random restarts suffices, and the bulk
+            of the work is the order-finding subroutine — which is exactly
+            what the quantum part of Shor handles in polynomial time.
+          </p>
+          <div class="callout">
+            Classical order-finding is roughly as hard as factoring. The
+            entire quantum advantage of Shor's algorithm lives in this
+            single subroutine.
+          </div>
+          <details class="math-details">
+            <summary>Detailed math: the \(3/8\) lower bound via CRT</summary>
+            <div class="details-body">
+              <p>
+                Write \(\mathbb{Z}_N^\times \cong \mathbb{Z}_p^\times \times
+                \mathbb{Z}_q^\times\) by CRT. Each \(\mathbb{Z}_p^\times\) is
+                cyclic of even order \(p-1\). Let \(s_p, s_q\) be the orders
+                of the projections of \(x\). Then \(s = \mathrm{lcm}(s_p,
+                s_q)\). Failure (either \(s\) odd, or
+                \(x^{s/2} \equiv -1\)) corresponds to \(s_p\) and \(s_q\)
+                having the same 2-adic valuation. A counting argument over
+                the cyclic factors gives
+                \(\Pr[\text{failure}] \le 1/2 + 1/4 = \cdots\); the clean
+                bound that survives is \(\Pr[\text{success}] \ge 3/8\).
+                See Aaronson L19 for the full case analysis.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Order-finding \(\Rightarrow\) factoring with prob \(\ge 3/8\).</li>
+              <li>Failure modes: \(s\) odd, or \(x^{s/2} \equiv -1\).</li>
+              <li>Both factors fall out of two GCDs.</li>
+              <li>Constant restarts suffice classically.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §4 -->
+      <section class="figure-band" id="period-finding-lab">
+        <div class="figure-band-header">
+          <h2>Period-Finding Lab</h2>
+          <p>
+            Pick a small \(N\) and a base \(x\) coprime to it. The bar chart
+            shows \(f(r) = x^r \bmod N\) for \(r \in [0, 30]\). Read off
+            the period \(s\) (where the comb pattern repeats), then check
+            whether the lucky-twice condition is met.
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="pf-N">Modulus \(N\)</label>
+              <select id="pf-N">
+                <option value="15" selected>15 = 3·5</option>
+                <option value="21">21 = 3·7</option>
+                <option value="35">35 = 5·7</option>
+                <option value="33">33 = 3·11</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="pf-x">Base \(x\)</label>
+              <select id="pf-x"></select>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card">
+              <div class="status-label">Order \(s\)</div>
+              <div class="status-value" id="pf-s">4</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">\(s\) even?</div>
+              <div class="status-value small" id="pf-even">yes</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">\(x^{s/2} \bmod N\)</div>
+              <div class="status-value small" id="pf-half">4</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Outcome</div>
+              <div class="status-value small" id="pf-outcome">success</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Factors</div>
+              <div class="status-value small" id="pf-factors">3, 5</div>
+            </div>
+          </div>
+          <div class="panel">
+            <svg id="pf-svg" class="chart-svg" viewBox="0 0 900 300" role="img" aria-label="Period-finding bar chart"></svg>
+            <p class="figure-caption">
+              Each bar is \(f(r) = x^r \bmod N\). The horizontal stripes mark
+              the repeated value \(1\); the spacing between consecutive
+              \(1\)-bars is the period \(s\).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- §5 -->
+      <section class="figure-band" id="qft-intuition">
+        <div class="figure-band-header">
+          <h2>QFT Intuition: Combs In, Peaks Out</h2>
+          <p>
+            The quantum Fourier transform on \(\mathbb{Z}_Q\) is the unitary
+            \[
+              F_Q\,\ket{j} = \frac{1}{\sqrt Q}\sum_{k=0}^{Q-1}
+              \omega^{jk}\,\ket{k}, \qquad \omega = e^{2\pi i / Q}.
+            \]
+            Apply it to a periodic "comb" with period \(s\) and the output
+            concentrates on the multiples of \(Q/s\) (when \(s \mid Q\)).
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="qft-Q">Register size \(Q\)</label>
+              <select id="qft-Q">
+                <option value="8">8</option>
+                <option value="16" selected>16</option>
+                <option value="32">32</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="qft-s">Period \(s\)</label>
+              <select id="qft-s">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="8">8</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="qft-offset">Offset \(r_0\): <span id="qft-offset-value">0</span></label>
+              <input id="qft-offset" type="range" min="0" max="7" value="0" />
+            </div>
+          </div>
+          <div class="two-up">
+            <div class="panel">
+              <h3>Input: comb of period \(s\)</h3>
+              <svg id="qft-in-svg" class="chart-svg" viewBox="0 0 460 220" role="img"></svg>
+            </div>
+            <div class="panel">
+              <h3>Output: \(F_Q\) applied</h3>
+              <svg id="qft-out-svg" class="chart-svg" viewBox="0 0 460 220" role="img"></svg>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:1rem;">
+            <h3>Phase clocks: where each input term points</h3>
+            <p class="figure-note">
+              Each dial shows the phase \(\omega^{jk}\) for output index
+              \(j = j^{\star}\) (the largest output peak) and \(k\) ranging
+              over the input support. When all hands align, you get a peak;
+              when they cancel uniformly, you get destructive interference.
+            </p>
+            <svg id="qft-clock-svg" class="chart-svg" viewBox="0 0 720 120" role="img"></svg>
+          </div>
+          <details class="math-details">
+            <summary>Detailed math: \(s \mid Q\) gives perfect peaks</summary>
+            <div class="details-body">
+              <p>
+                If the input is the uniform comb \(\frac{1}{\sqrt{Q/s}}
+                \sum_{m=0}^{Q/s - 1} \ket{r_0 + ms}\), then
+                \[
+                \begin{aligned}
+                  F_Q\ket{\text{comb}}
+                    &= \frac{1}{\sqrt Q \sqrt{Q/s}}
+                       \sum_{j,m} \omega^{j(r_0 + ms)} \ket{j} \\
+                    &= \frac{\omega^{j r_0}}{\sqrt{Q/s}} \cdot
+                       \frac{1}{\sqrt Q} \sum_j
+                       \biggl(\sum_m \omega^{jms}\biggr)\ket{j}.
+                \end{aligned}
+                \]
+                The inner geometric sum equals \(Q/s\) when
+                \(j \equiv 0 \pmod{Q/s}\) and \(0\) otherwise. Squaring:
+                each peak has probability \(s/Q \cdot (Q/s) = 1/s\) — there
+                are \(s\) peaks, each equiprobable. Measuring \(j\) reveals
+                a uniformly random multiple of \(Q/s\).
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- §6 -->
+      <section class="section-shell" id="qft-circuit">
+        <div class="section-main">
+          <h2>Inside the Black Box: Implementing the QFT</h2>
+          <p class="lede">
+            The QFT is not magic — it is a recursive circuit of
+            \(O(\log^2 Q)\) gates. The key identity is
+            \[
+              F_{2N} = \frac{1}{\sqrt 2}
+              \begin{pmatrix} F_N & B_N \\ F_N & -B_N \end{pmatrix}, \qquad
+              B_N = \mathrm{diag}(1, \omega_{2N}, \omega_{2N}^2, \ldots).
+            \]
+            This is the same divide-and-conquer that gives the classical FFT,
+            but realized as a quantum circuit acting on \(n = \log_2 Q\)
+            qubits.
+          </p>
+          <p>
+            On qubits, the recipe is: Hadamard on the most significant qubit,
+            controlled phase rotations
+            \(R_k = \mathrm{diag}(1, e^{2\pi i / 2^k})\) from the lower
+            qubits onto it, then recurse on the remaining qubits. A final
+            cascade of SWAPs reverses the bit order. For three qubits
+            (\(Q = 8\)) the circuit reads:
+          </p>
+
+          <div class="circuit-wrap">
+            <svg id="qft-circuit-svg" class="circuit-svg" viewBox="0 0 720 220" role="img" aria-label="3-qubit QFT circuit"></svg>
+          </div>
+
+          <h3>Gate count</h3>
+          <p>
+            Counting: the top qubit costs \(1\) Hadamard plus \(n-1\)
+            controlled phases; recursion on \(n-1\) qubits gives the rest.
+            Hence
+            \[
+              C(n) = C(n-1) + n = O(n^2) = O(\log^2 Q),
+            \]
+            plus \(\lfloor n/2 \rfloor\) SWAPs at the end. Coppersmith's
+            <em>approximate QFT</em> drops phase gates with rotation angle
+            below \(2\pi / 2^{\log n}\); the resulting circuit has
+            \(O(n \log n)\) gates and changes the output distribution by
+            only an inverse-polynomial amount — which is enough for Shor.
+          </p>
+          <details class="math-details">
+            <summary>Detailed math: deriving the controlled-phase pattern</summary>
+            <div class="details-body">
+              <p>
+                Write \(\ket{j} = \ket{j_{n-1} j_{n-2} \cdots j_0}\). A
+                direct expansion of \(F_Q\ket{j}\) yields the product form
+                \[
+                  F_Q\ket{j} = \frac{1}{\sqrt Q} \prod_{\ell=1}^{n}
+                  \bigl(\ket{0} + e^{2\pi i \cdot 0.j_{\ell-1} j_{\ell-2}
+                  \cdots j_0}\ket{1}\bigr),
+                \]
+                where the binary fraction
+                \(0.j_{\ell-1}\cdots j_0 = j_{\ell-1}/2 + \cdots + j_0/2^\ell\).
+                Each tensor factor is produced by one Hadamard and a
+                cascade of controlled-\(R_k\) gates from below — exactly
+                the circuit above (modulo the bit-reversing SWAPs).
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Recursive: \(F_{2N}\) from \(F_N\) plus phase block.</li>
+              <li>\(O(\log^2 Q)\) gates exactly.</li>
+              <li>Coppersmith approximation: \(O(n \log n)\) gates suffice.</li>
+              <li>Final SWAPs reverse bit order.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §7 -->
+      <section class="figure-band" id="n15-walkthrough">
+        <div class="figure-band-header">
+          <h2>The Full Walkthrough on \(N = 15\)</h2>
+          <p>
+            Take \(N = 15\), pick \(x = 8\). The order is \(s = 4\) (since
+            \(8^4 = 4096 \equiv 1 \pmod{15}\)). Use \(Q = 256 = 2^8\) and
+            an output register of \(4\) qubits. Step through the seven
+            stages below to watch the state evolve from
+            \(\ket{0}^{\otimes 8}\ket{0}^{\otimes 4}\) to two non-trivial
+            factors of \(15\).
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="button-row" style="margin-bottom: 0.6rem;">
+            <button id="sw-back" type="button">◀ Back</button>
+            <button id="sw-next" type="button">Forward ▶</button>
+            <button id="sw-reset" type="button">Reset</button>
+          </div>
+          <div class="stage-pills" id="sw-pills"></div>
+
+          <div class="status-strip">
+            <div class="status-card">
+              <div class="status-label">Stage</div>
+              <div class="status-value small" id="sw-stage">1 / 7</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Register 1 (period reg)</div>
+              <div class="status-value small" id="sw-reg1">|0⟩<sup>⊗8</sup></div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Register 2 (output)</div>
+              <div class="status-value small" id="sw-reg2">|0⟩<sup>⊗4</sup></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <svg id="sw-svg" class="chart-svg" viewBox="0 0 900 280" role="img" aria-label="State amplitudes at the current stage"></svg>
+          </div>
+
+          <div class="stage-explain" id="sw-explain"></div>
+        </div>
+      </section>
+
+      <!-- §8 -->
+      <section class="figure-band" id="continued-fractions">
+        <div class="figure-band-header">
+          <h2>Continued-Fractions Calculator</h2>
+          <p>
+            After QFT and measurement we hold a pair \((j, Q)\) with
+            \(j/Q \approx k/s\) for some unknown \(k\) and the period \(s\)
+            we want. The continued-fractions algorithm produces all
+            convergents of \(j/Q\); the unique convergent with denominator
+            \(< N\) recovers \(s\). The textbook example is
+            \(25001/100000 \to 1/4\).
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="lab-controls">
+            <div class="control">
+              <label for="cf-num">Numerator \(j\)</label>
+              <input id="cf-num" type="number" min="1" value="25001" />
+            </div>
+            <div class="control">
+              <label for="cf-den">Denominator \(Q\)</label>
+              <input id="cf-den" type="number" min="2" value="100000" />
+            </div>
+            <div class="control">
+              <label for="cf-N">Bound \(N\) (denom &lt; N)</label>
+              <input id="cf-N" type="number" min="2" value="100" />
+            </div>
+            <div class="button-row">
+              <button id="cf-go" type="button">Expand</button>
+            </div>
+          </div>
+          <div class="status-strip">
+            <div class="status-card">
+              <div class="status-label">CF expansion</div>
+              <div class="status-value small" id="cf-expansion">[0; 3, 1, 6249, 4]</div>
+            </div>
+            <div class="status-card">
+              <div class="status-label">Recovered period</div>
+              <div class="status-value" id="cf-period">4</div>
+            </div>
+          </div>
+          <div class="panel">
+            <table class="geo-table cf-table" id="cf-table">
+              <thead>
+                <tr><th>i</th><th>\(a_i\)</th><th>\(p_i\)</th><th>\(q_i\)</th><th>\(p_i / q_i\)</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="figure-caption">
+              Convergents \(p_i / q_i\) come from
+              \(p_i = a_i p_{i-1} + p_{i-2}\),
+              \(q_i = a_i q_{i-1} + q_{i-2}\). The salient row (orange) is
+              the unique convergent with denominator \(< N\) and within the
+              \(1/(2Q)\) window of \(j/Q\).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- §9 -->
+      <section class="section-shell" id="q-squared">
+        <div class="section-main">
+          <h2>Why \(Q = \Theta(N^2)\)?</h2>
+          <p class="lede">
+            The continued-fractions step needs to recover \(k/s\) from a
+            measurement \(j\) with \(j/Q\) within \(1/(2Q)\) of the true
+            \(k/s\). Uniqueness of the rational reconstruction requires
+            \(Q\) at least quadratic in \(N\).
+          </p>
+          <p>
+            <strong>The uniqueness theorem.</strong> For any \(x \in [0, 1]\)
+            and \(\delta > 0\), at most one rational \(a/b\) with
+            \(b \le 1/\sqrt{2\delta}\) satisfies \(|x - a/b| \le \delta\).
+            Take \(\delta = 1/(2Q)\): we need \(s \le 1/\sqrt{1/Q} =
+            \sqrt Q\), so we want \(\sqrt Q \ge N\), i.e. \(Q \ge N^2\).
+            Standard practice picks \(Q\) to be the smallest power of two
+            with \(N^2 \le Q < 2N^2\).
+          </p>
+          <div class="callout">
+            Why not just use \(Q = N\)? Multiple distinct rationals
+            \(a_1/b_1, a_2/b_2 < N\) can sit within the same \(1/(2Q)\)
+            window — continued fractions cannot tell them apart. The
+            quadratic blow-up is the price of unique reconstruction.
+          </div>
+          <h3>Mini-interactive: the uniqueness window</h3>
+          <p>
+            Slide \(Q\) from \(N\) up to \(N^2\). The orange band is the
+            \(1/(2Q)\) window around \(k/Q\); blue dots are all rationals
+            \(a/b\) with \(b \le N\). When \(Q\) is too small, several dots
+            sit in the band; once \(Q \ge N^2\), only one survives.
+          </p>
+          <div class="lab-controls">
+            <div class="control">
+              <label for="qsq-N">\(N\)</label>
+              <input id="qsq-N" type="number" min="3" max="40" value="15" />
+            </div>
+            <div class="control">
+              <label for="qsq-Q">\(Q\): <span id="qsq-Q-value">256</span></label>
+              <input id="qsq-Q" type="range" min="15" max="900" value="256" />
+            </div>
+            <div class="control">
+              <label for="qsq-k">target \(k\): <span id="qsq-k-value">1</span></label>
+              <input id="qsq-k" type="range" min="1" max="14" value="1" />
+            </div>
+          </div>
+          <svg id="qsq-svg" class="chart-svg" viewBox="0 0 900 200" role="img"></svg>
+          <details class="math-details">
+            <summary>Detailed math: triangle-inequality proof of uniqueness</summary>
+            <div class="details-body">
+              <p>
+                Suppose \(a_1/b_1\) and \(a_2/b_2\) are distinct rationals
+                with \(b_1, b_2 \le B\) and both within \(\delta\) of \(x\).
+                Then by the triangle inequality
+                \[
+                  \left|\frac{a_1}{b_1} - \frac{a_2}{b_2}\right| \le 2\delta.
+                \]
+                But the left-hand side is at least \(1/(b_1 b_2) \ge 1/B^2\).
+                So \(1/B^2 \le 2\delta\), i.e. \(B \ge 1/\sqrt{2\delta}\).
+                Contrapositive: if \(b_1, b_2 < 1/\sqrt{2\delta}\), the two
+                rationals must be equal.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Window \(1/(2Q)\) determines reconstruction radius.</li>
+              <li>Uniqueness: at most one \(a/b\) with \(b \le \sqrt{1/(2\delta)}\).</li>
+              <li>So \(Q \ge N^2\) suffices.</li>
+              <li>Standard: \(N^2 \le Q < 2N^2\), \(Q\) a power of two.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §10 -->
+      <section class="section-shell" id="failure-modes">
+        <div class="section-main">
+          <h2>Failure Modes and Restarts</h2>
+          <p class="lede">
+            Three things can go wrong in a single run of Shor. Each is
+            fixable by re-randomizing the base \(x\) or re-running the
+            quantum subroutine; the constant \(3/8\) success bound means
+            \(O(1)\) restarts suffice in expectation.
+          </p>
+          <h3>(a) Order is odd</h3>
+          <p>
+            If \(s\) is odd, then \(x^{s/2}\) is not even an integer
+            modulo \(N\), and the difference-of-squares trick fails. For a
+            random \(x\), this happens with probability \(\le 1/2\). For
+            \(N = 21\), \(x = 2\) has order \(6\) (even, OK), but
+            \(x = 4\) has order \(3\) (odd, retry).
+          </p>
+          <h3>(b) \(x^{s/2} \equiv -1 \pmod N\)</h3>
+          <p>
+            Then \(\gcd(N, x^{s/2} - 1) \cdot \gcd(N, x^{s/2} + 1)\) puts
+            both prime factors into the same gcd, leaving the trivial
+            \(N\) and \(1\). Restart with a fresh \(x\). Example: for
+            \(N = 15\), \(x = 4\) has \(s = 2\) and
+            \(4^1 = 4 \not\equiv -1\): success. But \(x = 14\) has
+            \(s = 2\) and \(14^1 \equiv -1 \pmod{15}\): failure.
+          </p>
+          <h3>(c) Measured \(j\) does not give \(s\)</h3>
+          <p>
+            The continued-fractions step might return \(k/s\) reduced to
+            lowest terms — if \(\gcd(k, s) > 1\), the recovered denominator
+            is too small. Mitigation: take a second sample \(k'/s\), and
+            \(\mathrm{lcm}(\text{denominators})\) usually equals \(s\). In
+            the \(N = 15\) walkthrough, sample \(j = 128 \to 1/2\) gives
+            denom \(2\); sample \(j = 64 \to 1/4\) gives denom \(4\); the
+            lcm is \(4 = s\).
+          </p>
+          <p>
+            A subtler edge case (HW10 Q1): a function \(f\) that is
+            \(s\)-periodic in the algebraic sense (\(s \mid p - q
+            \Leftrightarrow f(p) = f(q)\)) need not be a Shor-style
+            modular exponential. The algorithm still recovers \(s\)
+            because the QFT only cares about the shift-invariance, not
+            about the specific values of \(f\).
+          </p>
+          <div class="callout">
+            All three failure modes are detectable from classical
+            post-processing alone (parity check, gcd test, denominator
+            bound). The total per-attempt success probability is at least
+            \(3/8\); after a logarithmic number of attempts, failure
+            probability is exponentially small.
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>(a) odd \(s\): retry \(x\).</li>
+              <li>(b) \(x^{s/2} = -1\): retry \(x\).</li>
+              <li>(c) \(\gcd(k, s) > 1\): combine samples via lcm.</li>
+              <li>Per-attempt success \(\ge 3/8\).</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §11 -->
+      <section class="section-shell" id="discrete-log">
+        <div class="section-main">
+          <h2>Variant: Discrete Log and Diffie–Hellman</h2>
+          <p class="lede">
+            The same period-finding machinery, applied to a function on a
+            two-dimensional lattice instead of \(\mathbb{Z}\), breaks the
+            discrete-log problem and therefore Diffie–Hellman key exchange
+            and elliptic-curve cryptography.
+          </p>
+          <p>
+            <strong>Setup.</strong> Fix a prime \(p\) and a generator
+            \(\alpha\) of \(\mathbb{Z}_p^\times\) of order \(R\). Given
+            \(g = \alpha^a \bmod p\), recover the secret exponent \(a\).
+            Define
+            \[
+              f(x_1, x_2) = \alpha^{x_1} g^{x_2} \bmod p
+              = \alpha^{x_1 + a x_2} \bmod p.
+            \]
+            Then \(f(x_1, x_2) = f(x_1', x_2')\) iff \((x_1 - x_1') + a(x_2
+            - x_2') \equiv 0 \pmod R\). The hidden subgroup of
+            \(\mathbb{Z}_R \times \mathbb{Z}_R\) is the line through the
+            origin generated by \((-a, 1)\) — period vector \((\ell,
+            -a\ell/\bmod R)\) for any integer \(\ell\).
+          </p>
+          <h3>Recovering \(a\)</h3>
+          <p>
+            Apply the QFT to both coordinates of register \(1\), then
+            measure. By the same comb-to-peaks argument, you obtain a
+            random pair \((z_1, z_2)\) lying on the dual lattice — i.e.
+            \(z_1 \cdot \ell + z_2 \cdot (-a\ell) \equiv 0 \pmod R\),
+            simplifying to \(z_1 \equiv a z_2 \pmod R\). If
+            \(\gcd(z_2, R) = 1\), one extended-Euclidean step gives
+            \(a = z_1 \cdot z_2^{-1} \bmod R\). Otherwise, retry — failure
+            probability is \(O(1/\log R)\).
+          </p>
+          <div class="callout">
+            Diffie–Hellman, ElGamal, DSA, and elliptic-curve variants all
+            reduce to discrete log on some abelian group. A scalable
+            quantum computer breaks every one of them with the same
+            two-register Shor variant.
+          </div>
+          <details class="math-details">
+            <summary>Detailed math: HW10 Q3 walkthrough</summary>
+            <div class="details-body">
+              <p>
+                After the QFT one measures \((z_1, z_2)\) uniformly on
+                \(\{(z_1, z_2) : z_1 + a z_2 \equiv 0 \pmod R\}\). Pretend
+                \(z_2\) is invertible mod \(R\). Then
+                \(a \equiv -z_1 z_2^{-1} \pmod R\), and one application of
+                the extended Euclidean algorithm yields \(a\) in
+                polynomial time. The set of \(z_2\) coprime to \(R\) has
+                density \(\varphi(R)/R = \Theta(1/\log\log R)\), so the
+                success probability per run is at least
+                \(\Omega(1/\log\log R)\) — and by classical amplification,
+                a polylog number of runs suffice.
+              </p>
+            </div>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Discrete log = period-finding on \(\mathbb{Z}_R^2\).</li>
+              <li>Hidden subgroup is the line \(\{(\ell, -a\ell)\}\).</li>
+              <li>Recover \(a\) by extended Euclidean.</li>
+              <li>Breaks DH, ElGamal, DSA, ECDSA.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §12 -->
+      <section class="section-shell" id="hsp">
+        <div class="section-main">
+          <h2>The Hidden Subgroup Problem</h2>
+          <details class="section-collapse">
+            <summary>Optional: HSP framework (collapsible)</summary>
+            <p>
+              Factoring, discrete log, and Simon's algorithm are all
+              instances of the <em>hidden subgroup problem</em> (HSP). Given
+              a group \(G\) and a function \(f : G \to S\) that is constant
+              on the cosets of an unknown subgroup \(H \le G\) and distinct
+              on different cosets, find \(H\). For finite abelian \(G\),
+              Shor's QFT-over-\(G\) machinery solves HSP in polynomial time
+              — a unified abstraction that subsumes everything above.
+            </p>
+            <p>
+              For factoring, \(G = \mathbb{Z}\), \(H = s\mathbb{Z}\), and
+              \(f(r) = x^r \bmod N\). For discrete log, \(G = \mathbb{Z}_R
+              \times \mathbb{Z}_R\) and \(H\) is the line \(\{(\ell, -a\ell)
+              : \ell \in \mathbb{Z}_R\}\). For Simon's, \(G = \mathbb{Z}_2^n\)
+              and \(H = \{0, s\}\). All three are abelian; Shor handles them
+              all with the same QFT-then-measure recipe.
+            </p>
+            <p>
+              The non-abelian HSP is wide open. Solving HSP for the
+              symmetric group \(S_n\) would yield an efficient quantum
+              algorithm for graph isomorphism — and, separately, for the
+              shortest vector problem on a lattice (which would break the
+              NIST PQC standards). After thirty years of effort, no
+              non-abelian polynomial-time HSP algorithm is known. Babai's
+              2016 quasi-polynomial classical algorithm for graph
+              isomorphism partially deflated the urgency, but the
+              non-abelian HSP remains the largest unsolved problem in
+              quantum algorithm theory.
+            </p>
+          </details>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>HSP = unifying frame for Shor and Simon.</li>
+              <li>Abelian HSP: solved by QFT over \(G\).</li>
+              <li>Non-abelian HSP: open, would imply graph iso in BQP.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §13 -->
+      <section class="section-shell" id="complexity">
+        <div class="section-main">
+          <h2>Where Shor Sits in Complexity Theory</h2>
+          <p class="lede">
+            Factoring is the canonical problem in the gap between classical
+            and quantum polynomial time. Shor places it in BQP; classically
+            it is conjectured to lie outside P. Together with the (mild)
+            conjecture that Factoring \(\notin\) BPP, Shor's algorithm is
+            the strongest evidence we have that BQP strictly contains BPP.
+          </p>
+          <svg id="cx-svg" class="complexity-svg" viewBox="0 0 530 380" role="img" aria-label="Complexity diagram"></svg>
+          <p>
+            <strong>Where factoring sits.</strong> It is in NP (a witness
+            is the prime factorization). It is in coNP (a primality
+            certificate for each factor). It is therefore not NP-complete
+            unless NP \(=\) coNP — so Shor is not "breaking NP", just
+            beating one specific structured problem. And factoring is in
+            BQP by Shor; conjecturally not in P (or even BPP). Hence
+            Shor is the textbook witness that P \(\subsetneq\) BQP.
+          </p>
+          <h3>What Shor does <em>not</em> do</h3>
+          <p>
+            Shor does not solve NP-complete problems. SAT, 3-coloring,
+            Hamiltonian cycle, integer programming — none of these have
+            the algebraic period structure that the QFT exploits. The
+            best-known quantum speedup for general NP-complete problems is
+            Grover's quadratic improvement, not the exponential one Shor
+            achieves on factoring.
+          </p>
+          <div class="callout">
+            "Quantum computers will solve everything faster" is a
+            persistent misconception. The structured-problem speedups of
+            Shor and HHL are dramatic but narrow; for unstructured search
+            and most NP-complete problems, only Grover-style \(\sqrt N\)
+            improvements are known.
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Factoring \(\in\) BQP \(\cap\) NP \(\cap\) coNP.</li>
+              <li>Conjecturally \(\notin\) P, hence BQP \(\ne\) BPP.</li>
+              <li>Shor \(\not\Rightarrow\) NP-complete in BQP.</li>
+              <li>Grover speedup is the generic NP fallback.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §14 -->
+      <section class="figure-band" id="sota">
+        <div class="figure-band-header">
+          <h2>Shor at 30: The Algorithmic and Cryptographic Landscape</h2>
+          <p>
+            Shor's 1994 paper opened a thirty-year line of work that has
+            shrunk the qubit budget, broadened the algorithm to new groups,
+            and provoked the standardization of replacement cryptosystems.
+            Ten signposts students should recognize:
+          </p>
+        </div>
+        <div class="figure-band-content">
+          <div class="sota-grid">
+            <article class="sota-card">
+              <div class="sota-year">1994 / 1997 · the original</div>
+              <h4>Shor's algorithm (STOC 1994; SIAM J. Comput. 1997)</h4>
+              <p>
+                Polynomial-time quantum factoring and discrete log via
+                period-finding plus the QFT over \(\mathbb{Z}_Q\). Subject
+                of this entire tutorial.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">1994 · Coppersmith</div>
+              <h4>Approximate QFT</h4>
+              <p>
+                Drop phase rotations smaller than \(2\pi/2^{O(\log n)}\).
+                Gate count drops from \(O(n^2)\) to \(O(n \log n)\) with
+                inverse-polynomial error — fully sufficient for Shor.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">1995 · Kitaev</div>
+              <h4>Quantum phase estimation</h4>
+              <p>
+                Reframes Shor as estimating the eigenphase of the unitary
+                \(U_x : \ket{y} \mapsto \ket{xy \bmod N}\). Phase
+                estimation is now the mother subroutine for HHL, ground
+                state energy, and amplitude estimation.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2003 · Beauregard</div>
+              <h4>2n+3 qubit modular-exponentiation circuit</h4>
+              <p>
+                Showed Shor on an \(n\)-bit number needs only \(2n + 3\)
+                logical qubits — a tight optimization that made
+                resource-estimation papers possible.
+                <a href="https://arxiv.org/abs/quant-ph/0205095">arXiv:quant-ph/0205095</a>
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2002 · Hallgren</div>
+              <h4>Pell's equation in BQP</h4>
+              <p>
+                Extended Shor's framework to compute the regulator of a
+                real quadratic field — i.e. solve Pell's equation \(x^2 -
+                Dy^2 = 1\) — in quantum polynomial time. Best classical
+                algorithm is sub-exponential.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2021 · Gidney–Ekerå</div>
+              <h4>RSA-2048 resource estimate</h4>
+              <p>
+                Concrete physical resource cost for breaking RSA-2048:
+                roughly \(20\) million noisy qubits running for \(8\)
+                hours, assuming surface-code error correction. State of the
+                art for "how hard would it actually be?".
+                <a href="https://arxiv.org/abs/1905.09749">arXiv:1905.09749</a>
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2024 · Regev</div>
+              <h4>Sub-exponential improvement</h4>
+              <p>
+                Replaces the single modular-exponentiation register with a
+                \(d\)-dimensional lattice variant; reduces the number of
+                modular multiplications from \(O(n^2)\) to \(O(n^{3/2})\)
+                using \(O(n^{1/2})\)-bit lattice basis gymnastics.
+                <a href="https://arxiv.org/abs/2308.06572">arXiv:2308.06572</a>
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2024 · Chevignard–Fouque–Schrottenloher</div>
+              <h4>Regev follow-ups</h4>
+              <p>
+                Tightened analyses, memory–time trade-offs, and
+                fault-tolerant resource estimates for the Regev variant.
+                Shows the post-Regev landscape is still being mapped.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">Aug 2024 · NIST</div>
+              <h4>Post-quantum cryptography standards</h4>
+              <p>
+                FIPS 203 (ML-KEM, née Kyber), FIPS 204 (ML-DSA, née
+                Dilithium), FIPS 205 (SLH-DSA, née SPHINCS+) — the first
+                standardized replacements for RSA and ECDH, all based on
+                lattice or hash-based hardness assumptions Shor cannot
+                touch. FALCON (FN-DSA) standardization followed in 2025.
+              </p>
+            </article>
+            <article class="sota-card">
+              <div class="sota-year">2020 / 2025 · records</div>
+              <h4>Largest factored composites</h4>
+              <p>
+                Classical (NFS): RSA-250 (829 bits, 2020). Real quantum
+                hardware: stuck near \(N = 21\) on bare-metal devices;
+                "factoring \(N = 15\)" demos are routine. The four-order-of-
+                magnitude gap is the fault-tolerance barrier.
+              </p>
+            </article>
+          </div>
+          <h3>Where to go next</h3>
+          <ul>
+            <li>
+              Childs, <em>Lecture Notes on Quantum Algorithms</em> (UMD).
+              The standard modern reference for HSP and post-Shor algorithms.
+              <a href="https://www.cs.umd.edu/~amchilds/qa/">cs.umd.edu/~amchilds/qa</a>
+            </li>
+            <li>
+              Nielsen &amp; Chuang, <em>Quantum Computation and Quantum
+              Information</em>, Chapter 5 — the canonical textbook
+              presentation of QFT, phase estimation, and Shor.
+            </li>
+            <li>
+              Aaronson, <em>Quantum Computing Since Democritus</em>, for
+              the complexity-theoretic context: BQP vs NP, and why Shor
+              is not a generic NP-solver.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- §15 -->
+      <section class="section-shell" id="mastery">
+        <div class="section-main">
+          <h2>Mastery Map</h2>
+          <p class="lede">
+            After working through this page you should be able to explain
+            each of the following in your own words. These are study goals,
+            not test prompts.
+          </p>
+          <div class="quiz-grid">
+            <article class="quiz-card">
+              <h3>The reduction</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                Why finding the order of a random \(x \in \mathbb{Z}_N^\times\)
+                gives a non-trivial factor of \(N\) with probability
+                \(\ge 3/8\), and why both lucky-twice conditions are needed.
+              </p>
+            </article>
+            <article class="quiz-card">
+              <h3>QFT mechanics</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                Why a comb of period \(s\) maps under \(F_Q\) to a comb of
+                period \(Q/s\), and what the recursive
+                \(F_{2N} = (1/\sqrt 2)\bigl[\begin{smallmatrix} F_N &amp; B_N\\ F_N &amp; -B_N\end{smallmatrix}\bigr]\)
+                identity buys you in gates.
+              </p>
+            </article>
+            <article class="quiz-card">
+              <h3>End-to-end on \(N = 15\)</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                Walk every step of the \(N = 15\), \(x = 8\), \(Q = 256\)
+                example: Hadamards, oracle, register-2 measurement, QFT,
+                register-1 measurement, continued fractions, gcds. You
+                should know which step does what.
+              </p>
+            </article>
+            <article class="quiz-card">
+              <h3>Continued fractions and \(Q^2\)</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                The triangle-inequality proof that uniqueness of the
+                rational reconstruction needs denominator
+                \(< \sqrt{1/(2\delta)}\), and why this forces
+                \(Q = \Theta(N^2)\).
+              </p>
+            </article>
+            <article class="quiz-card">
+              <h3>Discrete log variant</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                The two-register Shor variant for discrete log: definition
+                of \(f\), the hidden line, recovering \(a\) by extended
+                Euclidean from a measured pair \((z_1, z_2)\).
+              </p>
+            </article>
+            <article class="quiz-card">
+              <h3>Failure modes</h3>
+              <div class="answer-badge">Mastery goal</div>
+              <p>
+                The three failure modes (odd \(s\), \(x^{s/2} = -1\),
+                \(\gcd(k, s) > 1\)) and how each is detected and recovered
+                from with constant overhead.
+              </p>
+            </article>
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>Reduction first; then QFT; then CF.</li>
+              <li>One example end-to-end is worth ten formal proofs.</li>
+              <li>Failure modes have classical detection.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §16 -->
+      <section class="section-shell" id="faq">
+        <div class="section-main">
+          <h2>Common Pitfalls</h2>
+          <p class="lede">
+            A short list of confusions that trip up students every year.
+          </p>
+          <div class="faq-list">
+            <details>
+              <summary>Doesn't QFT just compute the classical FFT?</summary>
+              <p>
+                It computes the same linear map, but on amplitudes rather
+                than data. Classically, an \(N\)-point FFT takes
+                \(O(N \log N)\) operations and produces all \(N\) output
+                values. The QFT acts on \(n = \log N\) qubits in
+                \(O(n^2)\) gates and produces a quantum state whose
+                amplitudes are the FFT outputs — but you can only sample
+                from it. The whole game of Shor is to design a problem
+                where one sample is enough.
+              </p>
+            </details>
+            <details>
+              <summary>Why doesn't measurement destroy the period?</summary>
+              <p>
+                Measuring register 2 (the output of the modular
+                exponentiation) collapses register 1 to a uniform
+                superposition over the preimage \(\{r : x^r \equiv y \pmod
+                N\}\) — which is exactly a comb of period \(s\) (offset
+                \(r_0\)). The QFT then converts the period in the comb
+                into a peak in frequency space, so measurement of register
+                1 reveals (a multiple of) \(Q/s\) with high probability.
+              </p>
+            </details>
+            <details>
+              <summary>Why \(Q = \Theta(N^2)\) and not \(Q = N\)?</summary>
+              <p>
+                See §9. Continued fractions can recover \(s\) from \(j/Q\)
+                only if there is a unique rational approximation with
+                denominator \(< N\) within the measurement window
+                \(1/(2Q)\). The triangle-inequality bound forces
+                \(Q \ge N^2\).
+              </p>
+            </details>
+            <details>
+              <summary>Couldn't classical computers just sample multiples of \(Q/s\)?</summary>
+              <p>
+                If you knew \(s\), yes. The point is that \(s\) is what
+                you are trying to find. Classical Monte Carlo can sample
+                \(f(r)\) but cannot interfere the samples — the multiples
+                of \(Q/s\) only emerge as constructive interference
+                <em>after</em> the QFT, an inherently quantum operation.
+              </p>
+            </details>
+            <details>
+              <summary>Does Shor's algorithm need millions of qubits today?</summary>
+              <p>
+                For RSA-2048, yes (Gidney–Ekerå 2021: \(\sim 20\) million
+                noisy qubits, surface code, \(\sim 8\) hours). For toy
+                instances like \(N = 15\) or \(N = 21\), bare-metal
+                experiments have been done on a few qubits. The chasm
+                between toy and threat-model is the cost of fault-tolerant
+                error correction, not the cost of Shor's logical circuit.
+              </p>
+            </details>
+          </div>
+        </div>
+        <aside class="section-side">
+          <div class="keypoints">
+            <h3>Key Points</h3>
+            <ul>
+              <li>QFT \(\ne\) FFT: amplitudes vs data, sampling vs readout.</li>
+              <li>Measurement of register 2 creates the comb.</li>
+              <li>Resource estimates: millions of qubits, not thousands.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- §17 -->
+      <section class="section-band-shell" id="sources">
+        <h2>Sources &amp; Provenance</h2>
+        <div class="sources-list">
+          <div class="source-item">
+            <strong>Aaronson lectures (typeset).</strong> Lectures 19–21 of
+            <em>Introduction to Quantum Information Science</em>, UT Austin:
+            number theory and the reduction (L19), QFT and the recursive
+            circuit (L20), continued fractions and the \(Q = \Theta(N^2)\)
+            bound (L21).
+          </div>
+          <div class="source-item">
+            <strong>UT handwritten notes.</strong> Lectures 21–23 of the
+            Spring 2026 QIS course covering the same material with
+            additional worked examples and the discrete-log variant.
+          </div>
+          <div class="source-item">
+            <strong>Shor 1997.</strong> Peter W. Shor, <em>Polynomial-Time
+            Algorithms for Prime Factorization and Discrete Logarithms on a
+            Quantum Computer</em>, SIAM J. Comput. 26(5):1484–1509.
+            <a href="https://arxiv.org/abs/quant-ph/9508027">arXiv:quant-ph/9508027</a>
+          </div>
+          <div class="source-item">
+            <strong>Nielsen &amp; Chuang.</strong> <em>Quantum Computation
+            and Quantum Information</em>, Cambridge University Press,
+            Chapter 5.
+          </div>
+          <div class="source-item">
+            <strong>Childs lecture notes.</strong> Andrew Childs,
+            <em>Lecture Notes on Quantum Algorithms</em>, University of
+            Maryland, 2023 revision.
+            <a href="https://www.cs.umd.edu/~amchilds/qa/">cs.umd.edu/~amchilds/qa</a>
+          </div>
+          <div class="source-item">
+            <strong>Resource estimates.</strong> Craig Gidney and Martin
+            Ekerå, <em>How to factor 2048 bit RSA integers in 8 hours
+            using 20 million noisy qubits</em>.
+            <a href="https://arxiv.org/abs/1905.09749">arXiv:1905.09749</a>
+          </div>
+          <div class="source-item">
+            <strong>NIST PQC standards.</strong> FIPS 203 (ML-KEM), FIPS
+            204 (ML-DSA), FIPS 205 (SLH-DSA), finalized August 2024.
+          </div>
+        </div>
+        <p class="footer-note">
+          Everything on this page is static HTML, CSS, and JavaScript. The
+          only external runtime dependency is the KaTeX CDN for
+          typesetting math.
+        </p>
+      </section>
+    </main>
+
+    <script id="app-script">
+      (() => {
+        const numberFormatter = new Intl.NumberFormat("en-US", {
+          maximumFractionDigits: 3
+        });
+
+        function clamp(value, min, max) {
+          return Math.min(max, Math.max(min, value));
+        }
+        function round3(value) { return numberFormatter.format(value); }
+
+        function updateMath(root = document.body) {
+          if (!window.renderMathInElement) return false;
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "\\[", right: "\\]", display: true },
+              { left: "\\(", right: "\\)", display: false }
+            ],
+            throwOnError: false
+          });
+          return true;
+        }
+        function ensureMathRendered(root = document.body, attempts = 24) {
+          if (updateMath(root)) return;
+          if (attempts <= 0) return;
+          window.setTimeout(() => ensureMathRendered(root, attempts - 1), 150);
+        }
+        function createSvgElement(name, attrs = {}) {
+          const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+          Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+          return node;
+        }
+        function clearSvg(svg) {
+          while (svg.firstChild) svg.removeChild(svg.firstChild);
+        }
+
+        // ---------- Number-theory helpers ----------
+        function gcd(a, b) {
+          a = Math.abs(a); b = Math.abs(b);
+          while (b) { [a, b] = [b, a % b]; }
+          return a;
+        }
+        function modPow(base, exp, mod) {
+          base = ((base % mod) + mod) % mod;
+          let result = 1 % mod;
+          let e = exp;
+          while (e > 0) {
+            if (e & 1) result = (result * base) % mod;
+            base = (base * base) % mod;
+            e = Math.floor(e / 2);
+          }
+          return result;
+        }
+        function orderOf(x, N) {
+          if (gcd(x, N) !== 1) return null;
+          let v = 1 % N;
+          for (let s = 1; s < N * 2; s++) {
+            v = (v * x) % N;
+            if (v === 1) return s;
+          }
+          return null;
+        }
+        function lcm(a, b) { return (a / gcd(a, b)) * b; }
+
+        // ---------- §2: Repeated squaring ----------
+        function renderRepeatedSquaring() {
+          const xIn = document.getElementById("rs-x");
+          const rIn = document.getElementById("rs-r");
+          const NIn = document.getElementById("rs-N");
+          const btn = document.getElementById("rs-compute");
+          const binOut = document.getElementById("rs-binary");
+          const multsOut = document.getElementById("rs-mults");
+          const resOut = document.getElementById("rs-result");
+          const gcdOut = document.getElementById("rs-gcd");
+          const trace = document.getElementById("rs-trace");
+
+          function go() {
+            const x = Math.max(2, parseInt(xIn.value || "2", 10));
+            const r = Math.max(0, parseInt(rIn.value || "0", 10));
+            const N = Math.max(2, parseInt(NIn.value || "2", 10));
+            const bin = r === 0 ? "0" : r.toString(2);
+            binOut.textContent = bin;
+            gcdOut.textContent = String(gcd(x, N));
+            // Walk MSB to LSB
+            let acc = 1 % N;
+            let mults = 0;
+            const lines = [];
+            lines.push(`<span style="color:#888">start</span>  acc = 1`);
+            for (let i = 0; i < bin.length; i++) {
+              const bit = bin[i];
+              if (i > 0) {
+                acc = (acc * acc) % N;
+                mults++;
+                lines.push(`<span style="color:#888">square</span>  acc = ${acc}`);
+              }
+              if (bit === "1") {
+                acc = (acc * x) % N;
+                mults++;
+                lines.push(`<span style="color:#1f4f8b">·x</span> (bit ${bit})  acc = ${acc}`);
+              } else {
+                lines.push(`<span style="color:#aaa">·1</span> (bit ${bit})  acc = ${acc}`);
+              }
+            }
+            trace.innerHTML = lines.join("<br>");
+            multsOut.textContent = String(mults);
+            resOut.innerHTML = `${x}<sup>${r}</sup> mod ${N} = ${acc}`;
+          }
+          btn.addEventListener("click", go);
+          xIn.addEventListener("change", go);
+          rIn.addEventListener("change", go);
+          NIn.addEventListener("change", go);
+          go();
+        }
+
+        // ---------- §4: Period-finding lab ----------
+        function renderPeriodFindingLab() {
+          const Nsel = document.getElementById("pf-N");
+          const xsel = document.getElementById("pf-x");
+          const sOut = document.getElementById("pf-s");
+          const evenOut = document.getElementById("pf-even");
+          const halfOut = document.getElementById("pf-half");
+          const outcomeOut = document.getElementById("pf-outcome");
+          const factorsOut = document.getElementById("pf-factors");
+          const svg = document.getElementById("pf-svg");
+
+          function refillX() {
+            const N = parseInt(Nsel.value, 10);
+            const opts = [];
+            for (let x = 2; x < N; x++) {
+              if (gcd(x, N) === 1) opts.push(x);
+            }
+            xsel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join("");
+            // Default x=8 if available, else first option
+            const def = opts.includes(8) ? 8 : (opts.includes(2) ? 2 : opts[0]);
+            xsel.value = String(def);
+          }
+
+          function draw() {
+            clearSvg(svg);
+            const N = parseInt(Nsel.value, 10);
+            const x = parseInt(xsel.value, 10);
+            const s = orderOf(x, N) || 0;
+            sOut.textContent = String(s);
+            const isEven = s > 0 && s % 2 === 0;
+            evenOut.textContent = isEven ? "yes" : "no";
+            let half = isEven ? modPow(x, s / 2, N) : null;
+            halfOut.textContent = half == null ? "—" : String(half);
+            let outcome = "fail (s odd)";
+            let factors = "—";
+            if (isEven) {
+              if (half === N - 1) outcome = "fail (x^{s/2} ≡ -1)";
+              else {
+                const f1 = gcd(N, half - 1);
+                const f2 = gcd(N, half + 1);
+                if (f1 > 1 && f1 < N && f2 > 1 && f2 < N) {
+                  outcome = "success";
+                  factors = `${f1}, ${f2}`;
+                } else {
+                  outcome = "trivial gcd";
+                }
+              }
+            }
+            outcomeOut.textContent = outcome;
+            factorsOut.textContent = factors;
+
+            // Bar chart of f(r) = x^r mod N, r in [0, 30]
+            const W = 900, H = 300;
+            const left = 40, right = W - 20, top = 22, bottom = H - 36;
+            const R = 30;
+            const barW = (right - left) / (R + 1) - 2;
+            const yScale = (bottom - top) / N;
+            // Axis
+            svg.appendChild(createSvgElement("line", {
+              x1: left, x2: right, y1: bottom, y2: bottom,
+              stroke: "#bbb", "stroke-width": "1"
+            }));
+            // y-axis tick at 1 (highlight)
+            const y1 = bottom - 1 * yScale;
+            svg.appendChild(createSvgElement("line", {
+              x1: left, x2: right, y1: y1, y2: y1,
+              stroke: "#8a3a1c", "stroke-width": "1", "stroke-dasharray": "4 3", opacity: "0.55"
+            }));
+            const lbl1 = createSvgElement("text", {
+              x: left - 4, y: y1 + 3, "text-anchor": "end", "font-size": "10", fill: "#8a3a1c"
+            });
+            lbl1.textContent = "1";
+            svg.appendChild(lbl1);
+
+            for (let r = 0; r <= R; r++) {
+              const v = modPow(x, r, N);
+              const xPx = left + r * ((right - left) / (R + 1)) + 1;
+              const h = v * yScale;
+              const isOne = v === 1;
+              svg.appendChild(createSvgElement("rect", {
+                x: xPx, y: bottom - h,
+                width: barW, height: Math.max(1, h),
+                fill: isOne ? "#8a3a1c" : "#1f4f8b",
+                opacity: isOne ? "0.92" : "0.78"
+              }));
+              if (r % 5 === 0) {
+                const t = createSvgElement("text", {
+                  x: xPx + barW / 2, y: bottom + 14,
+                  "text-anchor": "middle", "font-size": "10", fill: "#666"
+                });
+                t.textContent = String(r);
+                svg.appendChild(t);
+              }
+            }
+            // Title
+            const title = createSvgElement("text", {
+              x: left, y: top - 4, "font-size": "12", fill: "#444"
+            });
+            title.textContent = `f(r) = ${x}^r mod ${N}, r ∈ [0,30]`;
+            svg.appendChild(title);
+            const xlbl = createSvgElement("text", {
+              x: right, y: bottom + 28, "text-anchor": "end", "font-size": "10", fill: "#777"
+            });
+            xlbl.textContent = "r";
+            svg.appendChild(xlbl);
+          }
+
+          Nsel.addEventListener("change", () => { refillX(); draw(); });
+          xsel.addEventListener("change", draw);
+          refillX();
+          draw();
+        }
+
+        // ---------- §5: QFT lab ----------
+        function renderQftLab() {
+          const Qsel = document.getElementById("qft-Q");
+          const Ssel = document.getElementById("qft-s");
+          const offRange = document.getElementById("qft-offset");
+          const offVal = document.getElementById("qft-offset-value");
+          const inSvg = document.getElementById("qft-in-svg");
+          const outSvg = document.getElementById("qft-out-svg");
+          const clockSvg = document.getElementById("qft-clock-svg");
+
+          function draw() {
+            const Q = parseInt(Qsel.value, 10);
+            let s = parseInt(Ssel.value, 10);
+            // Ensure s | Q for clean peaks; if not, force divisor
+            if (Q % s !== 0) s = 4;
+            const r0 = Math.min(parseInt(offRange.value, 10), s - 1);
+            offRange.max = String(s - 1);
+            offVal.textContent = String(r0);
+
+            // Input comb amplitudes (real, only at r0 + m*s)
+            const inAmps = new Array(Q).fill(0);
+            const support = [];
+            for (let m = 0; r0 + m * s < Q; m++) {
+              support.push(r0 + m * s);
+              inAmps[r0 + m * s] = 1 / Math.sqrt(Q / s);
+            }
+            // Output: F_Q applied. For comb supported on r0 + m*s, output amplitude
+            // a_j = (1/sqrt(Q)) * sum_m omega^{j(r0 + m s)} / sqrt(Q/s)
+            // Magnitude = (1/sqrt(s)) when j is multiple of Q/s, else 0.
+            const outProb = new Array(Q).fill(0);
+            const peakSpacing = Q / s;
+            for (let k = 0; k < s; k++) {
+              outProb[k * peakSpacing] = 1 / s;
+            }
+
+            drawBars(inSvg, inAmps.map(Math.abs), "input |a_r|", "#1f4f8b", Q);
+            drawBars(outSvg, outProb.map(p => Math.sqrt(p)), "output |â_j|", "#8a3a1c", Q);
+
+            drawClocks(clockSvg, support, peakSpacing, Q);
+          }
+
+          function drawBars(svg, vals, label, color, Q) {
+            clearSvg(svg);
+            const W = 460, H = 220;
+            const left = 28, right = W - 12, top = 22, bottom = H - 28;
+            const maxv = Math.max(0.05, ...vals);
+            const yScale = (bottom - top) / maxv * 0.92;
+            const barW = (right - left) / Q - 1.2;
+            svg.appendChild(createSvgElement("line", {
+              x1: left, x2: right, y1: bottom, y2: bottom,
+              stroke: "#bbb", "stroke-width": "1"
+            }));
+            for (let i = 0; i < Q; i++) {
+              const xPx = left + i * ((right - left) / Q) + 0.5;
+              const h = vals[i] * yScale;
+              if (h > 0.5) {
+                svg.appendChild(createSvgElement("rect", {
+                  x: xPx, y: bottom - h,
+                  width: Math.max(1, barW), height: h,
+                  fill: color, opacity: "0.85"
+                }));
+              }
+            }
+            const t = createSvgElement("text", {
+              x: left, y: top - 6, "font-size": "12", fill: "#444"
+            });
+            t.textContent = label;
+            svg.appendChild(t);
+            const r = createSvgElement("text", {
+              x: right, y: bottom + 16, "text-anchor": "end", "font-size": "10", fill: "#777"
+            });
+            r.textContent = `Q = ${Q}`;
+            svg.appendChild(r);
+          }
+
+          function drawClocks(svg, support, peakSpacing, Q) {
+            clearSvg(svg);
+            const dialCount = Math.min(8, support.length);
+            const W = 720, H = 120;
+            const radius = 32;
+            const padX = 6;
+            const cellW = (W - padX * 2) / 8;
+            // Use jStar = peakSpacing (first non-zero peak)
+            const jStar = peakSpacing;
+            for (let d = 0; d < 8; d++) {
+              const cx = padX + d * cellW + cellW / 2;
+              const cy = H / 2;
+              if (d >= dialCount) {
+                const t = createSvgElement("text", {
+                  x: cx, y: cy + 4, "text-anchor": "middle",
+                  "font-size": "11", fill: "#bbb"
+                });
+                t.textContent = "—";
+                svg.appendChild(t);
+                continue;
+              }
+              svg.appendChild(createSvgElement("circle", {
+                cx: cx, cy: cy, r: radius,
+                fill: "white", stroke: "#bbb", "stroke-width": "1"
+              }));
+              const k = support[d];
+              const phase = (2 * Math.PI * jStar * k) / Q;
+              const hx = cx + radius * Math.cos(phase - Math.PI / 2);
+              const hy = cy + radius * Math.sin(phase - Math.PI / 2);
+              svg.appendChild(createSvgElement("line", {
+                x1: cx, y1: cy, x2: hx, y2: hy,
+                stroke: "#1f4f8b", "stroke-width": "2"
+              }));
+              svg.appendChild(createSvgElement("circle", {
+                cx: hx, cy: hy, r: 3, fill: "#1f4f8b"
+              }));
+              const lbl = createSvgElement("text", {
+                x: cx, y: cy + radius + 14, "text-anchor": "middle",
+                "font-size": "10", fill: "#666"
+              });
+              lbl.textContent = `k=${k}`;
+              svg.appendChild(lbl);
+            }
+            const title = createSvgElement("text", {
+              x: padX, y: 12, "font-size": "11", fill: "#444"
+            });
+            title.textContent = `phases ω^{j*k} for j* = ${peakSpacing} (first nonzero peak)`;
+            svg.appendChild(title);
+          }
+
+          Qsel.addEventListener("change", draw);
+          Ssel.addEventListener("change", draw);
+          offRange.addEventListener("input", draw);
+          draw();
+        }
+
+        // ---------- §6: 3-qubit QFT circuit ----------
+        function renderQftCircuit() {
+          const svg = document.getElementById("qft-circuit-svg");
+          clearSvg(svg);
+          const W = 720, H = 220;
+          const yLines = [50, 110, 170];
+          const left = 70, right = W - 30;
+          const labels = ["q₂ (MSB)", "q₁", "q₀"];
+
+          // Wires
+          for (let i = 0; i < 3; i++) {
+            svg.appendChild(createSvgElement("line", {
+              x1: left, y1: yLines[i], x2: right, y2: yLines[i],
+              stroke: "#444", "stroke-width": "1.4"
+            }));
+            const lbl = createSvgElement("text", {
+              x: 8, y: yLines[i] + 4, "font-size": "12", fill: "#444"
+            });
+            lbl.textContent = labels[i];
+            svg.appendChild(lbl);
+          }
+
+          function gate(x, y, label, fill = "#1f4f8b") {
+            const w = 32, h = 28;
+            svg.appendChild(createSvgElement("rect", {
+              x: x - w/2, y: y - h/2, width: w, height: h,
+              fill: "white", stroke: fill, "stroke-width": "1.6", rx: "3"
+            }));
+            const t = createSvgElement("text", {
+              x: x, y: y + 4, "text-anchor": "middle",
+              "font-size": "12", fill: fill, "font-family": "ui-sans-serif"
+            });
+            t.textContent = label;
+            svg.appendChild(t);
+          }
+          function ctrl(x, yCtrl, yTarget, label) {
+            svg.appendChild(createSvgElement("circle", {
+              cx: x, cy: yCtrl, r: 4, fill: "#1f4f8b"
+            }));
+            svg.appendChild(createSvgElement("line", {
+              x1: x, y1: yCtrl, x2: x, y2: yTarget,
+              stroke: "#1f4f8b", "stroke-width": "1.4"
+            }));
+            gate(x, yTarget, label, "#1f4f8b");
+          }
+          function swap(x, yA, yB) {
+            const sz = 6;
+            for (const yy of [yA, yB]) {
+              svg.appendChild(createSvgElement("line", {
+                x1: x - sz, y1: yy - sz, x2: x + sz, y2: yy + sz,
+                stroke: "#8a3a1c", "stroke-width": "1.6"
+              }));
+              svg.appendChild(createSvgElement("line", {
+                x1: x - sz, y1: yy + sz, x2: x + sz, y2: yy - sz,
+                stroke: "#8a3a1c", "stroke-width": "1.6"
+              }));
+            }
+            svg.appendChild(createSvgElement("line", {
+              x1: x, y1: yA, x2: x, y2: yB,
+              stroke: "#8a3a1c", "stroke-width": "1.4"
+            }));
+          }
+
+          // H on q2; CR2 from q1; CR4 from q0
+          gate(140, yLines[0], "H");
+          ctrl(195, yLines[1], yLines[0], "R₂");
+          ctrl(255, yLines[2], yLines[0], "R₄");
+
+          // H on q1; CR2 from q0
+          gate(335, yLines[1], "H");
+          ctrl(390, yLines[2], yLines[1], "R₂");
+
+          // H on q0
+          gate(465, yLines[2], "H");
+
+          // SWAP q2 ↔ q0
+          swap(560, yLines[0], yLines[2]);
+
+          // Annotation
+          const note = createSvgElement("text", {
+            x: W / 2, y: H - 8, "text-anchor": "middle",
+            "font-size": "11", fill: "#666"
+          });
+          note.textContent = "F₈ on three qubits: H + cascading controlled R_k phases + final SWAP for bit reversal";
+          svg.appendChild(note);
+        }
+
+        // ---------- §7: N=15 Walkthrough ----------
+        function renderShorWalkthrough() {
+          const N = 15, x = 8, Q = 256, s = 4;
+          const stages = [
+            {
+              name: "1. Initial",
+              reg1: "|0⟩<sup>⊗8</sup>",
+              reg2: "|0⟩<sup>⊗4</sup>",
+              explain: `<b>Stage 1.</b> Allocate two registers. Register 1 has 8 qubits (Q = 2<sup>8</sup> = 256 ≥ N<sup>2</sup> = 225). Register 2 has 4 qubits to hold values mod 15. Initial state: \\(|0\\rangle^{\\otimes 8}|0\\rangle^{\\otimes 4}\\).`,
+              draw: drawInitial
+            },
+            {
+              name: "2. Hadamards",
+              reg1: "(1/√256) Σ |r⟩",
+              reg2: "|0⟩<sup>⊗4</sup>",
+              explain: `<b>Stage 2.</b> Apply \\(H^{\\otimes 8}\\) to register 1: \\(\\frac{1}{\\sqrt{256}} \\sum_{r=0}^{255} |r\\rangle |0\\rangle\\). Uniform superposition over all 256 input values.`,
+              draw: drawUniform
+            },
+            {
+              name: "3. Modular exp",
+              reg1: "Σ |r⟩",
+              reg2: "|8^r mod 15⟩",
+              explain: `<b>Stage 3.</b> Apply the reversible oracle \\(U_f : |r\\rangle|0\\rangle \\to |r\\rangle|8^r \\bmod 15\\rangle\\). The state becomes entangled: \\(\\frac{1}{\\sqrt{256}} \\sum_r |r\\rangle |8^r \\bmod 15\\rangle\\). Possible second-register values are {1, 8, 4, 2} cycling with period 4.`,
+              draw: drawEntangled
+            },
+            {
+              name: "4. Measure reg 2",
+              reg1: "comb on r ≡ 2 (mod 4)",
+              reg2: "|4⟩ (collapsed)",
+              explain: `<b>Stage 4.</b> Measure register 2; suppose the outcome is \\(y = 4\\) (a possible value in the cycle 1,8,4,2). Register 1 collapses to a uniform superposition over the preimage \\(\\{r : 8^r \\equiv 4 \\pmod{15}\\} = \\{2, 6, 10, \\ldots, 254\\}\\) — a comb of period s = 4 with offset r<sub>0</sub> = 2.`,
+              draw: drawComb
+            },
+            {
+              name: "5. QFT",
+              reg1: "peaks at j ∈ {0,64,128,192}",
+              reg2: "|4⟩",
+              explain: `<b>Stage 5.</b> Apply \\(F_{256}\\) to register 1. The comb of period 4 transforms to peaks at the 4 multiples of \\(Q/s = 256/4 = 64\\): \\(j \\in \\{0, 64, 128, 192\\}\\), each with probability 1/4. The offset r<sub>0</sub> only affects the unmeasurable global phase.`,
+              draw: drawQftPeaks
+            },
+            {
+              name: "6. Measure reg 1",
+              reg1: "j = 128 (sample)",
+              reg2: "|4⟩",
+              explain: `<b>Stage 6.</b> Measure register 1; suppose \\(j = 128\\). Continued fractions: \\(128/256 = 1/2\\), denominator 2 — too small (we need denom &lt; N = 15 but matching s = 4). Take a second sample, e.g. \\(j = 64\\): \\(64/256 = 1/4\\), denom 4. Combine via \\(\\mathrm{lcm}(2, 4) = 4 = s\\) ✓.`,
+              draw: drawCFSample
+            },
+            {
+              name: "7. Post-process",
+              reg1: "—",
+              reg2: "factors = {3, 5}",
+              explain: `<b>Stage 7.</b> With \\(s = 4\\) (even, ✓): compute \\(8^{s/2} = 8^2 = 64 \\equiv 4 \\pmod{15}\\), and \\(4 \\not\\equiv -1 \\pmod{15}\\) (✓). Then \\(\\gcd(15, 64 - 1) = \\gcd(15, 63) = 3\\) and \\(\\gcd(15, 64 + 1) = \\gcd(15, 65) = 5\\). Done: \\(15 = 3 \\times 5\\).`,
+              draw: drawFactors
+            },
+          ];
+          let cur = 0;
+          const pillsBox = document.getElementById("sw-pills");
+          const stageOut = document.getElementById("sw-stage");
+          const reg1Out = document.getElementById("sw-reg1");
+          const reg2Out = document.getElementById("sw-reg2");
+          const explainBox = document.getElementById("sw-explain");
+          const svg = document.getElementById("sw-svg");
+          const backBtn = document.getElementById("sw-back");
+          const nextBtn = document.getElementById("sw-next");
+          const resetBtn = document.getElementById("sw-reset");
+
+          stages.forEach((st, i) => {
+            const span = document.createElement("span");
+            span.className = "stage-pill";
+            span.textContent = st.name;
+            span.addEventListener("click", () => { cur = i; render(); });
+            pillsBox.appendChild(span);
+          });
+
+          function render() {
+            const st = stages[cur];
+            stageOut.textContent = `${cur + 1} / ${stages.length}`;
+            reg1Out.innerHTML = st.reg1;
+            reg2Out.innerHTML = st.reg2;
+            explainBox.innerHTML = st.explain;
+            // Update pills
+            Array.from(pillsBox.children).forEach((p, i) => {
+              p.classList.remove("active", "done");
+              if (i < cur) p.classList.add("done");
+              else if (i === cur) p.classList.add("active");
+            });
+            clearSvg(svg);
+            st.draw(svg);
+            ensureMathRendered(explainBox);
+          }
+
+          function axisAndBars(svg, probs, color, label) {
+            const W = 900, H = 280;
+            const left = 50, right = W - 20, top = 26, bottom = H - 30;
+            svg.appendChild(createSvgElement("line", {
+              x1: left, x2: right, y1: bottom, y2: bottom,
+              stroke: "#bbb", "stroke-width": "1"
+            }));
+            const Qlocal = probs.length;
+            const maxv = Math.max(0.001, ...probs);
+            const yScale = (bottom - top) / maxv * 0.92;
+            const barW = (right - left) / Qlocal;
+            for (let i = 0; i < Qlocal; i++) {
+              if (probs[i] <= 0) continue;
+              const xPx = left + i * barW;
+              const h = probs[i] * yScale;
+              svg.appendChild(createSvgElement("rect", {
+                x: xPx, y: bottom - h, width: Math.max(0.6, barW - 0.5), height: h,
+                fill: color, opacity: "0.85"
+              }));
+            }
+            // ticks
+            for (let t = 0; t <= 4; t++) {
+              const xPx = left + t * (right - left) / 4;
+              const v = Math.round((t * Qlocal) / 4);
+              const tx = createSvgElement("text", {
+                x: xPx, y: bottom + 14, "text-anchor": "middle",
+                "font-size": "10", fill: "#777"
+              });
+              tx.textContent = String(v);
+              svg.appendChild(tx);
+            }
+            const title = createSvgElement("text", {
+              x: left, y: top - 6, "font-size": "12", fill: "#444"
+            });
+            title.textContent = label;
+            svg.appendChild(title);
+          }
+
+          function drawInitial(svg) {
+            const probs = new Array(Q).fill(0);
+            probs[0] = 1;
+            axisAndBars(svg, probs, "#1f4f8b", "register 1: |0⟩ (single basis state)");
+          }
+          function drawUniform(svg) {
+            const probs = new Array(Q).fill(1 / Q);
+            axisAndBars(svg, probs, "#1f4f8b", "register 1: uniform over r ∈ [0, 255]");
+          }
+          function drawEntangled(svg) {
+            // Show prob 1/Q over all r (marginal of register 1)
+            const probs = new Array(Q).fill(1 / Q);
+            axisAndBars(svg, probs, "#1f4f8b", "marginal of register 1 (entangled with register 2)");
+          }
+          function drawComb(svg) {
+            // After measuring r2 = 4, register 1 supports r ≡ 2 mod 4, count Q/s = 64
+            const probs = new Array(Q).fill(0);
+            const r0 = 2;
+            const count = Q / s;
+            const each = 1 / count;
+            for (let m = 0; m < count; m++) probs[r0 + m * s] = each;
+            axisAndBars(svg, probs, "#1f4f8b", `register 1 after measuring reg 2 = 4: comb period ${s}`);
+          }
+          function drawQftPeaks(svg) {
+            const probs = new Array(Q).fill(0);
+            const peaks = [0, 64, 128, 192];
+            for (const j of peaks) probs[j] = 1 / 4;
+            axisAndBars(svg, probs, "#8a3a1c", "register 1 after F₂₅₆: peaks at multiples of Q/s = 64");
+          }
+          function drawCFSample(svg) {
+            const probs = new Array(Q).fill(0);
+            probs[128] = 1;
+            axisAndBars(svg, probs, "#8a3a1c", "measured j = 128 (one sample shown)");
+          }
+          function drawFactors(svg) {
+            clearSvg(svg);
+            const W = 900, H = 280;
+            const lines = [
+              "s = 4 (even ✓)",
+              "8^(s/2) = 8^2 = 64 ≡ 4 (mod 15)",
+              "4 ≠ -1 (mod 15) ✓",
+              "gcd(15, 64-1) = gcd(15, 63) = 3",
+              "gcd(15, 64+1) = gcd(15, 65) = 5",
+              "15 = 3 × 5 ✓"
+            ];
+            lines.forEach((ln, i) => {
+              const t = createSvgElement("text", {
+                x: 60, y: 40 + i * 36, "font-size": "16", fill: i === lines.length - 1 ? "#8a3a1c" : "#1f4f8b",
+                "font-family": "ui-monospace, monospace", "font-weight": i === lines.length - 1 ? "700" : "400"
+              });
+              t.textContent = ln;
+              svg.appendChild(t);
+            });
+          }
+
+          backBtn.addEventListener("click", () => { cur = Math.max(0, cur - 1); render(); });
+          nextBtn.addEventListener("click", () => { cur = Math.min(stages.length - 1, cur + 1); render(); });
+          resetBtn.addEventListener("click", () => { cur = 0; render(); });
+          render();
+        }
+
+        // ---------- §8: Continued fractions ----------
+        function continuedFraction(num, den) {
+          const a = [];
+          let p = num, q = den;
+          // Guard for very long expansions
+          for (let i = 0; i < 50 && q !== 0; i++) {
+            const ai = Math.floor(p / q);
+            a.push(ai);
+            const r = p - ai * q;
+            p = q; q = r;
+          }
+          return a;
+        }
+        function convergents(a) {
+          const out = [];
+          let pPrev = 1, pCur = a[0] || 0;
+          let qPrev = 0, qCur = 1;
+          out.push({ a: a[0] || 0, p: pCur, q: qCur });
+          for (let i = 1; i < a.length; i++) {
+            const pNew = a[i] * pCur + pPrev;
+            const qNew = a[i] * qCur + qPrev;
+            out.push({ a: a[i], p: pNew, q: qNew });
+            pPrev = pCur; pCur = pNew;
+            qPrev = qCur; qCur = qNew;
+          }
+          return out;
+        }
+
+        function renderContinuedFractions() {
+          const numIn = document.getElementById("cf-num");
+          const denIn = document.getElementById("cf-den");
+          const NIn = document.getElementById("cf-N");
+          const btn = document.getElementById("cf-go");
+          const expOut = document.getElementById("cf-expansion");
+          const periodOut = document.getElementById("cf-period");
+          const tbody = document.querySelector("#cf-table tbody");
+
+          function go() {
+            const num = parseInt(numIn.value, 10);
+            const den = parseInt(denIn.value, 10);
+            const Nbound = parseInt(NIn.value, 10);
+            const a = continuedFraction(num, den);
+            const conv = convergents(a);
+            expOut.textContent = `[${a[0]}; ${a.slice(1).join(", ")}]`;
+            // Salient: largest denom < Nbound
+            let salient = -1;
+            for (let i = 0; i < conv.length; i++) {
+              if (conv[i].q > 0 && conv[i].q < Nbound) salient = i;
+            }
+            periodOut.textContent = salient >= 0 ? String(conv[salient].q) : "—";
+            tbody.innerHTML = conv.map((c, i) => {
+              const cls = i === salient ? "cf-row salient" : "cf-row";
+              return `<tr class="${cls}"><td>${i}</td><td>${c.a}</td><td>${c.p}</td><td>${c.q}</td><td>${c.p}/${c.q}</td></tr>`;
+            }).join("");
+          }
+          btn.addEventListener("click", go);
+          numIn.addEventListener("change", go);
+          denIn.addEventListener("change", go);
+          NIn.addEventListener("change", go);
+          go();
+        }
+
+        // ---------- §9: Q² visualizer ----------
+        function renderQSquaredVisualizer() {
+          const NIn = document.getElementById("qsq-N");
+          const QRange = document.getElementById("qsq-Q");
+          const QVal = document.getElementById("qsq-Q-value");
+          const kRange = document.getElementById("qsq-k");
+          const kVal = document.getElementById("qsq-k-value");
+          const svg = document.getElementById("qsq-svg");
+
+          function draw() {
+            const N = clamp(parseInt(NIn.value || "15", 10), 3, 80);
+            const maxQ = N * N + 50;
+            QRange.max = String(maxQ);
+            const Q = clamp(parseInt(QRange.value, 10), N, maxQ);
+            QVal.textContent = String(Q);
+            const k = clamp(parseInt(kRange.value, 10), 1, N - 1);
+            kRange.max = String(N - 1);
+            kVal.textContent = String(k);
+
+            clearSvg(svg);
+            const W = 900, H = 200;
+            const left = 40, right = W - 40, mid = H / 2;
+            // Number line
+            svg.appendChild(createSvgElement("line", {
+              x1: left, y1: mid, x2: right, y2: mid,
+              stroke: "#888", "stroke-width": "1.4"
+            }));
+            // Center on x = k/Q ; show window of ±1/(2Q), scaled to half the line
+            const center = k / Q;
+            const halfWin = 1 / (2 * Q);
+            // Choose visualization width: show range center ± 3*halfWin (or more to see neighbors)
+            const visHalf = Math.max(halfWin * 6, 1 / N);
+            const xLo = center - visHalf, xHi = center + visHalf;
+            function px(v) { return left + (v - xLo) * (right - left) / (xHi - xLo); }
+            // Window band
+            svg.appendChild(createSvgElement("rect", {
+              x: px(center - halfWin), y: mid - 30,
+              width: px(center + halfWin) - px(center - halfWin), height: 60,
+              fill: "#8a3a1c", opacity: "0.18"
+            }));
+            // Fractions a/b with b ≤ N
+            let inWin = 0;
+            for (let b = 1; b <= N; b++) {
+              for (let a = 0; a <= b; a++) {
+                const v = a / b;
+                if (v < xLo || v > xHi) continue;
+                const within = Math.abs(v - center) <= halfWin;
+                if (within) inWin++;
+                svg.appendChild(createSvgElement("circle", {
+                  cx: px(v), cy: mid, r: within ? 5 : 3,
+                  fill: within ? "#1f4f8b" : "#9aa9b6",
+                  opacity: within ? "0.95" : "0.65"
+                }));
+                if (within) {
+                  const t = createSvgElement("text", {
+                    x: px(v), y: mid - 12, "text-anchor": "middle",
+                    "font-size": "10", fill: "#1f4f8b"
+                  });
+                  t.textContent = `${a}/${b}`;
+                  svg.appendChild(t);
+                }
+              }
+            }
+            // Marker at center
+            svg.appendChild(createSvgElement("line", {
+              x1: px(center), y1: mid - 35, x2: px(center), y2: mid + 35,
+              stroke: "#8a3a1c", "stroke-width": "1.6"
+            }));
+            const c = createSvgElement("text", {
+              x: px(center), y: mid + 50, "text-anchor": "middle",
+              "font-size": "11", fill: "#8a3a1c"
+            });
+            c.textContent = `k/Q = ${k}/${Q} ≈ ${center.toFixed(5)}`;
+            svg.appendChild(c);
+            const w = createSvgElement("text", {
+              x: left, y: 18, "font-size": "11", fill: "#444"
+            });
+            w.textContent = `window ±1/(2Q) = ±${(halfWin).toExponential(2)}; rationals a/b with b≤N inside: ${inWin}`;
+            svg.appendChild(w);
+            const status = createSvgElement("text", {
+              x: right, y: 18, "text-anchor": "end", "font-size": "11",
+              fill: Q >= N * N ? "#1f4f8b" : "#8a3a1c", "font-weight": "600"
+            });
+            status.textContent = Q >= N * N
+              ? `Q ≥ N² = ${N * N}: unique reconstruction`
+              : `Q < N² = ${N * N}: ambiguous`;
+            svg.appendChild(status);
+          }
+          NIn.addEventListener("change", draw);
+          QRange.addEventListener("input", draw);
+          kRange.addEventListener("input", draw);
+          draw();
+        }
+
+        // ---------- §13: Complexity diagram ----------
+        function renderComplexityDiagram() {
+          const svg = document.getElementById("cx-svg");
+          clearSvg(svg);
+          // PSPACE outermost
+          svg.appendChild(createSvgElement("rect", {
+            x: "30", y: "30", width: "470", height: "320", rx: "30",
+            fill: "rgba(95, 106, 117, 0.08)", stroke: "#5c6a75", "stroke-width": "2.4"
+          }));
+          // BQP
+          svg.appendChild(createSvgElement("rect", {
+            x: "70", y: "100", width: "260", height: "200", rx: "26",
+            fill: "rgba(31, 93, 148, 0.11)", stroke: "#1f5d94", "stroke-width": "2.4"
+          }));
+          // NP (overlapping BQP partially)
+          svg.appendChild(createSvgElement("path", {
+            d: "M260,80 C390,55 480,150 460,240 C440,310 360,330 290,310 C230,295 200,260 218,200 C232,150 220,110 260,80 Z",
+            fill: "rgba(73, 131, 72, 0.08)", stroke: "#3d7d48",
+            "stroke-width": "2.2", "stroke-dasharray": "9 7"
+          }));
+          // P inside BQP
+          svg.appendChild(createSvgElement("rect", {
+            x: "120", y: "180", width: "120", height: "70", rx: "16",
+            fill: "rgba(181, 83, 39, 0.16)", stroke: "#b55327", "stroke-width": "2"
+          }));
+
+          const labels = [
+            { x: 175, y: 220, text: "P", fill: "#b55327", size: 24 },
+            { x: 130, y: 130, text: "BQP", fill: "#1f5d94", size: 24 },
+            { x: 240, y: 60, text: "PSPACE", fill: "#374550", size: 22 },
+            { x: 425, y: 175, text: "NP", fill: "#3d7d48", size: 22 }
+          ];
+          labels.forEach(L => {
+            const t = createSvgElement("text", {
+              x: L.x, y: L.y, "text-anchor": "middle",
+              "font-size": String(L.size), fill: L.fill,
+              "font-family": "Helvetica Neue, Arial, sans-serif",
+              "font-weight": "700"
+            });
+            t.textContent = L.text;
+            svg.appendChild(t);
+          });
+          // Factoring marker in BQP ∩ NP
+          svg.appendChild(createSvgElement("circle", {
+            cx: "300", cy: "210", r: "7", fill: "#8a3a1c"
+          }));
+          const ft = createSvgElement("text", {
+            x: "312", y: "214", "font-size": "13", fill: "#8a3a1c", "font-weight": "600"
+          });
+          ft.textContent = "Factoring";
+          svg.appendChild(ft);
+          // Note
+          const note = createSvgElement("text", {
+            x: "260", y: "365", "text-anchor": "middle",
+            "font-size": "11", fill: "#5c6a75"
+          });
+          note.textContent = "Factoring ∈ BQP ∩ NP ∩ coNP; conjecturally not in P.";
+          svg.appendChild(note);
+        }
+
+        function init() {
+          renderRepeatedSquaring();
+          renderPeriodFindingLab();
+          renderQftLab();
+          renderQftCircuit();
+          renderShorWalkthrough();
+          renderContinuedFractions();
+          renderQSquaredVisualizer();
+          renderComplexityDiagram();
+          ensureMathRendered();
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

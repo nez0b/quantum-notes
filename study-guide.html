@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Final Review — Topic Guide</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1a1a1a;
+    --muted: #6a6a6a;
+    --accent: #6c4cf1;
+    --card: #ffffff;
+    --border: #e7e5e0;
+    --rule: #ecebe6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14141a;
+      --fg: #ececec;
+      --muted: #9a9aa6;
+      --accent: #a594ff;
+      --card: #1c1c24;
+      --border: #2a2a34;
+      --rule: #24242e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 6rem;
+  }
+  a { color: var(--accent); }
+  .back {
+    display: inline-block;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 2rem;
+  }
+  .back:hover { color: var(--accent); }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0 0 2.5rem;
+  }
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.4rem 1.6rem;
+    margin: 0 0 1rem;
+  }
+  section h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.8rem;
+    letter-spacing: -0.01em;
+  }
+  section p {
+    margin: 0 0 0.85rem;
+    font-size: 0.96rem;
+  }
+  section p:last-child { margin-bottom: 0; }
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+  footer {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 2rem;
+  }
+  code {
+    background: var(--rule);
+    padding: 0.05rem 0.3rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  /* Make KaTeX inline math match body color */
+  .katex { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">← back to notes</a>
+
+  <h1>Final Review — Topic Guide</h1>
+  <p class="sub">Topics worth reviewing for the final, with prompts that test whether you can extend the original algorithms rather than just recite them.</p>
+
+  <section>
+    <h2>Density matrices, mixed states &amp; entanglement entropy</h2>
+
+    <p>Build a density matrix from an ensemble: $\rho = \sum_i p_i \, |\psi_i\rangle\langle\psi_i|$. Decompose a given $\rho$ back into a mixture of pure states — and notice that the decomposition is not unique. Compute reduced/local density matrices by tracing out a subsystem, $\rho_A = \mathrm{Tr}_B \, |\psi\rangle\langle\psi|$, and compute the entanglement entropy $S(\rho_A) = -\sum_i \lambda_i \log_2 \lambda_i$ in ebits using the Schmidt coefficients.</p>
+
+    <p><span class="label">Distinctions worth working out.</span> When you take a <em>mixture</em> of two states vs a <em>superposition</em>, what happens to entanglement? Try each of the four combinations (mixture vs superposition, of unentangled vs entangled inputs) and decide whether the result is always / sometimes / never entangled. Construct small examples that confirm or refute each rule. The von Neumann entropy of a pure state and of the maximally mixed state are both worth knowing on sight.</p>
+
+    <p><span class="label">Variants to expect.</span> Be ready to apply a unitary to one party first and recompute $\rho_A$, and to think about how that operation interacts with the entanglement structure.</p>
+  </section>
+
+  <section>
+    <h2>Grover's algorithm: variants, analysis, exact runs</h2>
+
+    <p>Be able to walk through Grover step-by-step for small $N$. Know what state $H^{\otimes n}|0^n\rangle$ produces, what the oracle does, and how the diffusion operator is constructed. Practice writing the full state at every step of one or two iterations.</p>
+
+    <p><span class="label">When does Grover hit $100\%$ exactly?</span> The algorithm's amplitude on the marked subspace evolves as $\sin((2k+1)\theta)$ where $\sin\theta = \sqrt{M/N}$. For some special values of $N$ and $M$, the amplitude lands exactly on the marked state after a small number of iterations. Set up the trigonometric condition and work out which cases admit exact $100\%$ success. If you keep iterating past the optimal point, the amplitude rotates back — what's the period?</p>
+
+    <p><span class="label">Variants and extensions.</span> Grover with multiple marked items: how does the stopping time depend on $M$, and what goes wrong if $M$ is unknown? What if you halt and restart after a constant number of iterations — work out the per-restart success probability and the total cost.</p>
+
+    <p><span class="label">Grover-as-subroutine.</span> When a quantum algorithm calls Grover (or any bounded-error subroutine) inside a larger procedure, naive composition is unsafe: per-call error compounds, and the algorithm can fail with high probability even if each individual call succeeds with constant probability. Think carefully about <em>what</em> error each Grover call produces, how that error propagates through $T$ outer calls, and what amplification step you need to add so the total error stays bounded by a constant. The "obvious" runtime is wrong by a logarithmic factor — work out where it comes from.</p>
+
+    <p><span class="label">Subtlety.</span> When Grover fails to return a marked item, what does that outcome tell you (in a Bayesian sense) about the number of marked items? Be ready to argue carefully — the answer is not "nothing."</p>
+  </section>
+
+  <section>
+    <h2>Quantum cryptography: BB84, Wiesner money &amp; quantum one-time pad</h2>
+
+    <p>For each protocol, ask: <em>what</em> exactly is its security based on, and what is it <em>not</em> based on? Wiesner's quantum money, BB84, and various lattice-based candidates rest on different foundations — distinguish carefully between what's information-theoretic, what's computationally conjectured, and which "intuitive" explanations are actually red herrings (e.g. Holevo-style bit-counting arguments).</p>
+
+    <p><span class="label">Quantum one-time pad.</span> If Alice and Bob try to encrypt a single qubit by applying $X$ (a quantum NOT) keyed on a single shared bit, the protocol fails for many input states — work out which states are distinguishable to Eve under this protocol and which are not. Why does the analogy with the classical XOR one-time pad break down?</p>
+
+    <p><span class="label">The fix.</span> If you give Alice and Bob more shared randomness — e.g. two bits per qubit instead of one — they can use additional Pauli operations beyond $X$. Work out a protocol of this form and prove it is perfectly secure: what density matrix does Eve see after averaging over the secret key, and why does that imply security?</p>
+
+    <p><span class="label">Extension.</span> Does the same construction extend to encrypting an $n$-qubit (possibly entangled) message? How many key bits per qubit do you actually need, and can you prove that fewer would not suffice?</p>
+  </section>
+
+  <section>
+    <h2>Shor's algorithm &amp; period finding</h2>
+
+    <p>Be fluent at running Shor on a small composite $N$. Be comfortable with $|\mathbb{Z}_N^\times| = \varphi(N)$ and computing the order of a small element by hand. Once you have an order, work out the conditions under which it lets you actually recover a non-trivial factor — not every choice of base succeeds.</p>
+
+    <p><span class="label">The quantum part.</span> Practice tracing the state of the algorithm step by step: what does the first register look like after measuring the second register? What does the QFT do to that state, and how do you read off the period from the measurement outcome?</p>
+
+    <p><span class="label">Conceptual care.</span> Shor's algorithm is often summarized as "exponential speedup for factoring." Be careful: there are two distinct claims (one about black-box period finding, one about factoring as a problem in its own right), and they have different proven statuses. Be ready to say which is which.</p>
+  </section>
+
+  <section>
+    <h2>Foundations: states, unitarity, distinguishability, no-communication</h2>
+
+    <p>Be ready to evaluate quick claims about $1$-qubit operators: which standard operators satisfy $U = U^\dagger$? Which preserve inner products? Be fluent that $\langle v | w\rangle = \langle Uv | Uw\rangle$ for any unitary $U$, and what that implies for distinguishability.</p>
+
+    <p><span class="label">Global vs relative phases.</span> Two states that differ only by a <em>global phase</em> are physically the same state — no measurement distinguishes them. A <em>relative phase</em> in a superposition can be detected by choosing the right measurement basis. Be ready to look at a pair of kets and decide which case applies, and to identify the basis that distinguishes the second case.</p>
+
+    <p><span class="label">Tensoring and distinguishability.</span> If two states are indistinguishable to any single measurement, what happens when you have many copies? Think about the relevant overlap quantity and decide whether more copies help.</p>
+
+    <p><span class="label">No-communication theorem.</span> A local measurement on one half of an entangled pair cannot transmit information to the other party. State the theorem precisely (in terms of marginal statistics), and be careful about the difference between "Alice cannot send Bob information" and weaker / stronger claims that sound similar.</p>
+  </section>
+
+  <section>
+    <h2>Quantum search for combinatorial problems</h2>
+
+    <p>A common pattern in quantum algorithm design: take a problem whose classical solution searches through $O(N^k)$ candidate witnesses, and use Grover or amplitude amplification to accelerate one or more layers of that search. Practice <em>posing</em> a combinatorial decision problem (does the input contain a triple satisfying some predicate? a pair? a matching?) as a Grover search — what's the search space, what's the marking predicate, and how is the predicate evaluated using the oracle?</p>
+
+    <p><span class="label">Nested search.</span> Many problems decompose as "for each candidate $x$, search for a $y$ that completes a witness with $x$." Quantumly, both layers can be sped up — but only if the inner search returns a correct answer with high enough probability that the outer Grover doesn't get confused. Think about how to combine the layers, what runtime exponent results, and where amplitude amplification is needed.</p>
+
+    <p><span class="label">Reductions to Element Distinctness.</span> Some geometric and combinatorial problems can be reduced to <strong>Element Distinctness</strong> (decide if any two entries of a list are equal), which has a known quantum speedup beyond what plain Grover gives — via <em>quantum walks</em>. If you can transform your input so that "two entries collide" encodes the property you want, the walk-based subroutine may give a better exponent than nested Grover. Worth knowing: what runtime Element Distinctness achieves, and what kinds of problems it composes well with.</p>
+
+    <p>The same template (Grover and quantum walks for accelerating combinatorial enumeration) shows up in triangle finding, $k$-collision, matrix product verification, and various graph problems.</p>
+  </section>
+
+  <section>
+    <h2>Quantum circuits: trace step-by-step</h2>
+
+    <p>Be fast at applying $H^{\otimes 2}$ to $|00\rangle$ — gives the uniform superposition over all four basis states with all positive amplitudes — then CNOT (swaps amplitudes of $|10\rangle$ and $|11\rangle$, creating entanglement), then phase gates like $P = \mathrm{diag}(1, i)$ which attach an $i$ only to basis states whose target bit is $1$.</p>
+
+    <p><span class="label">Common traps.</span> Applying $P$ to qubit 1 vs qubit 2 changes <em>which</em> basis states get the $i$. Sign/phase placement is the only difference between most multiple-choice answers, so trace coefficients carefully and check by inner-product with each candidate.</p>
+
+    <p><span class="label">Rule of thumb.</span> Every gate either rearranges amplitudes ($X$, CNOT, SWAP), introduces relative phases ($Z, S, T, P$), or creates superposition ($H, R_X, R_Y$).</p>
+  </section>
+
+  <section>
+    <h2>Quantum complexity classes</h2>
+
+    <p>Know the inclusions among $\mathsf{P}, \mathsf{BPP}, \mathsf{BQP}, \mathsf{PSPACE}, \mathsf{NP}$, and which pairwise relations are theorems vs. open problems vs. known to be open even modulo other conjectures. For each major separation or containment, be ready to say precisely what is and is not currently proven.</p>
+
+    <p>Watch phrasings like "it is known that…" or "it has been proven that…" carefully — most relations between $\mathsf{NP}$ and quantum classes remain open, even when the intuitive answer feels obvious. The proven query-complexity lower bounds for problems like Simon's are also worth knowing on sight.</p>
+  </section>
+
+  <section>
+    <h2>Simon's algorithm</h2>
+
+    <p>Know what state Simon's circuit produces after the oracle, and what measuring it yields. Be ready to explain carefully what a single measurement does and does not give you, and how many repetitions are needed before you can solve for the secret string with linear algebra.</p>
+
+    <p><span class="label">Conceptual extension.</span> Simon's algorithm is the prototype of the <strong>hidden subgroup problem</strong> over $(\mathbb{Z}/2)^n$, and Shor's algorithm follows the same template over $\mathbb{Z}$.</p>
+  </section>
+
+  <section>
+    <h2>Hardware platforms</h2>
+
+    <p>For each major hardware platform — trapped ion, superconducting, photonic, neutral-atom (Rydberg), topological — know what physically encodes the qubit, how the qubits are confined or held in place, and what environmental conditions (temperature, vacuum, optical setup) the platform requires. Be ready to spot incorrect descriptions of these mechanisms, including ones that conflate roles played by different physical fields.</p>
+  </section>
+
+  <section>
+    <h2>Quantum error correction (Shor 9-qubit code)</h2>
+
+    <p>Be precise about exactly which error patterns the Shor 9-qubit code corrects and which it does not. The natural single-qubit error model gives one answer; multiple errors of the same type, or errors that cross blocks, may give a different one. Work out small examples to confirm.</p>
+
+    <p><span class="label">Building blocks.</span> The 3-qubit bit-flip code corrects one $X$, the 3-qubit phase-flip code corrects one $Z$ (via Hadamard conjugation), and Shor concatenates them. The stabilizer formalism is the general framework; CSS codes generalize this construction.</p>
+  </section>
+
+  <hr/>
+
+  <h2 style="font-size:1.15rem;">Strategy notes</h2>
+  <section>
+    <p>True/false questions about complexity-class containments and cryptographic security bases tend to test <em>exact</em> phrasing. Drill the precise status of each claim — what's a theorem, what's an open problem, what's a heuristic — rather than relying on intuition.</p>
+
+    <p>Many problems chain: an early arithmetic slip in a worked computation cascades through the next several parts, so double-check small numbers. Where two algorithmic techniques could solve the same problem, be ready to compare them and explain which exponent each one gives.</p>
+
+    <p>Finally, several disparate-looking questions reduce to the same proof technique — averaging a quantum channel over a uniformly random key, and showing that the average state carries no information about the input. Once you see this pattern, it pays off across multiple topics.</p>
+  </section>
+
+  <footer>
+    <p><a href="index.html">← all notes</a></p>
+  </footer>
+</main>
+</body>
+</html>
