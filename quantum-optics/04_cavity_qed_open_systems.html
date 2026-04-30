@@ -1214,6 +1214,7 @@
 <a href="#input-output">Input-Output</a>
 <a href="#langevin">Langevin</a>
 <a href="#classical-limit">Classical Limit</a>
+<a href="#cavity-decay">Decay Lab</a>
 <a href="#sources">Sources</a>
   </div>
 </nav>
@@ -1468,6 +1469,53 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="cavity-decay">
+          <div class="section-main">
+            <h2>Interactive: Driven-Cavity Decay</h2>
+
+          <p class="lede">
+            With drive turned off, an initial coherent state
+            \(\lvert\alpha_0\rangle\) decays as
+            \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\) — a simple
+            exponential ringdown. With drive, the cavity reaches a
+            non-zero steady state \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
+          </p>
+          <div class="widget-shell" id="cavity-decay">
+  <h4>Driven cavity ringdown / steady-state</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide cavity decay <em>κ</em>, drive amplitude <em>ε</em>, and toggle the drive. Phase-space trajectory shows |α(t)|; the full curve is the analytic solution <em>α</em>(t) = (ε/κ)(1 − e<sup>−κt</sup>) + α₀ e<sup>−κt</sup>.</p>
+  <div class="widget-controls">
+        <label>
+          <span>decay κ</span>
+          <input type="range" id="cd-kappa" min="0.1" max="3.0" step="0.05" value="1.0" />
+          <span class="val" id="cd-kappa-val">1.00</span>
+        </label>
+        <label>
+          <span>drive ε</span>
+          <input type="range" id="cd-eps" min="0.0" max="3.0" step="0.05" value="1.5" />
+          <span class="val" id="cd-eps-val">1.50</span>
+        </label>
+        <label>
+          <span>|α₀|</span>
+          <input type="range" id="cd-alpha0" min="0.0" max="4.0" step="0.05" value="2.0" />
+          <span class="val" id="cd-alpha0-val">2.00</span>
+        </label>
+  </div>
+  <svg class="widget-svg" id="cavity-decay-svg" viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="cavity-decay-readout"><div>Steady-state |α_ss|² = <span id="cd-ss">—</span>  (half-decay time t<sub>1/2</sub> = <span id="cd-thalf">—</span>)</div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Free decay: \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\)</li>
+              <li>Driven steady state: \(\alpha_\mathrm{ss} = \varepsilon/\kappa\)</li>
+              <li>Half-life: \(t_{1/2} = \ln 2 / \kappa\)</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="sources">
   <div class="section-main">
     <h2>Sources &amp; Further Reading</h2>
@@ -1547,6 +1595,72 @@
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: cavity decay (driven, exponential ringdown) ----------
+      (function () {
+        var svg = document.getElementById('cavity-decay-svg');
+        if (!svg) return;
+        var kS = document.getElementById('cd-kappa');
+        var eS = document.getElementById('cd-eps');
+        var aS = document.getElementById('cd-alpha0');
+        var kV = document.getElementById('cd-kappa-val');
+        var eV = document.getElementById('cd-eps-val');
+        var aV = document.getElementById('cd-alpha0-val');
+        var ssSp = document.getElementById('cd-ss');
+        var thalfSp = document.getElementById('cd-thalf');
+        function draw() {
+          var k = parseFloat(kS.value);
+          var eps = parseFloat(eS.value);
+          var a0 = parseFloat(aS.value);
+          kV.textContent = k.toFixed(2);
+          eV.textContent = eps.toFixed(2);
+          aV.textContent = a0.toFixed(2);
+          var W = 520, H = 280, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var TMAX = 8.0;
+          var alpha_ss = eps / k;
+          var maxA = Math.max(a0, alpha_ss) * 1.15 + 0.1;
+          function xpos(t) { return pad + (t/TMAX) * inner_w; }
+          function ypos(a) { return pad + inner_h - (a/maxA) * inner_h; }
+          var html = '';
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          // SS line
+          html += '<line x1="' + pad + '" y1="' + ypos(alpha_ss) + '" x2="' + (W-pad) + '" y2="' + ypos(alpha_ss) + '" stroke="#e8b96a" stroke-width="1" stroke-dasharray="4,3"/>';
+          html += '<text x="' + (W-pad-8) + '" y="' + (ypos(alpha_ss)-4) + '" text-anchor="end" font-size="10" fill="#e8b96a">|α_ss| = ' + alpha_ss.toFixed(2) + '</text>';
+          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt/2}  (amplitude convention)
+          var pts = [];
+          for (var t = 0; t <= TMAX; t += 0.05) {
+            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t/2);
+            pts.push(xpos(t) + ',' + ypos(Math.abs(a)));
+          }
+          html += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#79c79f" stroke-width="2"/>';
+          // half-life marker
+          var thalf = Math.log(2)/k;
+          if (a0 > alpha_ss) {
+            var a_half = alpha_ss + (a0 - alpha_ss) * 0.5;
+            html += '<circle cx="' + xpos(thalf) + '" cy="' + ypos(a_half) + '" r="4" fill="#fff"/>';
+            html += '<text x="' + (xpos(thalf)+6) + '" y="' + (ypos(a_half)-4) + '" font-size="10" fill="#fff">t₁/₂</text>';
+          }
+          // axes labels
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">time t  (in units of 1/κ_ref)</text>';
+          html += '<text x="' + (pad/2) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/2) + ' ' + (H/2) + ')">|α(t)|</text>';
+          // tick labels
+          for (var t of [0, 1, 2, 4, 6, 8]) {
+            html += '<text x="' + xpos(t) + '" y="' + (pad+inner_h+15) + '" text-anchor="middle" font-size="10" fill="#888">' + t + '</text>';
+          }
+          svg.innerHTML = html;
+          ssSp.textContent = (alpha_ss*alpha_ss).toFixed(3);
+          thalfSp.textContent = thalf.toFixed(3);
+        }
+        kS.addEventListener('input', draw);
+        eS.addEventListener('input', draw);
+        aS.addEventListener('input', draw);
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

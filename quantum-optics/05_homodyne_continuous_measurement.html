@@ -1212,6 +1212,7 @@
 <a href="#shot-noise">Shot Noise</a>
 <a href="#phase-vs-het">Phase vs Het.</a>
 <a href="#sub-shot">Sub-Shot-Noise</a>
+<a href="#homodyne-quadrature">Quadrature Lab</a>
 <a href="#sme">SME</a>
 <a href="#wm-feedback">Wiseman-Milburn</a>
 <a href="#sources">Sources</a>
@@ -1376,6 +1377,51 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="homodyne-quadrature">
+          <div class="section-main">
+            <h2>Interactive: Homodyne Quadrature Selection</h2>
+
+          <p class="lede">
+            Slide LO phase \(\varphi\). The homodyne photocurrent
+            measures the rotated quadrature
+            \(X_\varphi = X\cos\varphi + P\sin\varphi\). For a coherent
+            state, the histogram of measured \(X_\varphi\) is a
+            Gaussian; for squeezed input, the variance dips below the
+            shot-noise floor when \(\varphi\) hits the squeezed
+            quadrature's angle.
+          </p>
+          <div class="widget-shell" id="homodyne-quadrature">
+  <h4>LO phase scan with optional squeezed input</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Histogram of 600 random samples of <em>X<sub>φ</sub></em>. Toggle squeezing on the input to see variance dip below the shot-noise floor (dashed) at <em>φ</em> = 0. Anti-squeezing (variance above floor) at <em>φ</em> = π/2.</p>
+  <div class="widget-controls">
+        <label>
+          <span>LO phase φ</span>
+          <input type="range" id="hd-phi" min="0" max="3.14" step="0.05" value="0.0" />
+          <span class="val" id="hd-phi-val">0.00</span>
+        </label>
+        <label>
+          <span>signal squeeze r</span>
+          <input type="range" id="hd-r" min="0" max="1.2" step="0.05" value="0.0" />
+          <span class="val" id="hd-r-val">0.00</span>
+        </label>
+  </div>
+  <div class="widget-buttons"><button id="hd-resample">Resample</button></div>
+  <svg class="widget-svg" id="homodyne-quadrature-svg" viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="homodyne-quadrature-readout"><div>Sample variance: <span id="hd-var">—</span> &nbsp; Shot-noise floor: <span id="hd-snf">0.500</span></div><div>dB vs SNL: <span id="hd-db">—</span></div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>LO phase φ selects measured quadrature \(X_\varphi\)</li>
+              <li>Squeezed input dips below SNL at the right φ</li>
+              <li>π/2 phase shift swaps squeezed ↔ anti-squeezed</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="sme">
   <div class="section-main">
     <h2>Continuous Measurement: The Stochastic Master Equation</h2>
@@ -1538,6 +1584,104 @@
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: homodyne quadrature with optional squeezing ----------
+      (function () {
+        var svg = document.getElementById('homodyne-quadrature-svg');
+        if (!svg) return;
+        var phS = document.getElementById('hd-phi');
+        var rS = document.getElementById('hd-r');
+        var phV = document.getElementById('hd-phi-val');
+        var rV = document.getElementById('hd-r-val');
+        var varSp = document.getElementById('hd-var');
+        var dbSp = document.getElementById('hd-db');
+        var resampleBtn = document.getElementById('hd-resample');
+        var seed = 12345;
+        function gauss() {
+          var u = 0, v = 0;
+          while(u===0) u = Math.random();
+          while(v===0) v = Math.random();
+          return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+        }
+        function draw() {
+          var phi = parseFloat(phS.value);
+          var r = parseFloat(rS.value);
+          phV.textContent = phi.toFixed(2);
+          rV.textContent = r.toFixed(2);
+          // squeezed quadratures: Var(X)=½ e^{-2r}, Var(P)=½ e^{2r}
+          // measured X_phi = X cos φ + P sin φ has variance:
+          // Var(X_phi) = ½ (e^{-2r} cos²φ + e^{2r} sin²φ)  [for squeezed vacuum]
+          // For coherent state: Var = 1/2
+          var Vphi;
+          if (r < 0.005) {
+            Vphi = 0.5;
+          } else {
+            Vphi = 0.5 * (Math.exp(-2*r)*Math.cos(phi)*Math.cos(phi) + Math.exp(2*r)*Math.sin(phi)*Math.sin(phi));
+          }
+          // sample 600 measurements
+          var samples = [];
+          var sample_var = 0, sample_mean = 0;
+          for (var i = 0; i < 600; i++) {
+            var x = Math.sqrt(Vphi) * gauss();
+            samples.push(x);
+            sample_mean += x;
+          }
+          sample_mean /= 600;
+          for (var i = 0; i < samples.length; i++) {
+            var d = samples[i] - sample_mean;
+            sample_var += d*d;
+          }
+          sample_var /= 600;
+          // build histogram
+          var W = 520, H = 300, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad - 24;
+          var nb = 30;
+          var XMIN = -3, XMAX = 3;
+          var bins = new Array(nb).fill(0);
+          for (var i = 0; i < samples.length; i++) {
+            var idx = Math.floor((samples[i] - XMIN) / (XMAX - XMIN) * nb);
+            if (idx >= 0 && idx < nb) bins[idx]++;
+          }
+          var maxCount = Math.max.apply(null, bins);
+          var bw = inner_w / nb;
+          var html = '';
+          for (var k = 0; k < nb; k++) {
+            var x0 = pad + k*bw;
+            var bh = (bins[k]/maxCount) * inner_h;
+            html += '<rect x="' + (x0+0.5) + '" y="' + (pad + inner_h - bh) + '" width="' + (bw-1) + '" height="' + bh + '" fill="#79c79f" opacity="0.65"/>';
+          }
+          // shot-noise floor reference Gaussian (Var = 1/2)
+          var coherent_pts = [];
+          for (var k = 0; k < nb; k++) {
+            var x = XMIN + (k+0.5) * (XMAX - XMIN) / nb;
+            // expected count for coherent: 600 * (XMAX-XMIN)/nb * gaussian_pdf(x; var=1/2)
+            var pdf = Math.exp(-x*x/(2*0.5)) / Math.sqrt(2*Math.PI*0.5);
+            var count = 600 * pdf * (XMAX-XMIN)/nb;
+            var x0 = pad + k*bw + bw/2;
+            var py = pad + inner_h - (count/maxCount)*inner_h;
+            coherent_pts.push(x0 + ',' + py);
+          }
+          html += '<polyline points="' + coherent_pts.join(' ') + '" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<text x="' + (W/2) + '" y="' + (H-12) + '" text-anchor="middle" font-size="11" fill="#888">measured X_φ</text>';
+          html += '<text x="' + pad + '" y="' + (pad+inner_h+15) + '" font-size="10" fill="#888">' + XMIN + '</text>';
+          html += '<text x="' + (W-pad) + '" y="' + (pad+inner_h+15) + '" text-anchor="end" font-size="10" fill="#888">' + XMAX + '</text>';
+          html += '<text x="' + (W-pad-160) + '" y="' + (pad+12) + '" font-size="10" fill="#888">solid: actual histogram (Var=' + sample_var.toFixed(3) + ')</text>';
+          html += '<text x="' + (W-pad-160) + '" y="' + (pad+25) + '" font-size="10" fill="#888">dashed: shot-noise floor (Var=0.500)</text>';
+          svg.innerHTML = html;
+          varSp.textContent = sample_var.toFixed(4);
+          var db = (Vphi < 0.5) ? -10*Math.log10(0.5/Vphi) : 10*Math.log10(Vphi/0.5);
+          dbSp.textContent = (db > 0 ? '+' : '') + db.toFixed(2) + ' dB ' + (db < 0 ? '(below SNL — squeezed!)' : (db > 0.1 ? '(above SNL — anti-squeezed)' : '(at SNL)'));
+        }
+        phS.addEventListener('input', draw);
+        rS.addEventListener('input', draw);
+        if (resampleBtn) resampleBtn.addEventListener('click', draw);
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

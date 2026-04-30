@@ -1213,6 +1213,7 @@
 <a href="#pdc">Down-Conversion</a>
 <a href="#opa-opo">OPA / OPO</a>
 <a href="#squeezing-gen">Squeezing</a>
+<a href="#squeeze-trajectory">Squeeze Lab</a>
 <a href="#chi3">χ⁽³⁾ Effects</a>
 <a href="#sources">Sources</a>
   </div>
@@ -1459,6 +1460,48 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="squeeze-trajectory">
+          <div class="section-main">
+            <h2>Interactive: Squeezing in Phase Space</h2>
+
+          <p class="lede">
+            The χ⁽²⁾-driven squeeze operator \(S(r,\theta)\) takes the
+            unit-circle vacuum noise and stretches it into an ellipse:
+            \(e^{-r}\) along one axis, \(e^{+r}\) along the orthogonal
+            axis, rotated by \(\theta\). This is the geometry that
+            below-threshold OPOs produce.
+          </p>
+          <div class="widget-shell" id="squeeze-trajectory">
+  <h4>Phase-space squeezed-vacuum ellipse</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide squeeze parameter <em>r</em> and angle <em>θ</em>. The unit-circle vacuum noise (dashed) is the reference; the squeezed ellipse (solid) shows the squeezed and anti-squeezed quadratures. The product Var(<em>X</em>) · Var(<em>P</em>) = ¼ holds: this is a minimum-uncertainty state.</p>
+  <div class="widget-controls">
+        <label>
+          <span>squeeze r</span>
+          <input type="range" id="sq-r" min="0" max="1.5" step="0.05" value="0.6" />
+          <span class="val" id="sq-r-val">0.60</span>
+        </label>
+        <label>
+          <span>angle θ</span>
+          <input type="range" id="sq-theta" min="0" max="3.14" step="0.05" value="0.0" />
+          <span class="val" id="sq-theta-val">0.00</span>
+        </label>
+  </div>
+  <svg class="widget-svg" id="squeeze-trajectory-svg" viewBox="0 0 440 320" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="squeeze-trajectory-readout"><div>Squeezed Var = ½e^{−2r} = <span id="sq-var-min">—</span> (<span id="sq-db-min">—</span> dB below SNL)</div><div>Anti-squeezed Var = ½e^{+2r} = <span id="sq-var-max">—</span></div><div>Product Var(X)·Var(P) = <span id="sq-prod">—</span> (Heisenberg minimum: 1/4)</div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Squeeze ellipse: shrunk in one quadrature, stretched in other</li>
+              <li>\(e^{-2r}\) variance reduction in dB: \(-8.7 r\)</li>
+              <li>Heisenberg saturation: Var(X)·Var(P) = ¼</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="sources">
   <div class="section-main">
     <h2>Sources &amp; Further Reading</h2>
@@ -1538,6 +1581,63 @@
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: squeeze-trajectory phase-space ellipse ---------------
+      (function () {
+        var svg = document.getElementById('squeeze-trajectory-svg');
+        if (!svg) return;
+        var rS = document.getElementById('sq-r');
+        var thS = document.getElementById('sq-theta');
+        var rV = document.getElementById('sq-r-val');
+        var thV = document.getElementById('sq-theta-val');
+        var vmin = document.getElementById('sq-var-min');
+        var vmax = document.getElementById('sq-var-max');
+        var dbmin = document.getElementById('sq-db-min');
+        var prod = document.getElementById('sq-prod');
+        function draw() {
+          var r = parseFloat(rS.value);
+          var th = parseFloat(thS.value);
+          rV.textContent = r.toFixed(2);
+          thV.textContent = th.toFixed(2);
+          var W = 440, H = 320, cx = W/2, cy = H/2;
+          var SCALE = 50;
+          var Vsq = 0.5 * Math.exp(-2*r);
+          var Vasq = 0.5 * Math.exp(2*r);
+          var html = '';
+          // axes
+          html += '<line x1="0" y1="' + cy + '" x2="' + W + '" y2="' + cy + '" stroke="#666"/>';
+          html += '<line x1="' + cx + '" y1="0" x2="' + cx + '" y2="' + H + '" stroke="#666"/>';
+          html += '<text x="' + (W-12) + '" y="' + (cy-5) + '" font-size="11" fill="#888">X</text>';
+          html += '<text x="' + (cx+5) + '" y="12" font-size="11" fill="#888">P</text>';
+          // unit-circle vacuum reference  (radius √(1/2) * SCALE)
+          var Rvac = Math.sqrt(0.5) * SCALE;
+          html += '<circle cx="' + cx + '" cy="' + cy + '" r="' + Rvac + '" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="3,3"/>';
+          html += '<text x="' + (cx + Rvac + 4) + '" y="' + (cy + Rvac + 4) + '" font-size="10" fill="#888">vacuum</text>';
+          // squeezed ellipse: semi-axes √Vsq and √Vasq * SCALE, rotated by θ rad
+          var ax_sq = Math.sqrt(Vsq) * SCALE;
+          var ax_asq = Math.sqrt(Vasq) * SCALE;
+          var deg = th * 180 / Math.PI;
+          html += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + ax_sq + '" ry="' + ax_asq + '" fill="rgba(121,247,156,0.18)" stroke="#79f29c" stroke-width="2" transform="rotate(' + deg.toFixed(1) + ' ' + cx + ' ' + cy + ')"/>';
+          // arrow showing squeeze direction
+          var dx = ax_sq * Math.cos(th), dy = -ax_sq * Math.sin(th);
+          html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx+dx) + '" y2="' + (cy+dy) + '" stroke="#79f29c" stroke-width="1.5"/>';
+          html += '<text x="' + (cx+dx+5) + '" y="' + (cy+dy-5) + '" font-size="10" fill="#79f29c">squeezed</text>';
+          var dx2 = ax_asq * Math.cos(th + Math.PI/2), dy2 = -ax_asq * Math.sin(th + Math.PI/2);
+          html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx+dx2) + '" y2="' + (cy+dy2) + '" stroke="#f29c79" stroke-width="1.5"/>';
+          html += '<text x="' + (cx+dx2+5) + '" y="' + (cy+dy2-5) + '" font-size="10" fill="#f29c79">anti-squeezed</text>';
+          svg.innerHTML = html;
+          vmin.textContent = Vsq.toFixed(4);
+          vmax.textContent = Vasq.toFixed(4);
+          dbmin.textContent = (-8.686 * r).toFixed(2);
+          prod.textContent = (Vsq * Vasq).toFixed(4) + ' = (1/2)² (saturated)';
+        }
+        rS.addEventListener('input', draw);
+        thS.addEventListener('input', draw);
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

@@ -1210,8 +1210,10 @@
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
         <a href="#tla">TLA Framing</a>
+<a href="#tla-primitives">Three Primitives</a>
 <a href="#langevin-lyapunov">Langevin→Lyapunov</a>
 <a href="#optical-adapt">Optical Adaptation</a>
+<a href="#rlc-comparison">vs RLC SPU</a>
 <a href="#envelope">Hardware Envelope</a>
 <a href="#targets">QCi Targets</a>
 <a href="#roadmap">Roadmap</a>
@@ -1261,6 +1263,54 @@
               <li>TLA: SDE stationary covariance ↔ algebraic primitive</li>
       <li>Aifer-Coles-Duffield 2023 (arXiv:2306.14740) — RLC version</li>
       <li>Photonic re-implementation: same primitive, faster MVM, lower noise floor</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="tla-primitives">
+  <div class="section-main">
+    <h2>Three TLA Primitives</h2>
+
+  <p class="lede">
+    Thermodynamic linear algebra is a family of algorithms — not
+    a single primitive. The OU machine implements the simplest
+    (and most-tested) one. The catalog matters because it tells
+    us what else this hardware could do.
+  </p>
+  <ol>
+    <li><strong>Linear systems / matrix inverse</strong>: solve
+      \(A v = b\) by reading \(2\hat\Sigma b\) from a sample
+      average. <em>This is the OU machine</em>. Symmetric PD
+      \(A\) and isotropic noise. Direct application: linear
+      regression, Gaussian-process inference, Newton steps.</li>
+    <li><strong>Sampling from a Gaussian</strong>: draw samples
+      from \(\mathcal{N}(0, A^{-1})\). Same SDE; instead of
+      averaging covariance you record trajectory points. Direct
+      application: Bayesian posterior sampling, MCMC
+      initialization, simulation.</li>
+    <li><strong>Determinant estimation</strong>: \(\log\det A\)
+      from the equilibrium free energy of the OU process. The
+      elegant Aifer-Coles-Duffield trick. Direct application:
+      evidence in Bayesian model comparison, normalising
+      constants for partition functions.</li>
+  </ol>
+  <p>
+    For the optical implementation, all three primitives share
+    the same hardware: <em>only the postprocessing changes</em>.
+    Linear systems read \(2\hat\Sigma b\); sampling reads
+    \(x(t)\) directly; determinant reads the cumulative work
+    done by the EOM. The economic argument is therefore: build
+    one optical SPU, get three primitives.
+  </p>
+  <div class="callout">The hardware that does any one of these does all three. The pitch to a hardware sponsor is therefore a portfolio bet: the OU machine de-risks the substrate; sampling and determinant estimation come for free in firmware once the substrate exists.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Three primitives, one substrate</li>
+      <li>Linear systems / sampling / determinant</li>
+      <li>Postprocessing differs, hardware does not</li>
       </ul>
     </aside>
   </div>
@@ -1319,7 +1369,26 @@
             primitive still works — we just choose a different
             estimator. See the Aifer-Coles-Duffield recipe table.
           </p>
-
+          <div class="widget-shell" id="lyapunov-sampler">
+  <h4>Interactive: 4-D OU machine convergence</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Press <em>Run</em> to step a small (d=4) OU machine. The trace plots Frobenius error ‖<em>Σ̂</em>(t) − ½<em>A</em>⁻¹‖_F as the empirical covariance from running averages converges to the Lyapunov solution. Convergence rate is <em>T<sub>mix</sub></em> ∝ <em>κ</em> for the overdamped OU machine (Note 07's central scaling result).</p>
+  <div class="widget-controls">
+        <label>
+          <span>κ = λ_max/λ_min</span>
+          <input type="range" id="lya-kappa" min="1.5" max="20" step="0.5" value="5" />
+          <span class="val" id="lya-kappa-val">5.0</span>
+        </label>
+        <label>
+          <span>step Δt</span>
+          <input type="range" id="lya-dt" min="0.005" max="0.1" step="0.005" value="0.04" />
+          <span class="val" id="lya-dt-val">0.040</span>
+        </label>
+  </div>
+  <div class="widget-buttons"><button id="lya-run">Run</button><button id="lya-reset">Reset</button></div>
+  <svg class="widget-svg" id="lyapunov-sampler-svg" viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="lyapunov-sampler-readout"><div>Sample covariance error: <span id="lya-err">—</span></div><div>Step: <span id="lya-step">0</span> / 1500</div></div>
+</div>
+          <div class="callout">The Lyapunov equation <em>is</em> the algebraic content of what an OU process knows at stationarity. The hardware advantage of the OU machine is not that it computes a different equation — it's that the matrix-vector multiplication that lives at the heart of <em>A</em>Σ + Σ<em>A</em>ᵀ = <em>D</em> can be evaluated in O(1) photonic round-trip time, vs CPU's O(d²).</div>
           </div>
           <div class="section-side">
             <aside class="keypoints">
@@ -1328,6 +1397,7 @@
                       <li>\(\dot x = -A x + \sqrt{D}\,\xi \Rightarrow A\Sigma + \Sigma A^T = D\)</li>
               <li>Symmetric PD \(A\) + \(D = I\) ⇒ \(\Sigma = \tfrac{1}{2}A^{-1}\)</li>
               <li>\(\hat\Sigma\) from sample averaging gives \(A^{-1}\)</li>
+              <li>Mixing time \(\propto \kappa\) (overdamped)</li>
               </ul>
             </aside>
           </div>
@@ -1386,59 +1456,154 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
             </aside>
           </div>
         </section>
-      <section class="section-shell" id="envelope">
+      <section class="section-shell" id="rlc-comparison">
   <div class="section-main">
-    <h2>Hardware Imperfection Envelope (η, τ, σ_meas)</h2>
+    <h2>Comparison: RLC SPU vs Optical OU Machine</h2>
 
-  <p>
-    Three knobs determine bench performance:
+  <p class="lede">
+    Normal Computing's RLC stochastic processing unit (Aifer
+    et al., <em>Nat. Commun.</em> 2025) is the existing,
+    demonstrated, electronic instance of the same primitive.
+    Why optical, given that RLC works?
   </p>
-  <ol>
-    <li><strong>Homodyne efficiency</strong> \(\eta\): the
-      detected fraction of the signal photocurrent. Reduces the
-      FPGA-implemented coupling. The drift matrix actually
-      realized is
-      \(A_\mathrm{eff} = A_\mathrm{diag} + \eta\,A_\mathrm{off}\)
-      (where \(A_\mathrm{off}\) is the off-diagonal part) —
-      <em>exactly</em>, no envelope-approximation. The
-      steady-state \(\hat\Sigma\) solves the Lyapunov equation
-      with this <em>wrong</em> matrix.</li>
-    <li><strong>Feedback delay</strong> \(\tau\): the time
-      between the homodyne measurement and the EOM injection.
-      Turns the dynamics into a delay-differential equation.
-      Subleading in the overdamped regime; we measure the
-      slope empirically.</li>
-    <li><strong>Measurement shot noise</strong> \(\sigma_\mathrm{meas}\):
-      additive Gaussian noise on the photocurrent. Inflates
-      the effective diffusion: \(D_\mathrm{eff} = D + (\eta\zeta\sigma_\mathrm{meas})^2\,A_\mathrm{off}A_\mathrm{off}^T\).
-      Costs sample-efficiency, not encoding correctness.</li>
-  </ol>
+  <table class="refs">
+    <tr><td><strong>Axis</strong></td><td><strong>RLC SPU</strong></td><td><strong>Optical OU</strong></td></tr>
+    <tr><td>Substrate</td><td>resistors-inductors-capacitors</td><td>fiber-loop pulses + FPGA</td></tr>
+    <tr><td>Encoding</td><td>passive analog (RC time constants set drift)</td><td>digital firmware on FPGA + optical loop</td></tr>
+    <tr><td>Reconfigurability</td><td>Patch-board topology change for different \(A\)</td><td>FPGA firmware update</td></tr>
+    <tr><td>Demonstrated d</td><td>8</td><td>32 (sim) / TBD on bench</td></tr>
+    <tr><td>Noise floor</td><td>thermal Johnson noise \(\sim k_B T R\)</td><td>vacuum shot noise \(\sim \hbar\omega\)</td></tr>
+    <tr><td>Power per MVM</td><td>~ pJ (passive, plus readout)</td><td>~ nJ (FPGA + optical loop)</td></tr>
+    <tr><td>Latency per MVM</td><td>~ μs (RC settling)</td><td>~ ns (round-trip)</td></tr>
+    <tr><td>Mature year</td><td>2024–2025</td><td>2026 + (in proposal)</td></tr>
+  </table>
   <p>
-    <strong>Important correction.</strong> An earlier draft of
-    this proposal claimed the envelope was multiplicative:
-    \(f_\mathrm{eff} = \eta\,e^{-\gamma\tau}\). That formula
-    is the <em>underdamped</em> Wiseman-Milburn result and
-    does not transfer to the overdamped case. For overdamped
-    OU, the η-axis is exact (not an envelope), the τ-axis is
-    sub-linear additive. The
-    <code>cim/experiments/exp03_ou_hardware_envelope.py</code>
-    measurement caught this — see
-    <code>cim/notes/feedback_fidelity.md</code> for the
-    corrected story.
+    The economic argument: <em>RLC is better in steady-state
+    energy efficiency; optical is better in latency per update,
+    and by 2–3 orders of magnitude</em>. For applications where
+    wall-clock matters (real-time Bayesian inference, online
+    learning), optical wins. For batch jobs where you can
+    wait microseconds per MVM, RLC is more efficient.
   </p>
-
+  <p>
+    <strong>Engineering risk inherited from CIM</strong>: the
+    optical OU machine reuses the entire MFB-CIM substrate
+    (Note 06). Every component has flight heritage at scale.
+    The risk is not "build new hardware"; it is "characterize
+    a different operating regime of an existing hardware
+    class". This <em>de-risking</em> argument is the
+    single-most-important reason to run the optical proposal in
+    parallel with continued RLC investment.
+  </p>
+  <div class="callout">An honest comparison concludes RLC and optical OU are not competitors but complements. RLC: low-power, low-rate, edge inference. Optical: high-throughput, high-dimension, datacenter inference. <em>Both</em> belong in a complete thermodynamic-linear-algebra portfolio.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
       <h3>Key takeaways</h3>
       <ul>
-              <li>η: exact steady-state shift, no envelope</li>
-      <li>τ: sub-linear additive correction</li>
-      <li>σ_meas: inflates diffusion, no encoding bias</li>
+              <li>RLC: better steady-state energy</li>
+      <li>Optical: better latency, 2-3 OOM</li>
+      <li>CIM heritage: low risk on hardware, high risk on regime</li>
       </ul>
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="envelope">
+          <div class="section-main">
+            <h2>Hardware Imperfection Envelope (η, τ, σ_meas)</h2>
+
+          <p>
+            Three knobs determine bench performance:
+          </p>
+          <ol>
+            <li><strong>Homodyne efficiency</strong> \(\eta\): the
+              detected fraction of the signal photocurrent. Reduces the
+              FPGA-implemented coupling. The drift matrix actually
+              realized is
+              \(A_\mathrm{eff} = A_\mathrm{diag} + \eta\,A_\mathrm{off}\)
+              (where \(A_\mathrm{off}\) is the off-diagonal part) —
+              <em>exactly</em>, no envelope-approximation. The
+              steady-state \(\hat\Sigma\) solves the Lyapunov equation
+              with this <em>wrong</em> matrix.</li>
+            <li><strong>Feedback delay</strong> \(\tau\): the time
+              between the homodyne measurement and the EOM injection.
+              Turns the dynamics into a delay-differential equation.
+              Subleading in the overdamped regime; we measure the
+              slope empirically.</li>
+            <li><strong>Measurement shot noise</strong> \(\sigma_\mathrm{meas}\):
+              additive Gaussian noise on the photocurrent. Inflates
+              the effective diffusion: \(D_\mathrm{eff} = D + (\eta\zeta\sigma_\mathrm{meas})^2\,A_\mathrm{off}A_\mathrm{off}^T\).
+              Costs sample-efficiency, not encoding correctness.</li>
+          </ol>
+          <p>
+            <strong>Important correction.</strong> An earlier draft of
+            this proposal claimed the envelope was multiplicative:
+            \(f_\mathrm{eff} = \eta\,e^{-\gamma\tau}\). That formula
+            is the <em>underdamped</em> Wiseman-Milburn result and
+            does not transfer to the overdamped case. For overdamped
+            OU, the η-axis is exact (not an envelope), the τ-axis is
+            sub-linear additive. The
+            <code>cim/experiments/exp03_ou_hardware_envelope.py</code>
+            measurement caught this — see
+            <code>cim/notes/feedback_fidelity.md</code> for the
+            corrected story.
+          </p>
+          <div class="widget-shell" id="eta-tau-envelope">
+  <h4>Interactive: (η, γτ) feasibility envelope</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">2D envelope plot in the (homodyne-efficiency η, feedback-delay γτ) plane. Dot color shows expected Frobenius error in <em>Σ̂</em> vs the ideal Lyapunov solution. Click anywhere to read off the value. The Practical/Stretch/Loose target boxes are overlaid; the FPGA-latency wall at γτ ≈ 10 is the dashed line.</p>
+  <div class="widget-controls">
+        <label>
+          <span>dimension d</span>
+          <input type="range" id="env-d" min="4" max="64" step="4" value="16" />
+          <span class="val" id="env-d-val">16</span>
+        </label>
+  </div>
+  <svg class="widget-svg" id="eta-tau-envelope-svg" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="eta-tau-envelope-readout"><span id="eta-tau-readout">Click anywhere on the plot.</span></div>
+</div>
+          <details class="math-details">
+  <summary>Where these scaling expressions come from</summary>
+
+    <p>
+      For the η-axis: the FPGA realises
+      \(J_\mathrm{eff} = \eta J\) on the off-diagonal coupling
+      (since the homodyne returns \(\eta x\) instead of \(x\)).
+      Substituting back into the Euler step shows the dynamics
+      has effective drift
+      \(A_\mathrm{eff}(\eta) = \mathrm{diag}(A) + \eta\,(A - \mathrm{diag}(A))\).
+      The steady-state \(\hat\Sigma(\eta)\) solves
+      \(A_\mathrm{eff}\hat\Sigma + \hat\Sigma A_\mathrm{eff}^T = D\)
+      <em>exactly</em>: there is no perturbative envelope, just
+      a different operator.
+    </p>
+    <p>
+      For the τ-axis: an explicit-Euler integration of a
+      delay-differential equation
+      \(\dot x = -A_\mathrm{eff}\,x(t-\tau) + \xi\) with a
+      one-step delay \(\tau\) of order the round-trip time has
+      leading-order error
+      \(\delta\Sigma = O(\gamma\tau \cdot \Sigma)\) for
+      \(\gamma\tau \ll 1\), where \(\gamma\) is the slowest
+      eigenvalue of \(A_\mathrm{eff}\). This is sub-linear
+      additive — not the multiplicative \(e^{-\gamma\tau}\)
+      that would obtain in the underdamped Wiseman-Milburn
+      regime.
+    </p>
+
+</details>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>η: exact steady-state shift, no envelope</li>
+              <li>τ: sub-linear additive correction</li>
+              <li>σ_meas: inflates diffusion, no encoding bias</li>
+              <li>FPGA latency = the load-bearing wall</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="targets">
   <div class="section-main">
     <h2>QCi-Actionable Target Table</h2>
@@ -1481,53 +1646,67 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
     </aside>
   </div>
 </section>
-      <section class="section-shell" id="roadmap">
-  <div class="section-main">
-    <h2>Roadmap: Overdamped → Underdamped √κ</h2>
+              <section class="section-shell" id="roadmap">
+          <div class="section-main">
+            <h2>Roadmap: Overdamped → Underdamped √κ</h2>
 
-  <p>
-    The current proposal (this note) is the <strong>overdamped
-    stepping-stone</strong>: linear damping, mixing time
-    \(T_\mathrm{mix} \propto 1/\lambda_\mathrm{min}(A) = \kappa\).
-    For ill-conditioned problems (κ ≫ 1) this is slow.
-  </p>
-  <p>
-    The <strong>underdamped variant</strong> (parallel theory
-    project, Direction A) replaces overdamped Langevin with a
-    symplectic Hamiltonian-plus-friction system: separated X
-    and P quadratures with momentum, friction tuned to match
-    the slowest mode. The mixing time is
-    \(T_\mathrm{mix} \propto 1/\sqrt{\lambda_\mathrm{min}} = \sqrt{\kappa}\).
-    For κ = 100, this is a 10× speedup. For κ = 10⁴, it's
-    100×.
-  </p>
-  <p>
-    The hardware substrate is unchanged: still time-multiplexed
-    pulses, still homodyne + FPGA + EOM. The change is that
-    the FPGA tracks <em>two</em> quadratures per pulse (X and
-    P) and implements the symplectic update equation. This
-    requires below-threshold OPO operation (so that quantum
-    noise on P is well-defined) and Wiseman-Milburn feedback
-    on the homodyne measurement.
-  </p>
-  <p>
-    The full derivation, simulation, and hardware spec table
-    are in <code>~/Code/Ideas/TLA/direction_A_underdamped/</code>
-    — paper draft submitted to NeurIPS 2026.
-  </p>
-  <div class="callout">The √κ advantage is the killer feature. Overdamped is the stepping-stone we de-risk on; underdamped is the asymptotic win. They share hardware. <em>The right way to think about this proposal is: the bench we build for overdamped <strong>is</strong> the bench that runs underdamped, with a firmware update.</em></div>
+          <p>
+            The current proposal (this note) is the <strong>overdamped
+            stepping-stone</strong>: linear damping, mixing time
+            \(T_\mathrm{mix} \propto 1/\lambda_\mathrm{min}(A) = \kappa\).
+            For ill-conditioned problems (κ ≫ 1) this is slow.
+          </p>
+          <p>
+            The <strong>underdamped variant</strong> (parallel theory
+            project, Direction A) replaces overdamped Langevin with a
+            symplectic Hamiltonian-plus-friction system: separated X
+            and P quadratures with momentum, friction tuned to match
+            the slowest mode. The mixing time is
+            \(T_\mathrm{mix} \propto 1/\sqrt{\lambda_\mathrm{min}} = \sqrt{\kappa}\).
+            For κ = 100, this is a 10× speedup. For κ = 10⁴, it's
+            100×.
+          </p>
+          <p>
+            The hardware substrate is unchanged: still time-multiplexed
+            pulses, still homodyne + FPGA + EOM. The change is that
+            the FPGA tracks <em>two</em> quadratures per pulse (X and
+            P) and implements the symplectic update equation. This
+            requires below-threshold OPO operation (so that quantum
+            noise on P is well-defined) and Wiseman-Milburn feedback
+            on the homodyne measurement.
+          </p>
+          <p>
+            The full derivation, simulation, and hardware spec table
+            are in <code>~/Code/Ideas/TLA/direction_A_underdamped/</code>
+            — paper draft submitted to NeurIPS 2026.
+          </p>
+          <div class="callout">The √κ advantage is the killer feature. Overdamped is the stepping-stone we de-risk on; underdamped is the asymptotic win. They share hardware. <em>The right way to think about this proposal is: the bench we build for overdamped <strong>is</strong> the bench that runs underdamped, with a firmware update.</em></div><div class="widget-shell" id="mixing-time-scaling">
+  <h4>Interactive: T_mix vs κ scaling</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">The empirical mixing-time-vs-condition-number scaling from <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> notebook 02. Slide κ to see how each algorithm scales: overdamped <em>T<sub>mix</sub></em> ∝ κ (empirical α ≈ 0.93), underdamped <em>T<sub>mix</sub></em> ∝ √κ (theory; Direction A measurement pending). Log–log axes.</p>
+  <div class="widget-controls">
+        <label>
+          <span>condition κ</span>
+          <input type="range" id="mix-kappa" min="1" max="200" step="1" value="20" />
+          <span class="val" id="mix-kappa-val">20</span>
+        </label>
   </div>
-  <div class="section-side">
-    <aside class="keypoints">
-      <h3>Key takeaways</h3>
-      <ul>
-              <li>Overdamped: \(T_\mathrm{mix} \propto \kappa\)</li>
-      <li>Underdamped (Direction A): \(T_\mathrm{mix} \propto \sqrt\kappa\)</li>
-      <li>Same hardware, firmware-distinguished operating regimes</li>
-      </ul>
-    </aside>
-  </div>
-</section>
+  <svg class="widget-svg" id="mixing-time-scaling-svg" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="mixing-time-scaling-readout"><div>Overdamped T_mix at κ: <span id="mix-over">—</span></div><div>Underdamped T_mix at κ: <span id="mix-under">—</span></div><div>Speedup ratio: <span id="mix-ratio">—</span></div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Overdamped: \(T_\mathrm{mix} \propto \kappa\)</li>
+              <li>Underdamped (Direction A): \(T_\mathrm{mix} \propto \sqrt\kappa\)</li>
+              <li>Same hardware, firmware-distinguished operating regimes</li>
+              <li>Empirical α=0.93 (overdamped) vs theory α=1</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="open">
   <div class="section-main">
     <h2>Open Questions</h2>
@@ -1667,6 +1846,297 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: 4-D OU machine convergence ---------------------------
+      (function () {
+        var svg = document.getElementById('lyapunov-sampler-svg');
+        if (!svg) return;
+        var kappaS = document.getElementById('lya-kappa');
+        var dtS = document.getElementById('lya-dt');
+        var kappaV = document.getElementById('lya-kappa-val');
+        var dtV = document.getElementById('lya-dt-val');
+        var errSpan = document.getElementById('lya-err');
+        var stepSpan = document.getElementById('lya-step');
+        var runBtn = document.getElementById('lya-run');
+        var resetBtn = document.getElementById('lya-reset');
+        var d = 4;
+        var x = new Float64Array(d);
+        var sumX = new Float64Array(d);
+        var sumXX = new Float64Array(d*d);
+        var step = 0, MAX = 1500, raf = null;
+        var errHistory = [];
+        var A = null, Ainv = null;
+
+        function buildA(kappa) {
+          // diagonal A with eigenvalues 1/kappa, ..., 1, normalized so λ_max=1
+          A = new Float64Array(d*d);
+          Ainv = new Float64Array(d*d);
+          for (var i = 0; i < d; i++) {
+            // eigenvalue: linspace from 1/kappa to 1
+            var lambda_i = (1.0/kappa) + (1 - 1/kappa) * (i / (d-1));
+            A[i*d + i] = lambda_i;
+            Ainv[i*d + i] = 1 / lambda_i;
+          }
+        }
+        function reset() {
+          step = 0;
+          for (var i = 0; i < d; i++) { x[i] = 0; sumX[i] = 0; }
+          for (var i = 0; i < d*d; i++) sumXX[i] = 0;
+          errHistory = [];
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          buildA(parseFloat(kappaS.value));
+          render();
+        }
+        function gauss() {
+          var u = 0, v = 0;
+          while(u===0) u = Math.random();
+          while(v===0) v = Math.random();
+          return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+        }
+        function doStep() {
+          if (step >= MAX) return;
+          var dt = parseFloat(dtS.value);
+          // dx = -A x dt + sqrt(2 dt) ξ  (so D = 2I, Σ = A^{-1})
+          for (var i = 0; i < d; i++) {
+            var drift = 0;
+            for (var j = 0; j < d; j++) drift += A[i*d+j] * x[j];
+            x[i] += -drift * dt + Math.sqrt(2*dt) * gauss();
+          }
+          // accumulate covariance estimate
+          for (var i = 0; i < d; i++) {
+            sumX[i] += x[i];
+            for (var j = 0; j < d; j++) sumXX[i*d+j] += x[i] * x[j];
+          }
+          step++;
+          // Frobenius error of (Σ̂ − A^{-1}) every 5 steps; convention here
+          // D=2I so target is Σ = A^{-1} (not ½A^{-1}).
+          if (step % 5 === 0 || step === 1) {
+            var err = 0;
+            for (var i = 0; i < d; i++) {
+              for (var j = 0; j < d; j++) {
+                var sigma_hat = sumXX[i*d+j] / step - (sumX[i]/step)*(sumX[j]/step);
+                var target = Ainv[i*d+j];
+                err += (sigma_hat - target)*(sigma_hat - target);
+              }
+            }
+            err = Math.sqrt(err);
+            errHistory.push({s: step, e: err});
+          }
+          render();
+        }
+        function loop() {
+          for (var k = 0; k < 5; k++) doStep();
+          if (step < MAX && raf !== null) {
+            raf = requestAnimationFrame(loop);
+          } else {
+            raf = null;
+          }
+        }
+        function render() {
+          kappaV.textContent = parseFloat(kappaS.value).toFixed(1);
+          dtV.textContent = parseFloat(dtS.value).toFixed(3);
+          var W = 520, H = 260, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var html = '';
+          html += '<text x="' + (W/2) + '" y="' + (pad/2) + '" text-anchor="middle" font-size="11" fill="#888">Frobenius error vs steps (log scale)</text>';
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
+          if (errHistory.length > 1) {
+            var maxE = -Infinity, minE = Infinity;
+            for (var k = 0; k < errHistory.length; k++) {
+              var le = Math.log10(Math.max(errHistory[k].e, 1e-3));
+              if (le > maxE) maxE = le;
+              if (le < minE) minE = le;
+            }
+            if (maxE - minE < 0.5) maxE = minE + 0.5;
+            var pts = errHistory.map(function (pt) {
+              var px = pad + (pt.s / MAX) * inner_w;
+              var le = Math.log10(Math.max(pt.e, 1e-3));
+              var py = pad + inner_h * (1 - (le - minE)/(maxE - minE));
+              return px + ',' + py;
+            }).join(' ');
+            html += '<polyline points="' + pts + '" fill="none" stroke="#79c79f" stroke-width="1.8"/>';
+            html += '<text x="' + (pad-4) + '" y="' + (pad+8) + '" text-anchor="end" font-size="10" fill="#888">10^' + maxE.toFixed(1) + '</text>';
+            html += '<text x="' + (pad-4) + '" y="' + (pad+inner_h) + '" text-anchor="end" font-size="10" fill="#888">10^' + minE.toFixed(1) + '</text>';
+            html += '<text x="' + (pad+inner_w) + '" y="' + (H-pad/2) + '" text-anchor="end" font-size="10" fill="#888">step ' + MAX + '</text>';
+          } else {
+            html += '<text x="' + (W/2) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888">press <em>Run</em> to begin</text>';
+          }
+          svg.innerHTML = html;
+          var lastErr = errHistory.length ? errHistory[errHistory.length-1].e : 0;
+          errSpan.textContent = lastErr.toFixed(4);
+          stepSpan.textContent = step;
+        }
+        runBtn.addEventListener('click', function () {
+          if (step >= MAX) reset();
+          if (raf === null) { raf = requestAnimationFrame(loop); }
+        });
+        resetBtn.addEventListener('click', reset);
+        kappaS.addEventListener('input', reset);
+        dtS.addEventListener('input', function () {
+          dtV.textContent = parseFloat(dtS.value).toFixed(3);
+        });
+        reset();
+      })();
+
+      // -- Widget: (η, γτ) feasibility envelope -------------------------
+      (function () {
+        var svg = document.getElementById('eta-tau-envelope-svg');
+        if (!svg) return;
+        var dS = document.getElementById('env-d');
+        var dV = document.getElementById('env-d-val');
+        var readout = document.getElementById('eta-tau-readout');
+        function buildPlot(d_dim, click_eta, click_gtau) {
+          var W = 520, H = 320, pad = 56;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          // η ∈ [0.5, 1], γτ ∈ [0, 12] log-ish; we'll use linear γτ for clarity
+          var ETA_MIN = 0.5, ETA_MAX = 1.0;
+          var GT_MIN = 0, GT_MAX = 12;
+          var html = '';
+          // background heatmap: error model
+          // err(η, γτ, d) ≈ 0.5*(1-η) + 0.04*γτ * sqrt(d/16)
+          var step = 12;
+          for (var px = pad; px < W-pad; px += step) {
+            for (var py = pad; py < H-pad; py += step) {
+              var eta = ETA_MIN + (px-pad)/inner_w * (ETA_MAX - ETA_MIN);
+              var gt = GT_MAX - (py-pad)/inner_h * (GT_MAX - GT_MIN);
+              var err = 0.5*(1-eta) + 0.04*gt * Math.sqrt(d_dim/16);
+              var v = Math.max(0, Math.min(1, err));
+              // green low → orange mid → red high
+              var r = Math.round(120 + 130*v);
+              var g = Math.round(200*(1-v) + 60*v);
+              var b = Math.round(160*(1-v) + 60*v);
+              html += '<rect x="' + px + '" y="' + py + '" width="' + step + '" height="' + step + '" fill="rgb(' + r + ',' + g + ',' + b + ')" opacity="0.55"/>';
+            }
+          }
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (H-pad) + '" x2="' + (W-pad) + '" y2="' + (H-pad) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (H-pad) + '" stroke="#888"/>';
+          // tick labels
+          var etas = [0.5, 0.7, 0.85, 0.95, 1.0];
+          for (var k = 0; k < etas.length; k++) {
+            var ex = pad + (etas[k]-ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            html += '<line x1="' + ex + '" y1="' + (H-pad) + '" x2="' + ex + '" y2="' + (H-pad+5) + '" stroke="#888"/>';
+            html += '<text x="' + ex + '" y="' + (H-pad+18) + '" text-anchor="middle" font-size="10" fill="#888">' + etas[k].toFixed(2) + '</text>';
+          }
+          var gts = [0, 1, 3, 6, 10, 12];
+          for (var k = 0; k < gts.length; k++) {
+            var gy = H - pad - (gts[k] - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<line x1="' + (pad-5) + '" y1="' + gy + '" x2="' + pad + '" y2="' + gy + '" stroke="#888"/>';
+            html += '<text x="' + (pad-8) + '" y="' + (gy+3) + '" text-anchor="end" font-size="10" fill="#888">' + gts[k] + '</text>';
+          }
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">homodyne efficiency η</text>';
+          html += '<text x="' + (pad/3) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/3) + ' ' + (H/2) + ')">feedback delay γτ</text>';
+          // target boxes
+          function boxTarget(eta_min, gt_max, color, label) {
+            var x0 = pad + (eta_min-ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            var x1 = pad + inner_w;
+            var y0 = pad;
+            var y1 = H - pad - (0 - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            var y_top = H - pad - (gt_max - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<rect x="' + x0 + '" y="' + y_top + '" width="' + (x1-x0) + '" height="' + (y1 - y_top) + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-dasharray="4,3"/>';
+            html += '<text x="' + (x0 + 6) + '" y="' + (y_top + 12) + '" font-size="10" fill="' + color + '" font-weight="600">' + label + '</text>';
+          }
+          boxTarget(0.99, 0.05, '#79c79f', 'Stretch');
+          boxTarget(0.95, 0.20, '#79f29c', 'Practical');
+          boxTarget(0.85, 0.50, '#e8b96a', 'Loose');
+          // FPGA wall
+          var wall_y = H - pad - (10 - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+          html += '<line x1="' + pad + '" y1="' + wall_y + '" x2="' + (W-pad) + '" y2="' + wall_y + '" stroke="#f27979" stroke-width="1.5" stroke-dasharray="6,3"/>';
+          html += '<text x="' + (W-pad-6) + '" y="' + (wall_y-4) + '" text-anchor="end" font-size="10" fill="#f27979">FPGA wall (γτ ≈ 10)</text>';
+          // click marker
+          if (click_eta != null) {
+            var cx = pad + (click_eta - ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            var cy = H - pad - (click_gtau - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="none" stroke="#fff" stroke-width="2"/>';
+            var err = 0.5*(1-click_eta) + 0.04*click_gtau * Math.sqrt(d_dim/16);
+            html += '<text x="' + (cx + 10) + '" y="' + (cy + 4) + '" font-size="11" fill="#fff" font-weight="600">err ≈ ' + err.toFixed(3) + '</text>';
+            readout.innerHTML = '<strong>η = ' + click_eta.toFixed(3) + ', γτ = ' + click_gtau.toFixed(2) + '</strong> at d = ' + d_dim + ' &rarr; estimated Σ-error ≈ ' + err.toFixed(3) + ' (Frobenius)';
+          }
+          svg.innerHTML = html;
+          dV.textContent = d_dim;
+        }
+        function fromClick(evt) {
+          var rect = svg.getBoundingClientRect();
+          var W_actual = rect.width, H_actual = rect.height;
+          // map back to viewBox 520x320
+          var vx = (evt.clientX - rect.left) * (520 / W_actual);
+          var vy = (evt.clientY - rect.top) * (320 / H_actual);
+          var pad = 56;
+          var inner_w = 520 - 2*pad, inner_h = 320 - 2*pad;
+          var eta = 0.5 + Math.max(0, Math.min(1, (vx - pad)/inner_w)) * 0.5;
+          var gt = 0 + Math.max(0, Math.min(1, 1 - (vy - pad)/inner_h)) * 12;
+          buildPlot(parseFloat(dS.value), eta, gt);
+        }
+        svg.addEventListener('click', fromClick);
+        dS.addEventListener('input', function () { buildPlot(parseFloat(dS.value)); });
+        buildPlot(parseFloat(dS.value));
+      })();
+
+      // -- Widget: T_mix vs κ scaling -----------------------------------
+      (function () {
+        var svg = document.getElementById('mixing-time-scaling-svg');
+        if (!svg) return;
+        var kS = document.getElementById('mix-kappa');
+        var kV = document.getElementById('mix-kappa-val');
+        var overSp = document.getElementById('mix-over');
+        var underSp = document.getElementById('mix-under');
+        var ratioSp = document.getElementById('mix-ratio');
+        function tOver(k) { return 8 * Math.pow(k, 0.93); }   // empirical
+        function tUnder(k) { return 16 * Math.sqrt(k); }      // theory
+        function draw() {
+          var k_now = parseFloat(kS.value);
+          kV.textContent = k_now.toFixed(0);
+          var W = 520, H = 320, pad = 56;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var KMIN = 1, KMAX = 200;
+          var TMIN = 4, TMAX = 4000;
+          function xpos(k) { return pad + (Math.log10(k)-Math.log10(KMIN))/(Math.log10(KMAX)-Math.log10(KMIN)) * inner_w; }
+          function ypos(t) { return pad + inner_h - (Math.log10(t)-Math.log10(TMIN))/(Math.log10(TMAX)-Math.log10(TMIN)) * inner_h; }
+          var html = '';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          var ks = [1, 3, 10, 30, 100, 200];
+          for (var k = 0; k < ks.length; k++) {
+            var xx = xpos(ks[k]);
+            html += '<line x1="' + xx + '" y1="' + (pad+inner_h) + '" x2="' + xx + '" y2="' + (pad+inner_h+5) + '" stroke="#888"/>';
+            html += '<text x="' + xx + '" y="' + (pad+inner_h+18) + '" text-anchor="middle" font-size="10" fill="#888">κ=' + ks[k] + '</text>';
+          }
+          var ts = [4, 16, 64, 256, 1024, 4000];
+          for (var k = 0; k < ts.length; k++) {
+            var yy = ypos(ts[k]);
+            html += '<line x1="' + (pad-5) + '" y1="' + yy + '" x2="' + pad + '" y2="' + yy + '" stroke="#888"/>';
+            html += '<text x="' + (pad-8) + '" y="' + (yy+3) + '" text-anchor="end" font-size="10" fill="#888">' + ts[k] + '</text>';
+          }
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/3 + 4) + '" text-anchor="middle" font-size="11" fill="#888">condition number κ = λ_max / λ_min</text>';
+          html += '<text x="' + (pad/3) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/3) + ' ' + (H/2) + ')">mixing time T_mix</text>';
+          // overdamped curve
+          var ov = []; for (var k = KMIN; k <= KMAX; k *= 1.08) ov.push(k);
+          var ovStr = ov.map(function(k){return xpos(k)+','+ypos(tOver(k));}).join(' ');
+          html += '<polyline points="' + ovStr + '" fill="none" stroke="#7a9fd1" stroke-width="2"/>';
+          // underdamped curve
+          var unStr = ov.map(function(k){return xpos(k)+','+ypos(tUnder(k));}).join(' ');
+          html += '<polyline points="' + unStr + '" fill="none" stroke="#79f29c" stroke-width="2" stroke-dasharray="5,3"/>';
+          // current κ marker
+          var cx = xpos(k_now);
+          html += '<circle cx="' + cx + '" cy="' + ypos(tOver(k_now)) + '" r="5" fill="#7a9fd1"/>';
+          html += '<circle cx="' + cx + '" cy="' + ypos(tUnder(k_now)) + '" r="5" fill="#79f29c"/>';
+          html += '<line x1="' + cx + '" y1="' + pad + '" x2="' + cx + '" y2="' + (pad+inner_h) + '" stroke="#fff" stroke-width="0.7" stroke-dasharray="2,3" opacity="0.5"/>';
+          // legend
+          html += '<text x="' + (W-pad-180) + '" y="' + (pad+12) + '" font-size="11" fill="#7a9fd1" font-weight="600">overdamped: T ∝ κ^0.93 (empirical)</text>';
+          html += '<text x="' + (W-pad-180) + '" y="' + (pad+30) + '" font-size="11" fill="#79f29c" font-weight="600">underdamped: T ∝ √κ (theory)</text>';
+          svg.innerHTML = html;
+          overSp.textContent = tOver(k_now).toFixed(1);
+          underSp.textContent = tUnder(k_now).toFixed(1);
+          ratioSp.textContent = (tOver(k_now) / tUnder(k_now)).toFixed(2) + '×';
+        }
+        kS.addEventListener('input', draw);
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

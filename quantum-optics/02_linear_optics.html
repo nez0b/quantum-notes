@@ -1208,6 +1208,7 @@
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
         <a href="#two-mode-bs">2-Mode BS</a>
+<a href="#bs-mixer">BS Mixer Lab</a>
 <a href="#hom">Hong-Ou-Mandel</a>
 <a href="#mzi">Mach-Zehnder</a>
 <a href="#decompositions">Decompositions</a>
@@ -1265,6 +1266,51 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="bs-mixer">
+          <div class="section-main">
+            <h2>Interactive: Beam-Splitter Mixer</h2>
+
+          <div class="widget-shell" id="bs-mixer">
+  <h4>Two-mode beam splitter: phase + transmittance</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Two coherent inputs <em>α</em>₁, <em>α</em>₂ enter a BS with transmittance <em>T</em> and relative input phase <em>φ</em>. The output amplitudes <em>β</em>₁ = √<em>T</em> <em>α</em>₁ + i√(1−<em>T</em>) e<sup>iφ</sup> <em>α</em>₂, <em>β</em>₂ = i√(1−<em>T</em>) <em>α</em>₁ + √<em>T</em> e<sup>iφ</sup> <em>α</em>₂. Watch the output intensities trace out the cosine interference pattern as you sweep <em>φ</em>.</p>
+  <div class="widget-controls">
+        <label>
+          <span>transmittance T</span>
+          <input type="range" id="bs-T" min="0" max="1" step="0.01" value="0.5" />
+          <span class="val" id="bs-T-val">0.50</span>
+        </label>
+        <label>
+          <span>phase φ</span>
+          <input type="range" id="bs-phi" min="0" max="6.283" step="0.05" value="0.0" />
+          <span class="val" id="bs-phi-val">0.00</span>
+        </label>
+        <label>
+          <span>|α₁|</span>
+          <input type="range" id="bs-a1" min="0" max="2.5" step="0.05" value="1.0" />
+          <span class="val" id="bs-a1-val">1.00</span>
+        </label>
+        <label>
+          <span>|α₂|</span>
+          <input type="range" id="bs-a2" min="0" max="2.5" step="0.05" value="1.0" />
+          <span class="val" id="bs-a2-val">1.00</span>
+        </label>
+  </div>
+  <svg class="widget-svg" id="bs-mixer-svg" viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="bs-mixer-readout"><div>|β₁|² = <span id="bs-out1">—</span> &nbsp; |β₂|² = <span id="bs-out2">—</span></div><div>Total |β|² = <span id="bs-tot">—</span> (should equal |α₁|²+|α₂|² for a unitary)</div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>BS = 2×2 unitary, phase-sensitive</li>
+              <li>Output intensities are sinusoidal in φ</li>
+              <li>Total photon number is conserved</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="hom">
   <div class="section-main">
     <h2>Hong-Ou-Mandel Interference</h2>
@@ -1495,6 +1541,72 @@
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: beam-splitter mixer (SVG diagram + intensities) ------
+      (function () {
+        var svg = document.getElementById('bs-mixer-svg');
+        if (!svg) return;
+        var els = {};
+        ['T', 'phi', 'a1', 'a2'].forEach(function (k) {
+          els[k] = document.getElementById('bs-' + k);
+          els[k+'V'] = document.getElementById('bs-' + k + '-val');
+        });
+        var out1 = document.getElementById('bs-out1');
+        var out2 = document.getElementById('bs-out2');
+        var tot = document.getElementById('bs-tot');
+        function draw() {
+          var T = parseFloat(els.T.value);
+          var phi = parseFloat(els.phi.value);
+          var a1 = parseFloat(els.a1.value);
+          var a2 = parseFloat(els.a2.value);
+          els.TV.textContent = T.toFixed(2);
+          els.phiV.textContent = phi.toFixed(2);
+          els.a1V.textContent = a1.toFixed(2);
+          els.a2V.textContent = a2.toFixed(2);
+          // β₁ = √T α₁ + i√(1-T) e^(iφ) α₂  (real α treatment)
+          // β₂ = i√(1-T) α₁ + √T e^(iφ) α₂
+          var rT = Math.sqrt(T), rR = Math.sqrt(1-T);
+          var c = Math.cos(phi), s = Math.sin(phi);
+          // re/im of β₁
+          var b1r = rT*a1 - rR*a2*s;
+          var b1i = rR*a2*c;
+          var b2r = -rR*a1*s + rT*a2*c;
+          var b2i = rR*a1 + rT*a2*s;
+          var I1 = b1r*b1r + b1i*b1i;
+          var I2 = b2r*b2r + b2i*b2i;
+          var W = 520, H = 260, cx = W/2, cy = H/2;
+          var html = '';
+          // BS as a 45° box
+          html += '<rect x="' + (cx-30) + '" y="' + (cy-30) + '" width="60" height="60" fill="rgba(122,159,209,0.15)" stroke="#7a9fd1" stroke-width="1.5" transform="rotate(45 ' + cx + ' ' + cy + ')"/>';
+          html += '<text x="' + cx + '" y="' + (cy+5) + '" text-anchor="middle" font-size="11" fill="#7a9fd1">BS</text>';
+          // input 1: from left
+          html += '<line x1="40" y1="' + cy + '" x2="' + (cx-50) + '" y2="' + cy + '" stroke="#888" stroke-width="2"/>';
+          html += '<text x="40" y="' + (cy-8) + '" font-size="11" fill="#7a9fd1">α₁ = ' + a1.toFixed(2) + '</text>';
+          // input 2: from top
+          html += '<line x1="' + cx + '" y1="40" x2="' + cx + '" y2="' + (cy-50) + '" stroke="#888" stroke-width="2"/>';
+          html += '<text x="' + (cx+8) + '" y="40" font-size="11" fill="#e8b96a">α₂ e^{iφ} = ' + a2.toFixed(2) + ' e^{i' + phi.toFixed(2) + '}</text>';
+          // output 1: to right
+          var maxI = Math.max(I1, I2, 0.001);
+          var w1 = 1 + 6*Math.sqrt(I1 / maxI);
+          var w2 = 1 + 6*Math.sqrt(I2 / maxI);
+          html += '<line x1="' + (cx+50) + '" y1="' + cy + '" x2="' + (W-40) + '" y2="' + cy + '" stroke="#79c79f" stroke-width="' + w1.toFixed(1) + '"/>';
+          html += '<text x="' + (W-40) + '" y="' + (cy-8) + '" text-anchor="end" font-size="11" fill="#79c79f">|β₁|² = ' + I1.toFixed(2) + '</text>';
+          // output 2: down
+          html += '<line x1="' + cx + '" y1="' + (cy+50) + '" x2="' + cx + '" y2="' + (H-30) + '" stroke="#79c79f" stroke-width="' + w2.toFixed(1) + '"/>';
+          html += '<text x="' + (cx+8) + '" y="' + (H-30) + '" font-size="11" fill="#79c79f">|β₂|² = ' + I2.toFixed(2) + '</text>';
+          // T label
+          html += '<text x="20" y="20" font-size="11" fill="#888">T = ' + T.toFixed(2) + ' (transmittance)</text>';
+          svg.innerHTML = html;
+          out1.textContent = I1.toFixed(3);
+          out2.textContent = I2.toFixed(3);
+          tot.textContent = (I1+I2).toFixed(3) + '  vs.  α₁²+α₂² = ' + (a1*a1+a2*a2).toFixed(3);
+        }
+        ['T', 'phi', 'a1', 'a2'].forEach(function (k) { els[k].addEventListener('input', draw); });
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

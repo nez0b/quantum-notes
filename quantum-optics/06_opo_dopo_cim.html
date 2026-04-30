@@ -1210,11 +1210,17 @@
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
         <a href="#opo-basics">OPO Basics</a>
+<a href="#below-threshold">Below Threshold</a>
 <a href="#dopo">DOPO Bifurcation</a>
 <a href="#quantum-classical">Quantum vs Classical</a>
 <a href="#mfb-network">MFB Network</a>
+<a href="#time-multiplexing">Time-Multiplex</a>
 <a href="#ising-mapping">Ising Mapping</a>
+<a href="#qubo-mappings">QUBO &amp; Beyond</a>
 <a href="#rosetta">Update Rosetta</a>
+<a href="#comparison">vs Annealers / SA</a>
+<a href="#scaling">Scaling</a>
+<a href="#open-questions">Open Questions</a>
 <a href="#sota">State of the Art</a>
 <a href="#sources">Sources</a>
   </div>
@@ -1264,168 +1270,429 @@
     </aside>
   </div>
 </section>
-      <section class="section-shell" id="dopo">
+      <section class="section-shell" id="below-threshold">
   <div class="section-main">
-    <h2>The DOPO Bifurcation</h2>
+    <h2>Below Threshold: The Squeezed-Vacuum Source</h2>
 
+  <p class="lede">
+    Below threshold, an OPO is the canonical workhorse for
+    generating <em>squeezed vacuum</em> — a state with one
+    quadrature variance below the shot-noise floor and the
+    other above (Note 03 introduced the squeeze operator
+    \(S(r)\); here we generate it physically).
+  </p>
   <p>
-    For a <em>degenerate</em> OPO (signal frequency = idler
-    frequency, same mode), the gain term in the Hamiltonian is
-    \(\sim a^{\dagger 2}\) — same as the squeeze operator
-    generator. Above threshold, pump depletion enters and the
-    mean-field equation becomes (e.g. Drummond, McNeil, Walls
-    1980):
+    Linearizing the intracavity equations around \(a = 0\)
+    and solving for the steady-state output via input-output
+    (Note 04, Gardiner-Collett),
     \[
-      \dot\alpha = (p - 1)\alpha - \mu\lvert\alpha\rvert^2 \alpha
-        + \xi(t),
+      \langle X_\mathrm{out}^2 \rangle
+        = \frac{1}{4}\,\frac{1 - \eta\,\Lambda}{1 + \Lambda},
+      \qquad
+      \langle P_\mathrm{out}^2 \rangle
+        = \frac{1}{4}\,\frac{1 + \eta\,\Lambda}{1 - \Lambda},
     \]
-    where \(p = g\lvert\beta_p\rvert/\kappa\) is the normalized
-    pump (1 at threshold), \(\mu \propto g^2/\kappa\) is the
-    saturation coefficient, and \(\xi(t)\) is the linearized
-    quantum noise (vacuum input). The dynamics is exactly the
-    normal form of a <strong>pitchfork bifurcation</strong>.
+    where \(\Lambda = (g\lvert\beta_p\rvert/\kappa)^2 = p^2\) and
+    \(\eta\) is the detection efficiency (1 for perfect
+    detection). At threshold \(p \to 1\), the squeezed
+    quadrature variance \(\to 0\) and the anti-squeezed
+    quadrature \(\to \infty\) — perfect EPR correlations are a
+    critical phenomenon of the OPO.
   </p>
   <p>
-    Below threshold (\(p < 1\)): the only stable fixed point is
-    \(\alpha = 0\) — squeezed vacuum. Above threshold (\(p > 1\)):
-    two stable fixed points at \(\alpha = \pm\sqrt{(p-1)/\mu}\),
-    and the unstable origin. The cubic saturation
-    \(-\mu\lvert\alpha\rvert^2\alpha\) is what bounds the
-    oscillation amplitude. Because the gain term respects
-    \(\alpha \to -\alpha\), the steady-state phase is
-    spontaneously selected — by quantum noise during the
-    crossing of threshold.
+    <em>State of the art</em>: 15 dB squeezing demonstrated by
+    Vahlbruch et al.\ 2016 with periodically-poled KTP at
+    \(\eta \approx 0.99\), corresponding to
+    \(\langle X_\mathrm{out}^2\rangle / (1/4) \approx 0.032\) —
+    a 30× variance reduction. This is the working substrate
+    for gravitational-wave squeezed-light injection in LIGO.
   </p>
-  <div class="callout">The DOPO is a noise-driven coin flip. The phase the device commits to is selected by the quantum-noise fluctuation that happens to be largest at the moment the system crosses threshold. This noise-driven phase selection is the entire computational primitive of the CIM.</div>
+  <div class="callout">Below-threshold OPO and above-threshold DOPO are <em>the same device</em> with the pump knob turned. The bifurcation at threshold is therefore not just a computational primitive — it is the connection between two operational regimes that have utterly different applications (squeezed light for metrology vs.\ Ising spins for optimization).</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
       <h3>Key takeaways</h3>
       <ul>
-              <li>DOPO mean-field = pitchfork bifurcation</li>
-      <li>Two stable phases (\(\pm\)) above threshold</li>
-      <li>Quantum noise selects which phase wins</li>
+              <li>Below threshold: linearized Langevin = squeezed vacuum</li>
+      <li>Squeezed variance \(\to 0\) as \(p \to 1\) — critical</li>
+      <li>Vahlbruch 2016: 15 dB demonstrated</li>
       </ul>
     </aside>
   </div>
 </section>
-      <section class="section-shell" id="quantum-classical">
-  <div class="section-main">
-    <h2>When Is the CIM Quantum, When Is It Classical?</h2>
+              <section class="section-shell" id="dopo">
+          <div class="section-main">
+            <h2>The DOPO Bifurcation</h2>
 
-  <p>
-    This is the question the CIM literature has spent two
-    decades arguing about. The honest answer has three
-    ingredients:
-  </p>
-  <ol>
-    <li><strong>Far above threshold</strong>
-      (\(p \gg 1, \lvert\alpha\rvert \gg 1\)): the field is
-      bright, fluctuations are a small perturbation around the
-      mean, mean-field theory is exact to leading order in
-      \(1/\lvert\alpha\rvert\). The dynamics is operationally
-      <em>classical</em>: it can be simulated by an SDE with
-      the same equations of motion, no Hilbert space needed.</li>
-    <li><strong>Far below threshold</strong>
-      (\(p \ll 1, \lvert\alpha\rvert \to 0\)): the field is
-      vacuum-fluctuation-scale; the full Lindblad master
-      equation is needed; entanglement and squeezing are
-      intrinsically non-classical features. The cavity is in a
-      squeezed-vacuum state.</li>
-    <li><strong>At threshold</strong> (\(p \approx 1\)): both
-      limits fail. The system is sensitive to a finite (\(O(1)\))
-      number of quantum-fluctuation noise events, which then
-      get amplified by the pitchfork instability into
-      macroscopic phase commitments. This is where the
-      "quantum advantage" arguments live.</li>
-  </ol>
-  <p>
-    The empirical evidence so far (Hamerly et al.\ 2018, Honjo
-    et al.\ 2021, Marandi et al.\ ongoing): for the Ising
-    problems CIMs have been benchmarked on,
-    <em>classical-noise-driven simulators of the same equations
-    of motion solve them just as well as the actual machines.</em>
-    Whether there exist problem classes where the genuine
-    quantum noise at threshold outperforms classical noise
-    (e.g.\ via tunneling through saddle points) remains
-    open. That's the live research question, not a settled
-    claim.
-  </p>
-  <div class="callout">Don't conflate &ldquo;the dynamics involves quantum optics&rdquo; with &ldquo;the device offers a quantum computational advantage&rdquo;. The first is uncontroversial. The second is an open empirical question — and the answer is currently <em>&ldquo;no, on the problems tested so far&rdquo;</em>.</div>
+          <p>
+            For a <em>degenerate</em> OPO (signal frequency = idler
+            frequency, same mode), the gain term in the Hamiltonian is
+            \(\sim a^{\dagger 2}\) — same as the squeeze operator
+            generator. Above threshold, pump depletion enters and the
+            mean-field equation becomes (e.g. Drummond, McNeil, Walls
+            1980):
+            \[
+              \dot\alpha = (p - 1)\alpha - \mu\lvert\alpha\rvert^2 \alpha
+                + \xi(t),
+            \]
+            where \(p = g\lvert\beta_p\rvert/\kappa\) is the normalized
+            pump (1 at threshold), \(\mu \propto g^2/\kappa\) is the
+            saturation coefficient, and \(\xi(t)\) is the linearized
+            quantum noise (vacuum input). The dynamics is exactly the
+            normal form of a <strong>pitchfork bifurcation</strong>.
+          </p>
+          <p>
+            Below threshold (\(p < 1\)): the only stable fixed point is
+            \(\alpha = 0\) — squeezed vacuum. Above threshold (\(p > 1\)):
+            two stable fixed points at \(\alpha = \pm\sqrt{(p-1)/\mu}\),
+            and the unstable origin. The cubic saturation
+            \(-\mu\lvert\alpha\rvert^2\alpha\) is what bounds the
+            oscillation amplitude. Because the gain term respects
+            \(\alpha \to -\alpha\), the steady-state phase is
+            spontaneously selected — by quantum noise during the
+            crossing of threshold.
+          </p>
+          <div class="callout">The DOPO is a noise-driven coin flip. The phase the device commits to is selected by the quantum-noise fluctuation that happens to be largest at the moment the system crosses threshold. This noise-driven phase selection is the entire computational primitive of the CIM.</div><details class="math-details">
+  <summary>Detailed math: pitchfork normal form from pump depletion</summary>
+
+    <p>
+      Start with the two-mode Hamiltonian for a degenerate
+      parametric amplifier with a depleted pump:
+      \[
+        H = \omega\, a^\dagger a + 2\omega\, b^\dagger b
+          + \tfrac{i}{2} g\,(a^{\dagger 2} b - a^{2} b^\dagger).
+      \]
+      The Heisenberg equations, going to the rotating frame
+      and adding cavity decay \(\kappa\) to the signal mode and
+      \(\kappa_p\) to the pump:
+      \[
+        \dot a = -\kappa\, a + g\,a^\dagger b, \qquad
+        \dot b = -\kappa_p\,b - \tfrac{1}{2} g\,a^2 + \kappa_p\beta_\mathrm{in}.
+      \]
+      Adiabatically eliminate the pump (\(\kappa_p \gg \kappa\),
+      fast pump): \(b \approx \beta_\mathrm{in} - g a^2 / (2\kappa_p)\).
+      Substitute back into \(\dot a\):
+      \[
+        \dot a = -\kappa\, a + g\, a^\dagger \beta_\mathrm{in}
+               - \frac{g^2}{2\kappa_p}\,a^\dagger a^2.
+      \]
+      For a real pump amplitude this is a real-coefficient
+      equation in \(a\); on a single quadrature
+      \(\alpha = \langle (a + a^\dagger)/\sqrt{2}\rangle\) we get
+      \[
+        \dot\alpha = -\kappa\,\alpha + g\beta_\mathrm{in}\,\alpha
+                   - \frac{g^2}{2\kappa_p}\,\alpha^3.
+      \]
+      Rescale time by \(\kappa^{-1}\) and define
+      \(p \equiv g\beta_\mathrm{in}/\kappa\) and
+      \(\mu \equiv g^2/(2\kappa\kappa_p)\) to land on the
+      dimensionless form
+      \(\dot\alpha = (p-1)\alpha - \mu\alpha^3\), the canonical
+      normal form of the supercritical pitchfork. The
+      fixed-point equation \((p-1)\alpha = \mu\alpha^3\) gives
+      \(\alpha = 0\) (always) plus
+      \(\alpha = \pm\sqrt{(p-1)/\mu}\) for \(p > 1\).
+    </p>
+
+</details>
+          <div class="widget-shell" id="dopo-bifurcation">
+  <h4>Interactive: DOPO bifurcation</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide the normalized pump <em>p</em>. Below threshold (<em>p</em> &lt; 1) only the origin is stable — the cavity is a squeezed-vacuum source. Above threshold the origin becomes unstable and two new fixed points <em>α</em> = ±√((<em>p</em>−1)/<em>μ</em>) emerge. The noise cloud at <em>p</em> = 1 is what selects which one wins.</p>
+  <div class="widget-controls">
+        <label>
+          <span>pump p / p_th</span>
+          <input type="range" id="dopo-p" min="0" max="3" step="0.01" value="0.6" />
+          <span class="val" id="dopo-p-val">0.60</span>
+        </label>
+        <label>
+          <span>saturation μ</span>
+          <input type="range" id="dopo-mu" min="0.05" max="1.5" step="0.01" value="0.3" />
+          <span class="val" id="dopo-mu-val">0.30</span>
+        </label>
+        <label>
+          <span>noise level √D</span>
+          <input type="range" id="dopo-noise" min="0.01" max="0.4" step="0.005" value="0.08" />
+          <span class="val" id="dopo-noise-val">0.080</span>
+        </label>
   </div>
-  <div class="section-side">
-    <aside class="keypoints">
-      <h3>Key takeaways</h3>
-      <ul>
-              <li>Above threshold: classical SDE</li>
-      <li>Below threshold: full Lindblad / squeezing</li>
-      <li>At threshold: amplification of \(O(1)\) quantum events</li>
-      </ul>
-    </aside>
+  <canvas class="widget-canvas" id="dopo-bifurcation-canvas" width="520" height="320"></canvas>
+  <div class="widget-readout" id="dopo-bifurcation-readout"><span id="dopo-bifurcation-text">Below threshold — origin stable, vacuum is squeezed.</span></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>DOPO mean-field = pitchfork bifurcation</li>
+              <li>Two stable phases (\(\pm\)) above threshold</li>
+              <li>Quantum noise selects which phase wins</li>
+              <li>Adiabatic pump elimination ⇒ \(\dot\alpha = (p-1)\alpha - \mu\alpha^3\)</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+              <section class="section-shell" id="quantum-classical">
+          <div class="section-main">
+            <h2>When Is the CIM Quantum, When Is It Classical?</h2>
+
+          <p>
+            This is the question the CIM literature has spent two
+            decades arguing about. The honest answer has three
+            ingredients:
+          </p>
+          <ol>
+            <li><strong>Far above threshold</strong>
+              (\(p \gg 1, \lvert\alpha\rvert \gg 1\)): the field is
+              bright, fluctuations are a small perturbation around the
+              mean, mean-field theory is exact to leading order in
+              \(1/\lvert\alpha\rvert\). The dynamics is operationally
+              <em>classical</em>: it can be simulated by an SDE with
+              the same equations of motion, no Hilbert space needed.</li>
+            <li><strong>Far below threshold</strong>
+              (\(p \ll 1, \lvert\alpha\rvert \to 0\)): the field is
+              vacuum-fluctuation-scale; the full Lindblad master
+              equation is needed; entanglement and squeezing are
+              intrinsically non-classical features. The cavity is in a
+              squeezed-vacuum state.</li>
+            <li><strong>At threshold</strong> (\(p \approx 1\)): both
+              limits fail. The system is sensitive to a finite (\(O(1)\))
+              number of quantum-fluctuation noise events, which then
+              get amplified by the pitchfork instability into
+              macroscopic phase commitments. This is where the
+              "quantum advantage" arguments live.</li>
+          </ol>
+          <p>
+            The empirical evidence so far (Hamerly et al.\ 2018, Honjo
+            et al.\ 2021, Marandi et al.\ ongoing): for the Ising
+            problems CIMs have been benchmarked on,
+            <em>classical-noise-driven simulators of the same equations
+            of motion solve them just as well as the actual machines.</em>
+            Whether there exist problem classes where the genuine
+            quantum noise at threshold outperforms classical noise
+            (e.g.\ via tunneling through saddle points) remains
+            open. That's the live research question, not a settled
+            claim.
+          </p>
+          <div class="callout">Don't conflate &ldquo;the dynamics involves quantum optics&rdquo; with &ldquo;the device offers a quantum computational advantage&rdquo;. The first is uncontroversial. The second is an open empirical question — and the answer is currently <em>&ldquo;no, on the problems tested so far&rdquo;</em>.</div>
+          <p>
+            <em>Where does the line live numerically?</em> A useful rule
+            of thumb: the regime is operationally classical when
+            \(\langle n\rangle \gtrsim 10\)–\(30\) per pulse —
+            i.e.\ when the signal-to-noise ratio
+            \(\sqrt{\langle n\rangle}/1 \gtrsim 3\)–\(5\). Below that,
+            quantum-optical features (squeezing, single-photon
+            statistics, entanglement across pulses) dominate. The
+            interactive below lets you slide \(\langle n\rangle\) across
+            this crossover.
+          </p>
+          <div class="widget-shell" id="qc-regime">
+  <h4>Interactive: where is the quantum/classical crossover?</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide the photon number per pulse <em>n̄</em> on a log scale. The signal-to-vacuum ratio is √<em>n̄</em> : 1. The regime label flips when SNR crosses 3.</p>
+  <div class="widget-controls">
+        <label>
+          <span>log₁₀ ⟨n⟩</span>
+          <input type="range" id="qc-n" min="-2" max="6" step="0.05" value="2.0" />
+          <span class="val" id="qc-n-val">+2.00</span>
+        </label>
   </div>
-</section>
-       <section class="section-shell" id="mfb-network">
-   <div class="section-main">
-     <h2>Network of DOPOs with Measurement Feedback</h2>
+  <svg class="widget-svg" id="qc-regime-svg" viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="qc-regime-readout"><span id="qc-regime-text">SNR ≈ 10 — bright-field, classical SDE applies.</span></div>
+</div>
+          <details class="math-details">
+  <summary>Detailed math: when does linearization around the mean become exact?</summary>
 
-   <p>
-     One DOPO commits to one bit of phase. To compute, we need
-     interactions between bits. The Inagaki/Yamamoto/Marandi
-     <strong>measurement-feedback CIM</strong> (MFB-CIM)
-     architecture, in pictures:
-   </p>
-   <pre style="background: var(--page-panel); padding: 0.8rem; border-radius: 0.3rem; font-size: 0.86rem; white-space: pre; overflow-x: auto;">
-┌─────────────────────────────────────────────────────┐
-│  pulse loop (fiber ring + DOPO gain medium)         │
-│  N pulses circulating, one slot per spin            │
-└──────────────┬──────────────────────────────────────┘
-               │ tap output ~1%
-               ▼
-   balanced homodyne   ──► measures X-quadrature x_i
-               │
-               ▼
-   FPGA: compute MVM = J · x   (the Ising coupling)
-               │
-               ▼
-   electro-optic modulator
-   inject ε·MVM into next round-trip slot
-               │
-               ▼
-   [also inject calibrated stochastic noise √D·ξ]
-               │
-               └─► back into the loop
-   </pre>
-   <p>
-     Pulses are time-multiplexed in a fiber ring: each
-     round-trip the FPGA reads the X-quadratures via balanced
-     homodyne (Note 05), computes the Ising matrix-vector
-     product \(\sum_j J_{ij} x_j\), and injects the result back
-     into the next pulse via an electro-optic modulator. This
-     <em>is</em> the spin-spin coupling — it lives in the
-     digital feedback loop, not in the optics.
-   </p>
-   <p>
-     Why time-multiplexed? You can fit \(N\) pulses
-     (one per spin) into one fiber loop and the whole thing
-     runs at the round-trip rate. The Honjo et al.\ 2021
-     machine has \(N = 100{,}144\) — over 100k spins on a
-     single fiber loop, all processed by one FPGA. The
-     architecture is dimension-efficient in a way no
-     spatially-multiplexed scheme is.
-   </p>
+    <p>
+      Write the field as \(a = \alpha + \delta a\), where
+      \(\alpha = \langle a\rangle\) is the (large) classical
+      mean and \(\delta a\) carries quantum fluctuations. The
+      Heisenberg-Langevin equation for \(\delta a\) becomes
+      <em>linear</em> with coefficients evaluated at \(\alpha\):
+      \[
+        \dot{\delta a} = M(\alpha)\,\delta a + \xi(t),
+      \]
+      where \(M(\alpha)\) is a \(2\times 2\) drift matrix
+      capturing parametric gain plus cubic-saturation
+      feedback. Nonlinear terms in \(\delta a\) are suppressed
+      by \(1/\lvert\alpha\rvert\). For
+      \(\lvert\alpha\rvert^2 \gg 1\) (i.e.\ many photons per
+      pulse) those nonlinearities are a small perturbation, the
+      linearized Gaussian description is exact, and
+      <em>by a theorem of Mandel-Wolf</em> the dynamics is
+      exactly reproducible by a classical SDE with Gaussian
+      white noise of variance set by the vacuum.
+    </p>
+    <p>
+      Below threshold, \(\lvert\alpha\rvert \to 0\), the
+      linearization is around the unstable fixed point and
+      \(M(\alpha)\) has positive eigenvalues for one quadrature
+      and negative for the other — so the Gaussian
+      approximation predicts squeezing (variance below the
+      vacuum floor). At threshold, \(M(\alpha)\) has a zero
+      eigenvalue and the linearization breaks down: cubic
+      terms in \(\delta a\) become essential, and the dynamics
+      is genuinely nonlinear.
+    </p>
 
-   </div>
-   <div class="section-side">
-     <aside class="keypoints">
-       <h3>Key takeaways</h3>
-       <ul>
-               <li>Time-multiplexed pulses = spins</li>
-       <li>FPGA implements \(\sum_j J_{ij} x_j\)</li>
-       <li>EOM injection = spin-spin coupling</li>
-       </ul>
-     </aside>
-   </div>
- </section>
+</details>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Above threshold: classical SDE (Mandel-Wolf)</li>
+              <li>Below threshold: full Lindblad / squeezing</li>
+              <li>At threshold: nonlinear amplification of \(O(1)\) events</li>
+              <li>Crossover empirically near \(\langle n\rangle \sim 10\)</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+              <section class="section-shell" id="mfb-network">
+          <div class="section-main">
+            <h2>Network of DOPOs with Measurement Feedback</h2>
+
+          <p>
+            One DOPO commits to one bit of phase. To compute, we need
+            interactions between bits. The Inagaki/Yamamoto/Marandi
+            <strong>measurement-feedback CIM</strong> (MFB-CIM)
+            architecture, in pictures:
+          </p>
+          <pre style="background: var(--page-panel); padding: 0.8rem; border-radius: 0.3rem; font-size: 0.86rem; white-space: pre; overflow-x: auto;">
+       ┌─────────────────────────────────────────────────────┐
+       │  pulse loop (fiber ring + DOPO gain medium)         │
+       │  N pulses circulating, one slot per spin            │
+       └──────────────┬──────────────────────────────────────┘
+                      │ tap output ~1%
+                      ▼
+          balanced homodyne   ──► measures X-quadrature x_i
+                      │
+                      ▼
+          FPGA: compute MVM = J · x   (the Ising coupling)
+                      │
+                      ▼
+          electro-optic modulator
+          inject ε·MVM into next round-trip slot
+                      │
+                      ▼
+          [also inject calibrated stochastic noise √D·ξ]
+                      │
+                      └─► back into the loop
+          </pre>
+          <p>
+            Pulses are time-multiplexed in a fiber ring: each
+            round-trip the FPGA reads the X-quadratures via balanced
+            homodyne (Note 05), computes the Ising matrix-vector
+            product \(\sum_j J_{ij} x_j\), and injects the result back
+            into the next pulse via an electro-optic modulator. This
+            <em>is</em> the spin-spin coupling — it lives in the
+            digital feedback loop, not in the optics.
+          </p>
+          <p>
+            Why time-multiplexed? You can fit \(N\) pulses
+            (one per spin) into one fiber loop and the whole thing
+            runs at the round-trip rate. The Honjo et al.\ 2021
+            machine has \(N = 100{,}144\) — over 100k spins on a
+            single fiber loop, all processed by one FPGA. The
+            architecture is dimension-efficient in a way no
+            spatially-multiplexed scheme is.
+          </p>
+          <div class="widget-shell" id="cim-roundtrip">
+  <h4>Interactive: 4-spin CIM round-trip</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">A miniature 4-spin chain with Heisenberg-style coupling. Press <em>Run</em> to step through 80 round-trips of the McMahon Euler update (AHC.py:131–133). The bars show pulse amplitudes; the trace below shows Ising energy <em>H</em> = −½ <em>s</em>ᵀ<em>J</em><em>s</em> decreasing as the system commits to a low-energy spin configuration.</p>
+  <div class="widget-controls">
+        <label>
+          <span>pump rate</span>
+          <input type="range" id="cim-pump" min="0.005" max="0.05" step="0.001" value="0.02" />
+          <span class="val" id="cim-pump-val">0.020</span>
+        </label>
+        <label>
+          <span>coupling ε</span>
+          <input type="range" id="cim-coupling" min="0.005" max="0.08" step="0.001" value="0.03" />
+          <span class="val" id="cim-coupling-val">0.030</span>
+        </label>
+        <label>
+          <span>noise √D</span>
+          <input type="range" id="cim-noise" min="0.0" max="0.1" step="0.002" value="0.04" />
+          <span class="val" id="cim-noise-val">0.040</span>
+        </label>
+  </div>
+  <div class="widget-buttons"><button id="cim-roundtrip-run">Run</button><button id="cim-roundtrip-step">Step</button><button id="cim-roundtrip-reset">Reset</button></div>
+  <svg class="widget-svg" id="cim-roundtrip-svg" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="cim-roundtrip-readout"><div>Spin config: <span id="cim-roundtrip-spins">+ + + +</span></div><div>Ising energy: <span id="cim-roundtrip-energy">0.000</span></div><div>Round-trip: <span id="cim-roundtrip-step-num">0</span> / 80</div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Time-multiplexed pulses = spins</li>
+              <li>FPGA implements \(\sum_j J_{ij} x_j\)</li>
+              <li>EOM injection = spin-spin coupling</li>
+              <li>Round-trip rate sets clock speed</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+              <section class="section-shell" id="time-multiplexing">
+          <div class="section-main">
+            <h2>Time-Multiplexed Pulses: The Architecture</h2>
+
+          <p class="lede">
+            The fiber-loop CIM is not <em>N</em> separate cavities — it
+            is one cavity holding <em>N</em> pulses. Understanding the
+            timing budget is what makes the architecture intelligible.
+          </p>
+          <p>
+            The Honjo-NTT 100k-spin machine uses a 5 km fiber ring
+            (round-trip \(\tau_\mathrm{rt} \approx 25\,\mu\text{s}\))
+            with pulses spaced at 200 ps — that fits \(\sim\)125,000
+            time slots, of which 100,144 are used. The PPLN gain
+            crystal is traversed once per round-trip; each pulse picks
+            up gain proportional to the current pump amplitude. The
+            FPGA budget per slot is a few ns (200 ps slot ⇒ FPGA must
+            finish its part of the MVM faster than the pulse leaves
+            the EOM zone).
+          </p>
+          <details class="math-details">
+  <summary>Detailed math: round-trip latency budget</summary>
+
+    <p>
+      Per round-trip the FPGA does \(O(N^2)\) multiply-accumulates
+      for the dense Ising MVM, plus \(O(N)\) reads and writes
+      from homodyne and to EOM driver. With pulses spaced
+      \(\Delta\tau_\mathrm{slot}\) and total round-trip time
+      \(\tau_\mathrm{rt} = N \Delta\tau_\mathrm{slot}\), the FPGA
+      has \(\Delta\tau_\mathrm{slot}\) per spin to pipeline its
+      MVM contribution. For \(N = 10^5, \Delta\tau_\mathrm{slot}
+      = 200\) ps, that's \(2 \times 10^4\)
+      multiply-accumulates per spin in \(2 \times 10^{-10}\) s
+      — a sustained \(10^{14}\) MACS, hard but tractable on a
+      top-tier FPGA. <strong>The latency budget is the
+      load-bearing constraint of the entire architecture.</strong>
+    </p>
+    <p>
+      The Honjo et al.\ paper reports their FPGA runs at 250
+      MHz clock with parallelism \(\approx\) 250 lanes,
+      giving \(6 \times 10^{10}\) MACS — they only achieve
+      this because the \(J\) matrix is a sparse graph,
+      not dense. Dense problems would saturate well below 100k.
+    </p>
+
+</details><div class="callout">Time-multiplexing trades spatial expense (one waveguide per spin) for temporal expense (one round-trip per update). It's a win as long as the FPGA can keep up with the round-trip rate — and that constraint is precisely what Note 07's OU machine inherits.</div>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>100k spins fit in one 5 km fiber ring</li>
+              <li>Pulse slot \(\Delta\tau \approx 200\,\mathrm{ps}\); RT \(\sim 25\,\mu\)s</li>
+              <li>FPGA latency = the load-bearing assumption</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="ising-mapping">
   <div class="section-main">
     <h2>From Pulses to Ising Solutions</h2>
@@ -1469,6 +1736,63 @@
               <li>Output: \(s = \mathrm{sgn}\,x\) — bipolar spin string</li>
       <li>Heuristic: minimizes \(-\tfrac{1}{2}s^T J s\)</li>
       <li>AHC/CAC = post-hoc fixes for amplitude heterogeneity</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="qubo-mappings">
+  <div class="section-main">
+    <h2>QUBO, MAX-CUT, and the Encoding Overhead</h2>
+
+  <p class="lede">
+    Most combinatorial problems are not natively Ising; they
+    reduce to Ising. The reduction comes with overhead — the
+    number of physical spins per logical variable matters for
+    whether the CIM beats a CPU.
+  </p>
+  <p>
+    <strong>QUBO &harr; Ising</strong>. A 0/1 QUBO over
+    \(z \in \{0,1\}^n\) with cost
+    \(C(z) = z^T Q z\) maps to bipolar spins
+    \(s = 2z - 1 \in \{\pm 1\}^n\) via
+    \[
+      C(z) = \tfrac{1}{4}\,s^T Q s + \tfrac{1}{4}\,(\mathbf{1}^T Q + Q\mathbf{1})\,s
+           + \tfrac{1}{4}\,\mathbf{1}^T Q \mathbf{1}.
+    \]
+    The diagonal of \(Q\) becomes a linear field
+    \(h_i = \tfrac{1}{2}(\mathbf{1}^T Q)_i\); the off-diagonal
+    becomes \(J_{ij} = \tfrac{1}{4}(Q_{ij} + Q_{ji})\). One
+    logical bit ↔ one physical spin: zero overhead.
+  </p>
+  <p>
+    <strong>MAX-CUT &harr; Ising</strong>. For a graph
+    \(G = (V, E)\), maximizing \(\lvert\mathrm{cut}(s)\rvert\)
+    corresponds to minimizing \(s^T A s / 2\) where \(A\) is
+    the adjacency matrix, i.e.\ \(J = -A\). The
+    <code>cim-optimizer</code> regression tests use exactly
+    this convention. Again zero overhead.
+  </p>
+  <p>
+    <strong>Beyond Ising: 3-SAT, TSP, …</strong> Lucas (2014)
+    catalogs reductions for ~30 NP problems. Most introduce
+    \(O(n)\)–\(O(n \log n)\) auxiliary spins per logical
+    variable to encode constraints (e.g.\ TSP needs
+    \(n^2\) spins for an \(n\)-city tour: a one-hot
+    position-time matrix). For 3-SAT the overhead is roughly
+    quadratic. <em>The CIM's 100k-spin scale becomes only a
+    316-city TSP or a 100-variable 3-SAT instance after
+    encoding.</em> This is the fine print on "100,000 spins".
+  </p>
+  <div class="callout">When CIM advocates and skeptics talk past each other, the encoding-overhead distinction is often the missing common ground. <em>MAX-CUT on dense graphs at N=100k</em> is genuinely impressive — but only a tiny minority of real-world problems reduce to MAX-CUT without inflating spin count by 100×.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>QUBO ↔ Ising: zero overhead</li>
+      <li>MAX-CUT ↔ Ising: \(J = -A\), zero overhead</li>
+      <li>TSP, 3-SAT, …: quadratic-or-worse overhead</li>
+      <li>Lucas 2014 = the Ising-reduction catalog</li>
       </ul>
     </aside>
   </div>
@@ -1527,6 +1851,157 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
             </aside>
           </div>
         </section>
+      <section class="section-shell" id="comparison">
+  <div class="section-main">
+    <h2>Comparison: CIM vs Quantum Annealers vs SA</h2>
+
+  <p class="lede">
+    How does the MFB-CIM stack up against D-Wave (quantum
+    annealing) and well-tuned simulated annealing (SA) on
+    CPUs? Honest answer: <em>it depends on the problem class
+    and the metric</em>.
+  </p>
+  <p>
+    <strong>D-Wave (transverse-field Ising annealer)</strong>:
+    superconducting-flux qubits, ~5,000 qubits but with
+    chimera/pegasus connectivity (degree 6–15). The CIM has
+    <em>all-to-all</em> connectivity (FPGA can route any
+    \(J_{ij}\)) — a major win on dense problem instances.
+    For sparse problems matching D-Wave's native graph,
+    D-Wave is faster. For dense MAX-CUT at \(N \gtrsim 1000\),
+    CIM has demonstrated clearer wins.
+  </p>
+  <p>
+    <strong>Simulated annealing on a top-tier CPU</strong>:
+    implementing the CIM SDE on a GPU and running the same
+    update Yamamoto-style is what Hamerly et al.\ 2018
+    actually do — and they call it "noisy mean-field
+    annealing", and it solves the same instances at the same
+    wall-clock as the optical machine. <em>The classical
+    simulator is the dual</em>: when the CIM beats SA, it's
+    because the CIM hardware runs a particular SDE faster
+    than CPU SA runs Metropolis, not because of quantum
+    advantage.
+  </p>
+  <p>
+    <strong>Where the CIM <em>does</em> win</strong>:
+    \(O(\mu\)s\()\) round-trip latency per update on hardware
+    that scales O(N²) only at the FPGA level — the constant
+    factors in front of the asymptotic complexity are 2–3
+    orders of magnitude better than CPU SA. For dense large-N
+    problems where you care about wall-clock time-to-solution
+    (not asymptotic complexity), CIM is a serious contender.
+  </p>
+  <div class="callout">If you read one paper to calibrate your priors here, make it Hamerly et al.\ <em>Sci. Adv.</em> 2018 — <em>Experimental investigation of performance differences between coherent Ising machines and a quantum annealer</em>. It is the most honest head-to-head comparison in the literature.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>All-to-all connectivity: CIM beats D-Wave on dense</li>
+      <li>vs SA: same physics, different hardware constants</li>
+      <li>Wall-clock wins, asymptotic ties</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="scaling">
+  <div class="section-main">
+    <h2>Scaling Demonstrated</h2>
+
+  <p>
+    What problem sizes have actually been solved by physical
+    CIMs (not their simulators)? The numbers, year by year:
+  </p>
+  <table class="refs">
+    <tr><td>Year</td><td>Group</td><td>N spins</td><td>Substrate</td><td>Demonstrated</td></tr>
+    <tr><td>2014</td><td>Yamamoto / Stanford</td><td>4</td><td>free-space PPLN</td><td>1D Ising chain demo</td></tr>
+    <tr><td>2016</td><td>Inagaki et al.\ (NTT)</td><td>2,048</td><td>1 km fiber</td><td>complete-graph K₂₀₀₀</td></tr>
+    <tr><td>2016</td><td>McMahon et al.\ (Stanford)</td><td>100</td><td>fiber + measurement-feedback</td><td>programmable J on hardware</td></tr>
+    <tr><td>2018</td><td>Hamerly et al.\ (Stanford+NTT)</td><td>2,000</td><td>1 km fiber</td><td>head-to-head vs D-Wave</td></tr>
+    <tr><td>2021</td><td>Honjo et al.\ (NTT)</td><td>100,144</td><td>5 km fiber</td><td>sparse-graph MAX-CUT</td></tr>
+    <tr><td>2024+</td><td>Marandi (Caltech)</td><td>~100</td><td>integrated thin-film LiNbO₃</td><td>chip-scale DOPO networks</td></tr>
+  </table>
+  <p>
+    The 2014 → 2021 progression is a 25,000× scaling in 7
+    years — limited by FPGA throughput and fiber length, not
+    by photonics. The Marandi nanophotonic effort is the
+    inflection: integrated DOPOs at ~5 mm scale would let one
+    chip do what a 5 km fiber loop currently does, with
+    \(10^4\)× lower latency. <em>That</em> would change the
+    economics — and is the substrate the OU machine in Note
+    07 inherits.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>2014 → 2021: 4 → 100k spin scaling</li>
+      <li>Limited by FPGA + fiber, not photonics</li>
+      <li>Marandi integrated path = the inflection</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="open-questions">
+  <div class="section-main">
+    <h2>Open Theoretical Questions</h2>
+
+  <p class="lede">
+    Five questions whose answers would change the field's
+    self-image. None are settled in 2026.
+  </p>
+  <ol>
+    <li><strong>Is there a quantum-noise-driven advantage at
+      threshold?</strong> Bouland et al.\ have argued that
+      tunneling between spin configurations during the
+      bifurcation should give a polynomial speedup — but the
+      empirical evidence is mixed and depends sensitively on
+      how SA is tuned. <em>Settling this requires a problem
+      class where SA provably fails and CIM provably succeeds
+      with the same wall-clock budget.</em></li>
+    <li><strong>What does AHC/CAC actually correct?</strong>
+      The corrections work empirically but have no first-principles
+      derivation. They look suspiciously like they're
+      solving a different optimization problem (something
+      like \(\min \sum_i (h_i^2 - 1)^2\)) than Ising — and that
+      might be why they help.</li>
+    <li><strong>What is the right embedding for non-binary
+      variables?</strong> Continuous QUBOs, mixed-integer
+      programs, constraint-satisfaction with non-trivial
+      constraint topologies — none have a clean CIM mapping.
+      The literature is currently piling auxiliary spins as
+      one-hot ancillas, which kills the constant-factor
+      advantage.</li>
+    <li><strong>Is the dynamical regime "quantum"?</strong>
+      The pedagogical answer is "below threshold, yes; above
+      threshold, no" — but the actual computation happens
+      <em>at</em> threshold, and the linearization breaks down
+      there. We don't have a rigorous characterization of the
+      threshold regime.</li>
+    <li><strong>Can the same hardware do <em>not-Ising</em>
+      tasks?</strong> Note 07 is one answer: linear algebra
+      via Lyapunov sampling. Bayesian inference via Langevin
+      MCMC is another. Each requires a different firmware in
+      the FPGA's update step.</li>
+  </ol>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Quantum advantage: open empirically</li>
+      <li>AHC/CAC: works but not understood</li>
+      <li>Embedding non-Ising: kills constant factors</li>
+      <li>Threshold regime: theoretically under-characterized</li>
+      <li>Same hardware, new tasks: Note 07 is one direction</li>
+      </ul>
+    </aside>
+  </div>
+</section>
       <section class="section-shell" id="sota">
   <div class="section-main">
     <h2>State of the Art (1996 → 2026)</h2>
@@ -1648,6 +2123,304 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget 1: DOPO bifurcation phase portrait ----------------------
+      (function () {
+        var canvas = document.getElementById('dopo-bifurcation-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        var pSlider = document.getElementById('dopo-p');
+        var muSlider = document.getElementById('dopo-mu');
+        var nSlider = document.getElementById('dopo-noise');
+        var pVal = document.getElementById('dopo-p-val');
+        var muVal = document.getElementById('dopo-mu-val');
+        var nVal = document.getElementById('dopo-noise-val');
+        var text = document.getElementById('dopo-bifurcation-text');
+        var SCALE = 80;       // pixels per unit α
+        var ORIGIN_X = W/2, ORIGIN_Y = H/2;
+        function draw() {
+          var p = parseFloat(pSlider.value);
+          var mu = parseFloat(muSlider.value);
+          var noise = parseFloat(nSlider.value);
+          pVal.textContent = p.toFixed(2);
+          muVal.textContent = mu.toFixed(2);
+          nVal.textContent = noise.toFixed(3);
+          ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('background-color') || '#0e0e16';
+          ctx.fillRect(0, 0, W, H);
+          // axes
+          ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, ORIGIN_Y); ctx.lineTo(W, ORIGIN_Y);
+          ctx.moveTo(ORIGIN_X, 0); ctx.lineTo(ORIGIN_X, H);
+          ctx.stroke();
+          // axis labels
+          ctx.fillStyle = '#888'; ctx.font = '11px monospace';
+          ctx.fillText('X', W - 12, ORIGIN_Y - 5);
+          ctx.fillText('P', ORIGIN_X + 5, 12);
+          // potential V(x) = -(p-1)/2 x² + μ/4 x⁴ — visualize via a faint
+          // contour map of |gradient|
+          var step = 6;
+          for (var px = 0; px < W; px += step) {
+            for (var py = 0; py < H; py += step) {
+              var x = (px - ORIGIN_X) / SCALE;
+              var y = (py - ORIGIN_Y) / SCALE;
+              // drift magnitude in 2D where pump only acts on X axis:
+              var dx = (p - 1) * x - mu * x * x * x;
+              var dy = -1.0 * y; // damping on P only (no parametric gain)
+              var mag = Math.sqrt(dx*dx + dy*dy);
+              var v = Math.max(0, 1 - mag*1.4);
+              ctx.fillStyle = 'rgba(122, 159, 209, ' + (v*0.20).toFixed(3) + ')';
+              ctx.fillRect(px, py, step, step);
+            }
+          }
+          // sample trajectories: random initial conditions, integrate Euler
+          ctx.strokeStyle = 'rgba(180, 200, 240, 0.45)';
+          ctx.lineWidth = 1;
+          var N_TRAJ = 40;
+          for (var k = 0; k < N_TRAJ; k++) {
+            var x = (Math.random() - 0.5) * 4;
+            var y = (Math.random() - 0.5) * 4;
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X + x*SCALE, ORIGIN_Y - y*SCALE);
+            for (var s = 0; s < 220; s++) {
+              var dx = (p-1)*x - mu*x*x*x;
+              var dy = -1.0*y;
+              var dt = 0.06;
+              x += dt*dx + Math.sqrt(dt)*noise*(Math.random()-0.5)*2;
+              y += dt*dy + Math.sqrt(dt)*noise*(Math.random()-0.5)*2;
+              if (Math.abs(x) > 4 || Math.abs(y) > 4) break;
+              ctx.lineTo(ORIGIN_X + x*SCALE, ORIGIN_Y - y*SCALE);
+            }
+            ctx.stroke();
+          }
+          // fixed points
+          var fps = [{x: 0, color: (p < 1 ? '#79f29c' : '#f27979')}];
+          if (p > 1) {
+            var ax = Math.sqrt((p-1)/mu);
+            fps.push({x: ax, color: '#79f29c'});
+            fps.push({x: -ax, color: '#79f29c'});
+          }
+          for (var i = 0; i < fps.length; i++) {
+            ctx.fillStyle = fps[i].color;
+            ctx.beginPath();
+            ctx.arc(ORIGIN_X + fps[i].x*SCALE, ORIGIN_Y, 5, 0, 2*Math.PI);
+            ctx.fill();
+          }
+          var label;
+          if (p < 0.95) label = 'Below threshold (p = ' + p.toFixed(2) + ') — origin stable. Cavity is squeezed-vacuum.';
+          else if (p > 1.05) label = 'Above threshold (p = ' + p.toFixed(2) + ') — two stable phases at α = ±' + Math.sqrt((p-1)/mu).toFixed(2) + '. Phase commitment.';
+          else label = 'At threshold (p = ' + p.toFixed(2) + ') — origin marginal. Quantum noise selects which phase wins.';
+          text.textContent = label;
+        }
+        [pSlider, muSlider, nSlider].forEach(function (el) {
+          el.addEventListener('input', draw);
+        });
+        draw();
+      })();
+
+      // -- Widget 2: quantum/classical regime gauge -----------------------
+      (function () {
+        var svg = document.getElementById('qc-regime-svg');
+        if (!svg) return;
+        var nSlider = document.getElementById('qc-n');
+        var nVal = document.getElementById('qc-n-val');
+        var text = document.getElementById('qc-regime-text');
+        var W = 520, H = 180;
+        function regimeLabel(snr) {
+          if (snr < 1) return {name: 'vacuum-fluctuation regime', color: '#7a9fd1', detail: 'Full Lindblad / squeezed-vacuum description.'};
+          if (snr < 3) return {name: 'crossover (threshold)', color: '#e8b96a', detail: 'Linearization breaks down; nonlinear quantum noise.'};
+          if (snr < 30) return {name: 'bright but quantum-influenced', color: '#79c79f', detail: 'Linearized Gaussian (mean-field + Langevin noise).'};
+          return {name: 'classical bright-field', color: '#79c79f', detail: 'Operationally classical; Mandel-Wolf says SDE suffices.'};
+        }
+        function draw() {
+          var logn = parseFloat(nSlider.value);
+          var n = Math.pow(10, logn);
+          var snr = Math.sqrt(n);
+          nVal.textContent = logn.toFixed(2);
+          var reg = regimeLabel(snr);
+          // build SVG content
+          var pad = 40;
+          var bar_y = H/2 - 8;
+          var bar_h = 16;
+          var bar_x = pad, bar_w = W - 2*pad;
+          // log scale bar from 10^-2 to 10^6
+          var nx = bar_x + (logn + 2)/8 * bar_w;
+          var threshold_x = bar_x + (Math.log10(9) + 2)/8 * bar_w;  // SNR=3 ⇒ n=9
+          var bright_x = bar_x + (Math.log10(900) + 2)/8 * bar_w;   // SNR=30 ⇒ n=900
+          svg.innerHTML = (
+            '<defs>' +
+            '  <linearGradient id="qcgrad" x1="0" x2="1">' +
+            '    <stop offset="0" stop-color="#7a9fd1"/>' +
+            '    <stop offset="' + ((Math.log10(9)+2)/8) + '" stop-color="#e8b96a"/>' +
+            '    <stop offset="' + ((Math.log10(900)+2)/8) + '" stop-color="#79c79f"/>' +
+            '    <stop offset="1" stop-color="#79c79f"/>' +
+            '  </linearGradient>' +
+            '</defs>' +
+            '<rect x="' + bar_x + '" y="' + bar_y + '" width="' + bar_w + '" height="' + bar_h + '" rx="8" fill="url(#qcgrad)" opacity="0.7"/>' +
+            '<line x1="' + threshold_x + '" x2="' + threshold_x + '" y1="' + (bar_y-8) + '" y2="' + (bar_y+bar_h+8) + '" stroke="#e8b96a" stroke-width="1.5" stroke-dasharray="3,3"/>' +
+            '<line x1="' + bright_x + '" x2="' + bright_x + '" y1="' + (bar_y-8) + '" y2="' + (bar_y+bar_h+8) + '" stroke="#79c79f" stroke-width="1.5" stroke-dasharray="3,3"/>' +
+            '<text x="' + threshold_x + '" y="' + (bar_y-12) + '" text-anchor="middle" font-size="10" fill="#888">SNR=3</text>' +
+            '<text x="' + bright_x + '" y="' + (bar_y-12) + '" text-anchor="middle" font-size="10" fill="#888">SNR=30</text>' +
+            '<circle cx="' + nx + '" cy="' + (bar_y + bar_h/2) + '" r="9" fill="' + reg.color + '" stroke="#fff" stroke-width="1.5"/>' +
+            '<text x="' + bar_x + '" y="' + (H-20) + '" font-size="10" fill="#888">⟨n⟩=10⁻²</text>' +
+            '<text x="' + (bar_x+bar_w) + '" y="' + (H-20) + '" font-size="10" fill="#888" text-anchor="end">⟨n⟩=10⁶</text>' +
+            '<text x="' + (W/2) + '" y="' + (bar_y + bar_h + 30) + '" font-size="13" fill="' + reg.color + '" text-anchor="middle" font-weight="600">⟨n⟩ ≈ 10^' + logn.toFixed(2) + ' &#8594; SNR ≈ ' + snr.toFixed(2) + '</text>'
+          );
+          text.innerHTML = '<strong>' + reg.name + '</strong>: ' + reg.detail;
+        }
+        nSlider.addEventListener('input', draw);
+        draw();
+      })();
+
+      // -- Widget 3: 4-spin CIM round-trip simulation ---------------------
+      (function () {
+        var svg = document.getElementById('cim-roundtrip-svg');
+        if (!svg) return;
+        var pumpSlider = document.getElementById('cim-pump');
+        var couplingSlider = document.getElementById('cim-coupling');
+        var noiseSlider = document.getElementById('cim-noise');
+        var pumpVal = document.getElementById('cim-pump-val');
+        var couplingVal = document.getElementById('cim-coupling-val');
+        var noiseVal = document.getElementById('cim-noise-val');
+        var spinsText = document.getElementById('cim-roundtrip-spins');
+        var energyText = document.getElementById('cim-roundtrip-energy');
+        var stepText = document.getElementById('cim-roundtrip-step-num');
+        var runBtn = document.getElementById('cim-roundtrip-run');
+        var stepBtn = document.getElementById('cim-roundtrip-step');
+        var resetBtn = document.getElementById('cim-roundtrip-reset');
+
+        // 4-spin frustrated chain: J = -A where A is graph adjacency
+        // (MAX-CUT convention from earlier work). Triangle 0-1-2 + pendant 3:
+        // edges (0,1), (1,2), (0,2), (1,3) ⇒ ground state is unique up to flip
+        var J = [
+          [0, -1, -1,  0],
+          [-1, 0, -1, -1],
+          [-1, -1, 0,  0],
+          [0, -1,  0,  0]
+        ];
+        var W = 520, H = 320;
+        var x = [0, 0, 0, 0];
+        var energyHistory = [];
+        var step = 0;
+        var maxSteps = 80;
+        var running = false;
+        var raf = null;
+
+        function isingEnergy() {
+          var E = 0;
+          var s = x.map(function (v) { return v >= 0 ? 1 : -1; });
+          for (var i = 0; i < 4; i++)
+            for (var j = i+1; j < 4; j++)
+              E -= J[i][j] * s[i] * s[j];
+          return E;
+        }
+        function reset() {
+          x = [0.01*(Math.random()-0.5), 0.01*(Math.random()-0.5),
+               0.01*(Math.random()-0.5), 0.01*(Math.random()-0.5)];
+          energyHistory = [];
+          step = 0;
+          running = false;
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          render();
+        }
+        function doStep() {
+          if (step >= maxSteps) return;
+          var pump = parseFloat(pumpSlider.value);
+          var eps = parseFloat(couplingSlider.value);
+          var noise = parseFloat(noiseSlider.value);
+          var dt = 1.0;
+          // r ramps from -0.5 (below threshold) to +1.5 (above) over the run
+          var r = -0.5 + 2.0 * (step / maxSteps);
+          var mu = 0.05;
+          // MVM = J · x
+          var mvm = [0,0,0,0];
+          for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+              mvm[i] += J[i][j] * x[j];
+          for (var i = 0; i < 4; i++) {
+            // gain - cubic saturation
+            x[i] += pump*dt * (x[i] * (r - mu*x[i]*x[i]));
+            // EOM injection
+            x[i] += eps*dt * mvm[i];
+            // injected noise
+            x[i] += noise * (Math.random() - 0.5);
+            // bound for visualization stability
+            if (x[i] > 3) x[i] = 3;
+            if (x[i] < -3) x[i] = -3;
+          }
+          energyHistory.push(isingEnergy());
+          step++;
+          render();
+        }
+        function loop() {
+          doStep();
+          if (running && step < maxSteps) {
+            raf = requestAnimationFrame(loop);
+          } else {
+            running = false;
+          }
+        }
+        function render() {
+          var pump = parseFloat(pumpSlider.value);
+          var eps = parseFloat(couplingSlider.value);
+          var noise = parseFloat(noiseSlider.value);
+          pumpVal.textContent = pump.toFixed(3);
+          couplingVal.textContent = eps.toFixed(3);
+          noiseVal.textContent = noise.toFixed(3);
+          // bars on top half
+          var barTop = 30, barH = 90, pad = 30;
+          var bw = (W - 2*pad) / 4;
+          var s_strs = [];
+          var bars = '';
+          var labels = '';
+          var colors = ['#7a9fd1', '#e8b96a', '#79c79f', '#c879d1'];
+          for (var i = 0; i < 4; i++) {
+            var v = x[i];
+            var s = v >= 0 ? '+' : '−';
+            s_strs.push(s);
+            var bx = pad + i*bw + bw*0.15;
+            var by_zero = barTop + barH/2;
+            var bh = -v * (barH/2) / 2.5;
+            bars += '<rect x="' + bx + '" y="' + (bh < 0 ? by_zero : by_zero - bh) + '" width="' + (bw*0.7) + '" height="' + Math.abs(bh) + '" fill="' + colors[i] + '" opacity="0.75"/>';
+            bars += '<line x1="' + bx + '" x2="' + (bx+bw*0.7) + '" y1="' + by_zero + '" y2="' + by_zero + '" stroke="#888"/>';
+            labels += '<text x="' + (bx + bw*0.35) + '" y="' + (barTop + barH + 15) + '" text-anchor="middle" font-size="11" fill="#888">x_' + (i+1) + '=' + v.toFixed(2) + '</text>';
+          }
+          // energy trace below
+          var traceTop = barTop + barH + 38, traceH = H - traceTop - 30;
+          var trace = '<text x="' + pad + '" y="' + (traceTop - 6) + '" font-size="10" fill="#888">Ising energy −½sᵀJs</text>';
+          if (energyHistory.length > 1) {
+            var minE = Math.min.apply(null, energyHistory);
+            var maxE = Math.max.apply(null, energyHistory);
+            if (maxE === minE) maxE += 1;
+            var pts = energyHistory.map(function (E, k) {
+              var px = pad + (k / maxSteps) * (W - 2*pad);
+              var py = traceTop + traceH * (1 - (E - minE) / (maxE - minE));
+              return px + ',' + py;
+            }).join(' ');
+            trace += '<polyline points="' + pts + '" fill="none" stroke="#79c79f" stroke-width="1.8"/>';
+            trace += '<text x="' + (W-pad) + '" y="' + (traceTop + 12) + '" font-size="10" fill="#888" text-anchor="end">E_max=' + maxE.toFixed(2) + '</text>';
+            trace += '<text x="' + (W-pad) + '" y="' + (traceTop + traceH - 2) + '" font-size="10" fill="#888" text-anchor="end">E_min=' + minE.toFixed(2) + '</text>';
+          }
+          svg.innerHTML = bars + labels + trace;
+          spinsText.textContent = s_strs.join(' ');
+          energyText.textContent = (energyHistory.length ? energyHistory[energyHistory.length-1] : 0).toFixed(3);
+          stepText.textContent = step + ' / ' + maxSteps;
+        }
+        runBtn.addEventListener('click', function () {
+          if (step >= maxSteps) reset();
+          if (!running) { running = true; loop(); }
+        });
+        stepBtn.addEventListener('click', function () { if (!running) doStep(); });
+        resetBtn.addEventListener('click', reset);
+        [pumpSlider, couplingSlider, noiseSlider].forEach(function (el) {
+          el.addEventListener('input', render);
+        });
+        reset();
+      })();
+    
 </script>
   </body>
 </html>

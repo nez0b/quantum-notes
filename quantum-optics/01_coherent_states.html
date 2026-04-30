@@ -1212,8 +1212,10 @@
 <a href="#coherent">Coherent States</a>
 <a href="#quadratures">Quadratures</a>
 <a href="#wigner">Wigner</a>
+<a href="#wigner-explorer">Wigner Lab</a>
 <a href="#squeezing">Squeezing</a>
 <a href="#density">Density Ops</a>
+<a href="#photon-stats">Photon Stats</a>
 <a href="#classical-limit">Classical Limit</a>
 <a href="#sources">Sources</a>
   </div>
@@ -1396,6 +1398,63 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="wigner-explorer">
+          <div class="section-main">
+            <h2>Interactive: The Wigner Function for Gaussian States</h2>
+
+          <p class="lede">
+            Slide \(\Re\alpha\), \(\Im\alpha\), squeeze amplitude
+            \(r\), squeeze angle \(\theta\), and thermal occupation
+            \(\bar n\) to see the Wigner function deform. Coherent =
+            displaced unit Gaussian; squeezed = stretched ellipse;
+            thermal = isotropic but inflated.
+          </p>
+          <div class="widget-shell" id="wigner-explorer">
+  <h4>Live Wigner explorer</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">All Gaussian-state Wigner functions are 2D Gaussians with covariance matrix <em>V</em>. The displacement translates the centre; the squeeze parameters rotate and stretch the ellipse; thermal occupation inflates both axes uniformly.</p>
+  <div class="widget-controls">
+        <label>
+          <span>Re α</span>
+          <input type="range" id="wig-re" min="-3" max="3" step="0.05" value="1.2" />
+          <span class="val" id="wig-re-val">+1.20</span>
+        </label>
+        <label>
+          <span>Im α</span>
+          <input type="range" id="wig-im" min="-3" max="3" step="0.05" value="0.0" />
+          <span class="val" id="wig-im-val">+0.00</span>
+        </label>
+        <label>
+          <span>squeeze r</span>
+          <input type="range" id="wig-r" min="0" max="1.5" step="0.05" value="0.0" />
+          <span class="val" id="wig-r-val">0.00</span>
+        </label>
+        <label>
+          <span>squeeze θ</span>
+          <input type="range" id="wig-theta" min="0" max="3.14" step="0.05" value="0.0" />
+          <span class="val" id="wig-theta-val">0.00</span>
+        </label>
+        <label>
+          <span>thermal n̄</span>
+          <input type="range" id="wig-nbar" min="0" max="3" step="0.05" value="0.0" />
+          <span class="val" id="wig-nbar-val">0.00</span>
+        </label>
+  </div>
+  <canvas class="widget-canvas" id="wigner-explorer-canvas" width="440" height="440"></canvas>
+  <div class="widget-readout" id="wigner-explorer-readout"><div>⟨X⟩ = <span id="wig-mean-x">—</span> &nbsp; ⟨P⟩ = <span id="wig-mean-p">—</span></div><div>Var X = <span id="wig-var-x">—</span> &nbsp; Var P = <span id="wig-var-p">—</span></div><div>State type: <span id="wig-type">coherent</span></div></div>
+</div>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Coherent: displaced unit Gaussian</li>
+              <li>Squeezed: rotated/stretched ellipse</li>
+              <li>Thermal: isotropic, inflated</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="squeezing">
   <div class="section-main">
     <h2>Squeezed States</h2>
@@ -1485,6 +1544,87 @@
     </aside>
   </div>
 </section>
+              <section class="section-shell" id="photon-stats">
+          <div class="section-main">
+            <h2>Photon Number Statistics</h2>
+
+          <p class="lede">
+            Coherent, squeezed, and thermal states share Gaussian
+            phase-space distributions but have <em>radically different
+            photon-counting statistics</em>. The photon-number
+            distribution \(P(n) = \langle n\rvert\rho\lvert n\rangle\)
+            is the experimental observable from a click detector.
+          </p>
+          <ul>
+            <li><strong>Coherent</strong>:
+              \(P(n) = e^{-\bar n}\,\bar n^n / n!\) — Poisson, with
+              \(\mathrm{Var}(N) = \bar n\) and Fano factor 1.</li>
+            <li><strong>Thermal</strong>:
+              \(P(n) = \bar n^n / (\bar n + 1)^{n+1}\) — geometric,
+              with \(\mathrm{Var}(N) = \bar n^2 + \bar n\); Fano factor
+              \(\bar n + 1\). Super-Poissonian.</li>
+            <li><strong>Squeezed vacuum</strong>:
+              \(P(n) = 0\) for odd \(n\); for even
+              \(n = 2k\), \(P(2k) = (\tanh r)^{2k}\,(2k)! / [2^{2k}(k!)^2 \cosh r]\).
+              Pair-only — never an odd photon count.</li>
+            <li><strong>Number state</strong>:
+              \(P(n) = \delta_{n, n_0}\). Sub-Poissonian:
+              \(\mathrm{Var}(N) = 0 \le \bar n\). The most non-classical
+              photon-number distribution.</li>
+          </ul>
+          <p>
+            The <strong>Mandel Q parameter</strong>
+            \(Q = (\mathrm{Var}(N) - \bar N) / \bar N\) is the canonical
+            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian
+            (classical mixture), \(Q < 0\) sub-Poissonian (truly quantum).
+          </p>
+          <div class="widget-shell" id="photon-distribution">
+  <h4>Interactive: photon-number distributions side-by-side</h4>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Plots <em>P</em>(<em>n</em>) for coherent, thermal, and squeezed-vacuum states with the same mean photon number <em>n̄</em>. The Mandel-Q readout flags the regime; the two states have radically different statistics yet share the same mean.</p>
+  <div class="widget-controls">
+        <label>
+          <span>mean ⟨n⟩</span>
+          <input type="range" id="pn-nbar" min="0.5" max="15" step="0.1" value="4.0" />
+          <span class="val" id="pn-nbar-val">4.0</span>
+        </label>
+  </div>
+  <svg class="widget-svg" id="photon-distribution-svg" viewBox="0 0 540 300" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="widget-readout" id="photon-distribution-readout"><div>Coherent Q = <span id="pn-q-coh">0.000</span> (Poisson)</div><div>Thermal Q = <span id="pn-q-th">—</span></div><div>Squeezed-vacuum Q = <span id="pn-q-sq">—</span></div></div>
+</div>
+          <details class="math-details">
+  <summary>Why P(n) for squeezed vacuum has only even terms</summary>
+
+    <p>
+      The squeeze operator
+      \(S(r) = \exp[\tfrac{r}{2}(a^{\dagger 2} - a^2)]\) is a
+      quadratic generator: it raises and lowers photon number
+      <em>in pairs</em>. Acting on the vacuum
+      \(\lvert 0\rangle\), it generates a superposition of
+      even-\(n\) Fock states. Direct calculation of the
+      expansion coefficient \(\langle 2k\rvert S(r)\lvert 0\rangle\)
+      (e.g.\ via the disentangled normal-ordered form
+      \(S(r) = e^{\frac{1}{2}\tanh r\,a^{\dagger 2}}
+      (\cosh r)^{-1/2 - a^\dagger a} e^{-\frac{1}{2}\tanh r\,a^2}\))
+      yields the formula \(P(2k) \propto (\tanh r)^{2k}\)
+      quoted above. <em>The forbidden-odd-\(n\) feature is the
+      hallmark of a parametric process: photons are created in
+      pairs.</em>
+    </p>
+
+</details>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Coherent ↔ Poisson, Q = 0</li>
+              <li>Thermal ↔ super-Poissonian, Q > 0</li>
+              <li>Squeezed-vacuum ↔ even-only, can be sub-Poissonian</li>
+              <li>Number state ↔ Q < 0, fully quantum</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
       <section class="section-shell" id="classical-limit">
   <div class="section-main">
     <h2>Where Coherent States Are Classical</h2>
@@ -1601,6 +1741,191 @@
       ensureMathRendered();
     }
   })();
+</script>
+<script>
+
+      // -- Widget: Wigner function explorer (canvas heatmap) ------------
+      (function () {
+        var canvas = document.getElementById('wigner-explorer-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        var ids = ['re', 'im', 'r', 'theta', 'nbar'];
+        var els = {};
+        ids.forEach(function (k) {
+          els[k] = document.getElementById('wig-' + k);
+          els[k + 'V'] = document.getElementById('wig-' + k + '-val');
+        });
+        var meanX = document.getElementById('wig-mean-x');
+        var meanP = document.getElementById('wig-mean-p');
+        var varX = document.getElementById('wig-var-x');
+        var varP = document.getElementById('wig-var-p');
+        var typeSpan = document.getElementById('wig-type');
+        function draw() {
+          var re = parseFloat(els.re.value);
+          var im = parseFloat(els.im.value);
+          var r = parseFloat(els.r.value);
+          var theta = parseFloat(els.theta.value);
+          var nbar = parseFloat(els.nbar.value);
+          els.reV.textContent = re.toFixed(2);
+          els.imV.textContent = im.toFixed(2);
+          els.rV.textContent = r.toFixed(2);
+          els.thetaV.textContent = theta.toFixed(2);
+          els.nbarV.textContent = nbar.toFixed(2);
+          // Convention: phase-space coords (x,p) such that vacuum has Var X = Var P = 1/2
+          // Coherent at α: ⟨X⟩ = √2 Re α, ⟨P⟩ = √2 Im α
+          // Squeeze with (r, θ) rotates and scales. Combined with thermal n̄:
+          // Var_squeezed = (n̄ + 1/2) e^{-2r}, anti-Var = (n̄ + 1/2) e^{+2r}
+          var mx = Math.SQRT2 * re;
+          var mp = Math.SQRT2 * im;
+          var Vsq = (nbar + 0.5) * Math.exp(-2*r);
+          var Vasq = (nbar + 0.5) * Math.exp(2*r);
+          // Cov in (X,P) basis after rotation by θ
+          var c = Math.cos(theta), s = Math.sin(theta);
+          // rotation matrix R(θ); cov in lab = R diag(Vsq,Vasq) R^T
+          var Cxx = c*c*Vsq + s*s*Vasq;
+          var Cpp = s*s*Vsq + c*c*Vasq;
+          var Cxp = c*s*(Vsq - Vasq);
+          // Render heatmap of W(x,p)
+          var XMIN = -5, XMAX = 5, PMIN = -5, PMAX = 5;
+          var img = ctx.getImageData(0, 0, W, H);
+          var data = img.data;
+          // det and inverse of cov
+          var det = Cxx*Cpp - Cxp*Cxp;
+          var iC11 = Cpp/det, iC22 = Cxx/det, iC12 = -Cxp/det;
+          var norm = 1/(2*Math.PI*Math.sqrt(det));
+          // colormap: viridis-ish
+          function color(t) {
+            // t in [0,1]
+            t = Math.max(0, Math.min(1, t));
+            var rr = Math.floor(68 + 200*t);
+            var gg = Math.floor(20 + 220*t*t);
+            var bb = Math.floor(140 - 140*t + 80*(1-t));
+            return [rr, gg, Math.max(0,bb)];
+          }
+          var maxW = norm; // for unit-trace Gaussian peak is at center
+          for (var py = 0; py < H; py++) {
+            var p_phys = PMAX - (py / H) * (PMAX - PMIN);
+            for (var px = 0; px < W; px++) {
+              var x_phys = XMIN + (px / W) * (XMAX - XMIN);
+              var dx = x_phys - mx, dp = p_phys - mp;
+              var q = iC11*dx*dx + 2*iC12*dx*dp + iC22*dp*dp;
+              var Wval = norm * Math.exp(-0.5*q);
+              var t = Wval / maxW;
+              var col = color(t);
+              var idx = (py*W + px)*4;
+              data[idx] = col[0]; data[idx+1] = col[1]; data[idx+2] = col[2]; data[idx+3] = 255;
+            }
+          }
+          ctx.putImageData(img, 0, 0);
+          // axes overlay
+          ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.3;
+          ctx.beginPath();
+          ctx.moveTo(0, H/2); ctx.lineTo(W, H/2);
+          ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#fff';
+          ctx.font = '11px monospace';
+          ctx.fillText('X →', W-22, H/2-5);
+          ctx.fillText('P →', W/2+5, 12);
+          // readouts
+          meanX.textContent = mx.toFixed(2);
+          meanP.textContent = mp.toFixed(2);
+          varX.textContent = Cxx.toFixed(3);
+          varP.textContent = Cpp.toFixed(3);
+          var label;
+          if (nbar > 0.05 && r < 0.05) label = 'thermal' + (re !== 0 || im !== 0 ? ' + displaced' : '');
+          else if (r > 0.05) label = 'squeezed' + (re !== 0 || im !== 0 ? ' + displaced' : ' vacuum');
+          else label = 'coherent' + (re === 0 && im === 0 ? ' (= vacuum)' : '');
+          typeSpan.textContent = label;
+        }
+        ids.forEach(function (k) { els[k].addEventListener('input', draw); });
+        draw();
+      })();
+
+      // -- Widget: photon-number distribution ---------------------------
+      (function () {
+        var svg = document.getElementById('photon-distribution-svg');
+        if (!svg) return;
+        var nbarS = document.getElementById('pn-nbar');
+        var nbarV = document.getElementById('pn-nbar-val');
+        var qCoh = document.getElementById('pn-q-coh');
+        var qTh = document.getElementById('pn-q-th');
+        var qSq = document.getElementById('pn-q-sq');
+        function poisson(n, lam) {
+          var lp = -lam;
+          for (var k = 1; k <= n; k++) lp += Math.log(lam) - Math.log(k);
+          return Math.exp(lp);
+        }
+        function thermal(n, nbar) {
+          return Math.pow(nbar, n) / Math.pow(nbar+1, n+1);
+        }
+        function squeezedVac(n, r) {
+          if (n % 2 === 1) return 0;
+          var k = n / 2;
+          // P(2k) = (tanh r)^(2k) (2k)! / (4^k (k!)^2 cosh r)
+          var lt = Math.log(Math.tanh(r));
+          var lp = (2*k) * lt - Math.log(Math.cosh(r));
+          // log of (2k)! / (4^k k!^2) — central binomial coefficient / 4^k
+          var lcoeff = 0;
+          for (var j = 1; j <= 2*k; j++) lcoeff += Math.log(j);
+          for (var j = 1; j <= k; j++) lcoeff -= 2*Math.log(j);
+          lcoeff -= 2*k * Math.log(2);
+          return Math.exp(lp + lcoeff);
+        }
+        function draw() {
+          var nbar = parseFloat(nbarS.value);
+          nbarV.textContent = nbar.toFixed(1);
+          // For squeezed-vacuum to have same ⟨n⟩=nbar, need sinh²r = nbar ⇒ r = asinh(√nbar)
+          var r_for_nbar = Math.asinh(Math.sqrt(nbar));
+          var W = 540, H = 300, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad - 24;
+          var Nmax = Math.min(40, Math.ceil(nbar*4) + 6);
+          var bw = inner_w / Nmax;
+          var html = '';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          // find max P for scaling
+          var maxP = 0;
+          var coh_arr = [], th_arr = [], sq_arr = [];
+          for (var n = 0; n < Nmax; n++) {
+            var pc = poisson(n, nbar), pt = thermal(n, nbar), ps = squeezedVac(n, r_for_nbar);
+            coh_arr.push(pc); th_arr.push(pt); sq_arr.push(ps);
+            if (pc > maxP) maxP = pc;
+            if (pt > maxP) maxP = pt;
+            if (ps > maxP) maxP = ps;
+          }
+          for (var n = 0; n < Nmax; n++) {
+            var x0 = pad + n * bw;
+            var pc = coh_arr[n], pt = th_arr[n], ps = sq_arr[n];
+            var hc = (pc / maxP) * inner_h, ht = (pt / maxP) * inner_h, hs = (ps / maxP) * inner_h;
+            var bw_each = bw * 0.27;
+            html += '<rect x="' + (x0 + 1) + '" y="' + (pad + inner_h - hc) + '" width="' + bw_each + '" height="' + hc + '" fill="#7a9fd1" opacity="0.85"/>';
+            html += '<rect x="' + (x0 + 1 + bw_each + 1) + '" y="' + (pad + inner_h - ht) + '" width="' + bw_each + '" height="' + ht + '" fill="#e8b96a" opacity="0.85"/>';
+            html += '<rect x="' + (x0 + 1 + 2*bw_each + 2) + '" y="' + (pad + inner_h - hs) + '" width="' + bw_each + '" height="' + hs + '" fill="#79c79f" opacity="0.85"/>';
+            if (n % 5 === 0) html += '<text x="' + (x0 + bw/2) + '" y="' + (pad + inner_h + 14) + '" text-anchor="middle" font-size="10" fill="#888">' + n + '</text>';
+          }
+          // legend
+          html += '<rect x="' + (W-pad-180) + '" y="' + pad + '" width="10" height="10" fill="#7a9fd1"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+9) + '" font-size="10" fill="#7a9fd1">coherent (Poisson)</text>';
+          html += '<rect x="' + (W-pad-180) + '" y="' + (pad+15) + '" width="10" height="10" fill="#e8b96a"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+24) + '" font-size="10" fill="#e8b96a">thermal (geometric)</text>';
+          html += '<rect x="' + (W-pad-180) + '" y="' + (pad+30) + '" width="10" height="10" fill="#79c79f"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+39) + '" font-size="10" fill="#79c79f">squeezed vac (even only)</text>';
+          html += '<text x="' + (W/2) + '" y="' + (H-12) + '" text-anchor="middle" font-size="11" fill="#888">photon number n  (each state has ⟨n⟩ = ' + nbar.toFixed(2) + ')</text>';
+          svg.innerHTML = html;
+          // Mandel Q values (analytic): coherent 0, thermal n̄, squeezed-vac 2sinh²r·(1+something)
+          // For squeezed vacuum with sinh²r=nbar: Var(N) = 2 nbar(nbar+1), so Q = (Var-N)/N = (2nbar(nbar+1)-nbar)/nbar = 2nbar+1
+          qCoh.textContent = '0.000';
+          qTh.textContent = nbar.toFixed(3);
+          qSq.textContent = (2*nbar + 1).toFixed(3) + ' (super-Poiss; pair statistics)';
+        }
+        nbarS.addEventListener('input', draw);
+        draw();
+      })();
+    
 </script>
   </body>
 </html>

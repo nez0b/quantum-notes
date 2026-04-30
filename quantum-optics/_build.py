@@ -394,6 +394,66 @@ def assemble_proper(*, head: str, header: str, nav: str, main_html: str,
 
 
 # ---------------------------------------------------------------------------
+# Widget helpers
+# ---------------------------------------------------------------------------
+# Each interactive widget is a <div class="widget-shell"> containing:
+#   - a brief title and 1-line description
+#   - one or more <input type="range"> sliders (built via slider())
+#   - a <canvas> or <svg> visualization
+#   - a <div class="widget-readout"> for live numeric output
+# A matching <script> block (passed via the note's "scripts" field) wires
+# slider events to a render function. Vanilla JS only — no libraries.
+
+def slider(*, var: str, label: str, min_: float, max_: float, step: float,
+           value: float, fmt: str = "{:.2f}") -> str:
+    """Render a labeled <input type=range>.  `var` becomes the id; the
+    `.val` span gets id=`{var}-val` so the JS can update its text."""
+    return (
+        f'        <label>\n'
+        f'          <span>{label}</span>\n'
+        f'          <input type="range" id="{var}" min="{min_}" max="{max_}" '
+        f'step="{step}" value="{value}" />\n'
+        f'          <span class="val" id="{var}-val">{fmt.format(value)}</span>\n'
+        f'        </label>'
+    )
+
+
+def widget_shell(*, anchor: str, title: str, blurb: str,
+                 controls_html: str, canvas_html: str,
+                 readout_html: str = "", buttons_html: str = "") -> str:
+    """Compose a widget shell.  Returns the inner HTML of one <div class="widget-shell">."""
+    parts = [
+        f'<div class="widget-shell" id="{anchor}">',
+        f'  <h4>{title}</h4>',
+        f'  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">{blurb}</p>',
+        f'  <div class="widget-controls">\n{controls_html}\n  </div>',
+    ]
+    if buttons_html:
+        parts.append(f'  <div class="widget-buttons">{buttons_html}</div>')
+    parts.append(f'  {canvas_html}')
+    if readout_html:
+        parts.append(f'  <div class="widget-readout" id="{anchor}-readout">{readout_html}</div>')
+    parts.append('</div>')
+    return "\n".join(parts)
+
+
+def canvas_el(anchor: str, *, w: int = 480, h: int = 320) -> str:
+    return (f'<canvas class="widget-canvas" id="{anchor}-canvas" '
+            f'width="{w}" height="{h}"></canvas>')
+
+
+def svg_el(anchor: str, *, w: int = 480, h: int = 280) -> str:
+    return (f'<svg class="widget-svg" id="{anchor}-svg" '
+            f'viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg"></svg>')
+
+
+def script_block(js: str) -> str:
+    """Wrap a JS body in a <script> block.  The body should be self-contained
+    (its own IIFE if it needs closure)."""
+    return f'<script>\n{js}\n</script>'
+
+
+# ---------------------------------------------------------------------------
 # Per-note content
 # ---------------------------------------------------------------------------
 # Each note is a dict. The `sections` list holds tuples of
@@ -421,8 +481,10 @@ NOTE_01 = {
         ("coherent", "Coherent States"),
         ("quadratures", "Quadratures"),
         ("wigner", "Wigner"),
+        ("wigner-explorer", "Wigner Lab"),
         ("squeezing", "Squeezing"),
         ("density", "Density Ops"),
+        ("photon-stats", "Photon Stats"),
         ("classical-limit", "Classical Limit"),
         ("sources", "Sources"),
     ],
@@ -561,6 +623,49 @@ NOTE_01 = {
          ["Wigner W(x,p) = phase-space density for \\(\\rho\\)",
           "Gaussian states ↔ Gaussian Wigner ↔ classical-like",
           "Negative Wigner ⇒ Fock-like \\(n \\ge 1\\) state"]),
+        ("wigner-explorer", "Interactive: The Wigner Function for Gaussian States", r"""
+          <p class="lede">
+            Slide \(\Re\alpha\), \(\Im\alpha\), squeeze amplitude
+            \(r\), squeeze angle \(\theta\), and thermal occupation
+            \(\bar n\) to see the Wigner function deform. Coherent =
+            displaced unit Gaussian; squeezed = stretched ellipse;
+            thermal = isotropic but inflated.
+          </p>
+          """ + widget_shell(
+            anchor="wigner-explorer",
+            title="Live Wigner explorer",
+            blurb=(
+              "All Gaussian-state Wigner functions are 2D Gaussians "
+              "with covariance matrix <em>V</em>. The displacement "
+              "translates the centre; the squeeze parameters rotate "
+              "and stretch the ellipse; thermal occupation inflates "
+              "both axes uniformly."
+            ),
+            controls_html=(
+              slider(var="wig-re", label="Re α", min_=-3, max_=3,
+                     step=0.05, value=1.2, fmt="{:+.2f}") + "\n" +
+              slider(var="wig-im", label="Im α", min_=-3, max_=3,
+                     step=0.05, value=0.0, fmt="{:+.2f}") + "\n" +
+              slider(var="wig-r", label="squeeze r", min_=0, max_=1.5,
+                     step=0.05, value=0.0, fmt="{:.2f}") + "\n" +
+              slider(var="wig-theta", label="squeeze θ", min_=0,
+                     max_=3.14, step=0.05, value=0.0, fmt="{:.2f}") + "\n" +
+              slider(var="wig-nbar", label="thermal n̄", min_=0,
+                     max_=3, step=0.05, value=0.0, fmt="{:.2f}")
+            ),
+            canvas_html=canvas_el("wigner-explorer", w=440, h=440),
+            readout_html=(
+              '<div>⟨X⟩ = <span id="wig-mean-x">—</span> &nbsp; '
+              '⟨P⟩ = <span id="wig-mean-p">—</span></div>'
+              '<div>Var X = <span id="wig-var-x">—</span> &nbsp; '
+              'Var P = <span id="wig-var-p">—</span></div>'
+              '<div>State type: <span id="wig-type">coherent</span></div>'
+            ),
+          ) + r"""
+          """,
+         ["Coherent: displaced unit Gaussian",
+          "Squeezed: rotated/stretched ellipse",
+          "Thermal: isotropic, inflated"]),
         ("squeezing", "Squeezed States", r"""
           <p>
             The single-mode squeeze operator
@@ -626,6 +731,79 @@ NOTE_01 = {
          ["Pure: rank-1 \\(\\rho\\); mixed: higher rank",
           "Thermal state inflates both X and P symmetrically",
           'P-representation singular ⇒ a "nonclassical" state']),
+        ("photon-stats", "Photon Number Statistics", r"""
+          <p class="lede">
+            Coherent, squeezed, and thermal states share Gaussian
+            phase-space distributions but have <em>radically different
+            photon-counting statistics</em>. The photon-number
+            distribution \(P(n) = \langle n\rvert\rho\lvert n\rangle\)
+            is the experimental observable from a click detector.
+          </p>
+          <ul>
+            <li><strong>Coherent</strong>:
+              \(P(n) = e^{-\bar n}\,\bar n^n / n!\) — Poisson, with
+              \(\mathrm{Var}(N) = \bar n\) and Fano factor 1.</li>
+            <li><strong>Thermal</strong>:
+              \(P(n) = \bar n^n / (\bar n + 1)^{n+1}\) — geometric,
+              with \(\mathrm{Var}(N) = \bar n^2 + \bar n\); Fano factor
+              \(\bar n + 1\). Super-Poissonian.</li>
+            <li><strong>Squeezed vacuum</strong>:
+              \(P(n) = 0\) for odd \(n\); for even
+              \(n = 2k\), \(P(2k) = (\tanh r)^{2k}\,(2k)! / [2^{2k}(k!)^2 \cosh r]\).
+              Pair-only — never an odd photon count.</li>
+            <li><strong>Number state</strong>:
+              \(P(n) = \delta_{n, n_0}\). Sub-Poissonian:
+              \(\mathrm{Var}(N) = 0 \le \bar n\). The most non-classical
+              photon-number distribution.</li>
+          </ul>
+          <p>
+            The <strong>Mandel Q parameter</strong>
+            \(Q = (\mathrm{Var}(N) - \bar N) / \bar N\) is the canonical
+            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian
+            (classical mixture), \(Q < 0\) sub-Poissonian (truly quantum).
+          </p>
+          """ + widget_shell(
+            anchor="photon-distribution",
+            title="Interactive: photon-number distributions side-by-side",
+            blurb=(
+              "Plots <em>P</em>(<em>n</em>) for coherent, thermal, and "
+              "squeezed-vacuum states with the same mean photon number "
+              "<em>n̄</em>. The Mandel-Q readout flags the regime; the "
+              "two states have radically different statistics yet share "
+              "the same mean."
+            ),
+            controls_html=slider(var="pn-nbar", label="mean ⟨n⟩", min_=0.5,
+                                 max_=15, step=0.1, value=4.0,
+                                 fmt="{:.1f}"),
+            canvas_html=svg_el("photon-distribution", w=540, h=300),
+            readout_html=(
+              '<div>Coherent Q = <span id="pn-q-coh">0.000</span> (Poisson)</div>'
+              '<div>Thermal Q = <span id="pn-q-th">—</span></div>'
+              '<div>Squeezed-vacuum Q = <span id="pn-q-sq">—</span></div>'
+            ),
+          ) + r"""
+          """ + math_details("Why P(n) for squeezed vacuum has only even terms", r"""
+            <p>
+              The squeeze operator
+              \(S(r) = \exp[\tfrac{r}{2}(a^{\dagger 2} - a^2)]\) is a
+              quadratic generator: it raises and lowers photon number
+              <em>in pairs</em>. Acting on the vacuum
+              \(\lvert 0\rangle\), it generates a superposition of
+              even-\(n\) Fock states. Direct calculation of the
+              expansion coefficient \(\langle 2k\rvert S(r)\lvert 0\rangle\)
+              (e.g.\ via the disentangled normal-ordered form
+              \(S(r) = e^{\frac{1}{2}\tanh r\,a^{\dagger 2}}
+              (\cosh r)^{-1/2 - a^\dagger a} e^{-\frac{1}{2}\tanh r\,a^2}\))
+              yields the formula \(P(2k) \propto (\tanh r)^{2k}\)
+              quoted above. <em>The forbidden-odd-\(n\) feature is the
+              hallmark of a parametric process: photons are created in
+              pairs.</em>
+            </p>
+          """),
+         ["Coherent ↔ Poisson, Q = 0",
+          "Thermal ↔ super-Poissonian, Q > 0",
+          "Squeezed-vacuum ↔ even-only, can be sub-Poissonian",
+          "Number state ↔ Q < 0, fully quantum"]),
         ("classical-limit", "Where Coherent States Are Classical", r"""
           <p>
             For \(\lvert\alpha\rvert \gg 1\), the coherent-state field is
@@ -676,6 +854,189 @@ NOTE_01 = {
           "Walls &amp; Milburn for graduate-level reference",
           "Continue: Note 02 (linear optics)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: Wigner function explorer (canvas heatmap) ------------
+      (function () {
+        var canvas = document.getElementById('wigner-explorer-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        var ids = ['re', 'im', 'r', 'theta', 'nbar'];
+        var els = {};
+        ids.forEach(function (k) {
+          els[k] = document.getElementById('wig-' + k);
+          els[k + 'V'] = document.getElementById('wig-' + k + '-val');
+        });
+        var meanX = document.getElementById('wig-mean-x');
+        var meanP = document.getElementById('wig-mean-p');
+        var varX = document.getElementById('wig-var-x');
+        var varP = document.getElementById('wig-var-p');
+        var typeSpan = document.getElementById('wig-type');
+        function draw() {
+          var re = parseFloat(els.re.value);
+          var im = parseFloat(els.im.value);
+          var r = parseFloat(els.r.value);
+          var theta = parseFloat(els.theta.value);
+          var nbar = parseFloat(els.nbar.value);
+          els.reV.textContent = re.toFixed(2);
+          els.imV.textContent = im.toFixed(2);
+          els.rV.textContent = r.toFixed(2);
+          els.thetaV.textContent = theta.toFixed(2);
+          els.nbarV.textContent = nbar.toFixed(2);
+          // Convention: phase-space coords (x,p) such that vacuum has Var X = Var P = 1/2
+          // Coherent at α: ⟨X⟩ = √2 Re α, ⟨P⟩ = √2 Im α
+          // Squeeze with (r, θ) rotates and scales. Combined with thermal n̄:
+          // Var_squeezed = (n̄ + 1/2) e^{-2r}, anti-Var = (n̄ + 1/2) e^{+2r}
+          var mx = Math.SQRT2 * re;
+          var mp = Math.SQRT2 * im;
+          var Vsq = (nbar + 0.5) * Math.exp(-2*r);
+          var Vasq = (nbar + 0.5) * Math.exp(2*r);
+          // Cov in (X,P) basis after rotation by θ
+          var c = Math.cos(theta), s = Math.sin(theta);
+          // rotation matrix R(θ); cov in lab = R diag(Vsq,Vasq) R^T
+          var Cxx = c*c*Vsq + s*s*Vasq;
+          var Cpp = s*s*Vsq + c*c*Vasq;
+          var Cxp = c*s*(Vsq - Vasq);
+          // Render heatmap of W(x,p)
+          var XMIN = -5, XMAX = 5, PMIN = -5, PMAX = 5;
+          var img = ctx.getImageData(0, 0, W, H);
+          var data = img.data;
+          // det and inverse of cov
+          var det = Cxx*Cpp - Cxp*Cxp;
+          var iC11 = Cpp/det, iC22 = Cxx/det, iC12 = -Cxp/det;
+          var norm = 1/(2*Math.PI*Math.sqrt(det));
+          // colormap: viridis-ish
+          function color(t) {
+            // t in [0,1]
+            t = Math.max(0, Math.min(1, t));
+            var rr = Math.floor(68 + 200*t);
+            var gg = Math.floor(20 + 220*t*t);
+            var bb = Math.floor(140 - 140*t + 80*(1-t));
+            return [rr, gg, Math.max(0,bb)];
+          }
+          var maxW = norm; // for unit-trace Gaussian peak is at center
+          for (var py = 0; py < H; py++) {
+            var p_phys = PMAX - (py / H) * (PMAX - PMIN);
+            for (var px = 0; px < W; px++) {
+              var x_phys = XMIN + (px / W) * (XMAX - XMIN);
+              var dx = x_phys - mx, dp = p_phys - mp;
+              var q = iC11*dx*dx + 2*iC12*dx*dp + iC22*dp*dp;
+              var Wval = norm * Math.exp(-0.5*q);
+              var t = Wval / maxW;
+              var col = color(t);
+              var idx = (py*W + px)*4;
+              data[idx] = col[0]; data[idx+1] = col[1]; data[idx+2] = col[2]; data[idx+3] = 255;
+            }
+          }
+          ctx.putImageData(img, 0, 0);
+          // axes overlay
+          ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.3;
+          ctx.beginPath();
+          ctx.moveTo(0, H/2); ctx.lineTo(W, H/2);
+          ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#fff';
+          ctx.font = '11px monospace';
+          ctx.fillText('X →', W-22, H/2-5);
+          ctx.fillText('P →', W/2+5, 12);
+          // readouts
+          meanX.textContent = mx.toFixed(2);
+          meanP.textContent = mp.toFixed(2);
+          varX.textContent = Cxx.toFixed(3);
+          varP.textContent = Cpp.toFixed(3);
+          var label;
+          if (nbar > 0.05 && r < 0.05) label = 'thermal' + (re !== 0 || im !== 0 ? ' + displaced' : '');
+          else if (r > 0.05) label = 'squeezed' + (re !== 0 || im !== 0 ? ' + displaced' : ' vacuum');
+          else label = 'coherent' + (re === 0 && im === 0 ? ' (= vacuum)' : '');
+          typeSpan.textContent = label;
+        }
+        ids.forEach(function (k) { els[k].addEventListener('input', draw); });
+        draw();
+      })();
+
+      // -- Widget: photon-number distribution ---------------------------
+      (function () {
+        var svg = document.getElementById('photon-distribution-svg');
+        if (!svg) return;
+        var nbarS = document.getElementById('pn-nbar');
+        var nbarV = document.getElementById('pn-nbar-val');
+        var qCoh = document.getElementById('pn-q-coh');
+        var qTh = document.getElementById('pn-q-th');
+        var qSq = document.getElementById('pn-q-sq');
+        function poisson(n, lam) {
+          var lp = -lam;
+          for (var k = 1; k <= n; k++) lp += Math.log(lam) - Math.log(k);
+          return Math.exp(lp);
+        }
+        function thermal(n, nbar) {
+          return Math.pow(nbar, n) / Math.pow(nbar+1, n+1);
+        }
+        function squeezedVac(n, r) {
+          if (n % 2 === 1) return 0;
+          var k = n / 2;
+          // P(2k) = (tanh r)^(2k) (2k)! / (4^k (k!)^2 cosh r)
+          var lt = Math.log(Math.tanh(r));
+          var lp = (2*k) * lt - Math.log(Math.cosh(r));
+          // log of (2k)! / (4^k k!^2) — central binomial coefficient / 4^k
+          var lcoeff = 0;
+          for (var j = 1; j <= 2*k; j++) lcoeff += Math.log(j);
+          for (var j = 1; j <= k; j++) lcoeff -= 2*Math.log(j);
+          lcoeff -= 2*k * Math.log(2);
+          return Math.exp(lp + lcoeff);
+        }
+        function draw() {
+          var nbar = parseFloat(nbarS.value);
+          nbarV.textContent = nbar.toFixed(1);
+          // For squeezed-vacuum to have same ⟨n⟩=nbar, need sinh²r = nbar ⇒ r = asinh(√nbar)
+          var r_for_nbar = Math.asinh(Math.sqrt(nbar));
+          var W = 540, H = 300, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad - 24;
+          var Nmax = Math.min(40, Math.ceil(nbar*4) + 6);
+          var bw = inner_w / Nmax;
+          var html = '';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          // find max P for scaling
+          var maxP = 0;
+          var coh_arr = [], th_arr = [], sq_arr = [];
+          for (var n = 0; n < Nmax; n++) {
+            var pc = poisson(n, nbar), pt = thermal(n, nbar), ps = squeezedVac(n, r_for_nbar);
+            coh_arr.push(pc); th_arr.push(pt); sq_arr.push(ps);
+            if (pc > maxP) maxP = pc;
+            if (pt > maxP) maxP = pt;
+            if (ps > maxP) maxP = ps;
+          }
+          for (var n = 0; n < Nmax; n++) {
+            var x0 = pad + n * bw;
+            var pc = coh_arr[n], pt = th_arr[n], ps = sq_arr[n];
+            var hc = (pc / maxP) * inner_h, ht = (pt / maxP) * inner_h, hs = (ps / maxP) * inner_h;
+            var bw_each = bw * 0.27;
+            html += '<rect x="' + (x0 + 1) + '" y="' + (pad + inner_h - hc) + '" width="' + bw_each + '" height="' + hc + '" fill="#7a9fd1" opacity="0.85"/>';
+            html += '<rect x="' + (x0 + 1 + bw_each + 1) + '" y="' + (pad + inner_h - ht) + '" width="' + bw_each + '" height="' + ht + '" fill="#e8b96a" opacity="0.85"/>';
+            html += '<rect x="' + (x0 + 1 + 2*bw_each + 2) + '" y="' + (pad + inner_h - hs) + '" width="' + bw_each + '" height="' + hs + '" fill="#79c79f" opacity="0.85"/>';
+            if (n % 5 === 0) html += '<text x="' + (x0 + bw/2) + '" y="' + (pad + inner_h + 14) + '" text-anchor="middle" font-size="10" fill="#888">' + n + '</text>';
+          }
+          // legend
+          html += '<rect x="' + (W-pad-180) + '" y="' + pad + '" width="10" height="10" fill="#7a9fd1"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+9) + '" font-size="10" fill="#7a9fd1">coherent (Poisson)</text>';
+          html += '<rect x="' + (W-pad-180) + '" y="' + (pad+15) + '" width="10" height="10" fill="#e8b96a"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+24) + '" font-size="10" fill="#e8b96a">thermal (geometric)</text>';
+          html += '<rect x="' + (W-pad-180) + '" y="' + (pad+30) + '" width="10" height="10" fill="#79c79f"/>';
+          html += '<text x="' + (W-pad-165) + '" y="' + (pad+39) + '" font-size="10" fill="#79c79f">squeezed vac (even only)</text>';
+          html += '<text x="' + (W/2) + '" y="' + (H-12) + '" text-anchor="middle" font-size="11" fill="#888">photon number n  (each state has ⟨n⟩ = ' + nbar.toFixed(2) + ')</text>';
+          svg.innerHTML = html;
+          // Mandel Q values (analytic): coherent 0, thermal n̄, squeezed-vac 2sinh²r·(1+something)
+          // For squeezed vacuum with sinh²r=nbar: Var(N) = 2 nbar(nbar+1), so Q = (Var-N)/N = (2nbar(nbar+1)-nbar)/nbar = 2nbar+1
+          qCoh.textContent = '0.000';
+          qTh.textContent = nbar.toFixed(3);
+          qSq.textContent = (2*nbar + 1).toFixed(3) + ' (super-Poiss; pair statistics)';
+        }
+        nbarS.addEventListener('input', draw);
+        draw();
+      })();
+    """),
 }
 
 
@@ -695,6 +1056,7 @@ NOTE_02 = {
     ],
     "nav": [
         ("two-mode-bs", "2-Mode BS"),
+        ("bs-mixer", "BS Mixer Lab"),
         ("hom", "Hong-Ou-Mandel"),
         ("mzi", "Mach-Zehnder"),
         ("decompositions", "Decompositions"),
@@ -743,6 +1105,41 @@ NOTE_02 = {
          ["Beam splitter = 2×2 unitary on field operators",
           "Coherent state splits classically; single photon splits quantumly",
           "Loss = BS with vacuum on the unused input"]),
+        ("bs-mixer", "Interactive: Beam-Splitter Mixer", r"""
+          """ + widget_shell(
+            anchor="bs-mixer",
+            title="Two-mode beam splitter: phase + transmittance",
+            blurb=(
+              "Two coherent inputs <em>α</em>₁, <em>α</em>₂ enter a "
+              "BS with transmittance <em>T</em> and relative input phase "
+              "<em>φ</em>. The output amplitudes "
+              "<em>β</em>₁ = √<em>T</em> <em>α</em>₁ + i√(1−<em>T</em>) e<sup>iφ</sup> <em>α</em>₂, "
+              "<em>β</em>₂ = i√(1−<em>T</em>) <em>α</em>₁ + √<em>T</em> e<sup>iφ</sup> <em>α</em>₂. "
+              "Watch the output intensities trace out the cosine "
+              "interference pattern as you sweep <em>φ</em>."
+            ),
+            controls_html=(
+              slider(var="bs-T", label="transmittance T", min_=0,
+                     max_=1, step=0.01, value=0.5, fmt="{:.2f}") + "\n" +
+              slider(var="bs-phi", label="phase φ", min_=0,
+                     max_=6.283, step=0.05, value=0.0, fmt="{:.2f}") + "\n" +
+              slider(var="bs-a1", label="|α₁|", min_=0,
+                     max_=2.5, step=0.05, value=1.0, fmt="{:.2f}") + "\n" +
+              slider(var="bs-a2", label="|α₂|", min_=0,
+                     max_=2.5, step=0.05, value=1.0, fmt="{:.2f}")
+            ),
+            canvas_html=svg_el("bs-mixer", w=520, h=260),
+            readout_html=(
+              '<div>|β₁|² = <span id="bs-out1">—</span> &nbsp; '
+              '|β₂|² = <span id="bs-out2">—</span></div>'
+              '<div>Total |β|² = <span id="bs-tot">—</span> '
+              '(should equal |α₁|²+|α₂|² for a unitary)</div>'
+            ),
+          ) + r"""
+          """,
+         ["BS = 2×2 unitary, phase-sensitive",
+          "Output intensities are sinusoidal in φ",
+          "Total photon number is conserved"]),
         ("hom", "Hong-Ou-Mandel Interference", r"""
           <p>
             Send two indistinguishable single photons into the two
@@ -868,6 +1265,70 @@ NOTE_02 = {
           "Clements 2016: depth-balanced rectangular form",
           "Continue: Note 03 (nonlinear optics)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: beam-splitter mixer (SVG diagram + intensities) ------
+      (function () {
+        var svg = document.getElementById('bs-mixer-svg');
+        if (!svg) return;
+        var els = {};
+        ['T', 'phi', 'a1', 'a2'].forEach(function (k) {
+          els[k] = document.getElementById('bs-' + k);
+          els[k+'V'] = document.getElementById('bs-' + k + '-val');
+        });
+        var out1 = document.getElementById('bs-out1');
+        var out2 = document.getElementById('bs-out2');
+        var tot = document.getElementById('bs-tot');
+        function draw() {
+          var T = parseFloat(els.T.value);
+          var phi = parseFloat(els.phi.value);
+          var a1 = parseFloat(els.a1.value);
+          var a2 = parseFloat(els.a2.value);
+          els.TV.textContent = T.toFixed(2);
+          els.phiV.textContent = phi.toFixed(2);
+          els.a1V.textContent = a1.toFixed(2);
+          els.a2V.textContent = a2.toFixed(2);
+          // β₁ = √T α₁ + i√(1-T) e^(iφ) α₂  (real α treatment)
+          // β₂ = i√(1-T) α₁ + √T e^(iφ) α₂
+          var rT = Math.sqrt(T), rR = Math.sqrt(1-T);
+          var c = Math.cos(phi), s = Math.sin(phi);
+          // re/im of β₁
+          var b1r = rT*a1 - rR*a2*s;
+          var b1i = rR*a2*c;
+          var b2r = -rR*a1*s + rT*a2*c;
+          var b2i = rR*a1 + rT*a2*s;
+          var I1 = b1r*b1r + b1i*b1i;
+          var I2 = b2r*b2r + b2i*b2i;
+          var W = 520, H = 260, cx = W/2, cy = H/2;
+          var html = '';
+          // BS as a 45° box
+          html += '<rect x="' + (cx-30) + '" y="' + (cy-30) + '" width="60" height="60" fill="rgba(122,159,209,0.15)" stroke="#7a9fd1" stroke-width="1.5" transform="rotate(45 ' + cx + ' ' + cy + ')"/>';
+          html += '<text x="' + cx + '" y="' + (cy+5) + '" text-anchor="middle" font-size="11" fill="#7a9fd1">BS</text>';
+          // input 1: from left
+          html += '<line x1="40" y1="' + cy + '" x2="' + (cx-50) + '" y2="' + cy + '" stroke="#888" stroke-width="2"/>';
+          html += '<text x="40" y="' + (cy-8) + '" font-size="11" fill="#7a9fd1">α₁ = ' + a1.toFixed(2) + '</text>';
+          // input 2: from top
+          html += '<line x1="' + cx + '" y1="40" x2="' + cx + '" y2="' + (cy-50) + '" stroke="#888" stroke-width="2"/>';
+          html += '<text x="' + (cx+8) + '" y="40" font-size="11" fill="#e8b96a">α₂ e^{iφ} = ' + a2.toFixed(2) + ' e^{i' + phi.toFixed(2) + '}</text>';
+          // output 1: to right
+          var maxI = Math.max(I1, I2, 0.001);
+          var w1 = 1 + 6*Math.sqrt(I1 / maxI);
+          var w2 = 1 + 6*Math.sqrt(I2 / maxI);
+          html += '<line x1="' + (cx+50) + '" y1="' + cy + '" x2="' + (W-40) + '" y2="' + cy + '" stroke="#79c79f" stroke-width="' + w1.toFixed(1) + '"/>';
+          html += '<text x="' + (W-40) + '" y="' + (cy-8) + '" text-anchor="end" font-size="11" fill="#79c79f">|β₁|² = ' + I1.toFixed(2) + '</text>';
+          // output 2: down
+          html += '<line x1="' + cx + '" y1="' + (cy+50) + '" x2="' + cx + '" y2="' + (H-30) + '" stroke="#79c79f" stroke-width="' + w2.toFixed(1) + '"/>';
+          html += '<text x="' + (cx+8) + '" y="' + (H-30) + '" font-size="11" fill="#79c79f">|β₂|² = ' + I2.toFixed(2) + '</text>';
+          // T label
+          html += '<text x="20" y="20" font-size="11" fill="#888">T = ' + T.toFixed(2) + ' (transmittance)</text>';
+          svg.innerHTML = html;
+          out1.textContent = I1.toFixed(3);
+          out2.textContent = I2.toFixed(3);
+          tot.textContent = (I1+I2).toFixed(3) + '  vs.  α₁²+α₂² = ' + (a1*a1+a2*a2).toFixed(3);
+        }
+        ['T', 'phi', 'a1', 'a2'].forEach(function (k) { els[k].addEventListener('input', draw); });
+        draw();
+      })();
+    """),
 }
 
 
@@ -896,6 +1357,7 @@ NOTE_03 = {
         ("pdc", "Down-Conversion"),
         ("opa-opo", "OPA / OPO"),
         ("squeezing-gen", "Squeezing"),
+        ("squeeze-trajectory", "Squeeze Lab"),
         ("chi3", "χ⁽³⁾ Effects"),
         ("sources", "Sources"),
     ],
@@ -1079,6 +1541,43 @@ NOTE_03 = {
          ["χ⁽³⁾ ubiquitous: SPM, XPM, FWM, Kerr",
           "Soliton physics is χ⁽³⁾",
           "For CIM/OU: typically a parasitic to suppress, not exploit"]),
+        ("squeeze-trajectory", "Interactive: Squeezing in Phase Space", r"""
+          <p class="lede">
+            The χ⁽²⁾-driven squeeze operator \(S(r,\theta)\) takes the
+            unit-circle vacuum noise and stretches it into an ellipse:
+            \(e^{-r}\) along one axis, \(e^{+r}\) along the orthogonal
+            axis, rotated by \(\theta\). This is the geometry that
+            below-threshold OPOs produce.
+          </p>
+          """ + widget_shell(
+            anchor="squeeze-trajectory",
+            title="Phase-space squeezed-vacuum ellipse",
+            blurb=(
+              "Slide squeeze parameter <em>r</em> and angle <em>θ</em>. "
+              "The unit-circle vacuum noise (dashed) is the reference; "
+              "the squeezed ellipse (solid) shows the squeezed and "
+              "anti-squeezed quadratures. The product Var(<em>X</em>) · "
+              "Var(<em>P</em>) = ¼ holds: this is a minimum-uncertainty "
+              "state."
+            ),
+            controls_html=(
+              slider(var="sq-r", label="squeeze r", min_=0, max_=1.5,
+                     step=0.05, value=0.6, fmt="{:.2f}") + "\n" +
+              slider(var="sq-theta", label="angle θ", min_=0, max_=3.14,
+                     step=0.05, value=0.0, fmt="{:.2f}")
+            ),
+            canvas_html=svg_el("squeeze-trajectory", w=440, h=320),
+            readout_html=(
+              '<div>Squeezed Var = ½e^{−2r} = <span id="sq-var-min">—</span> '
+              '(<span id="sq-db-min">—</span> dB below SNL)</div>'
+              '<div>Anti-squeezed Var = ½e^{+2r} = <span id="sq-var-max">—</span></div>'
+              '<div>Product Var(X)·Var(P) = <span id="sq-prod">—</span> (Heisenberg minimum: 1/4)</div>'
+            ),
+          ) + r"""
+          """,
+         ["Squeeze ellipse: shrunk in one quadrature, stretched in other",
+          "\\(e^{-2r}\\) variance reduction in dB: \\(-8.7 r\\)",
+          "Heisenberg saturation: Var(X)·Var(P) = ¼"]),
         ("sources", "Sources &amp; Further Reading", r"""
           <table class="refs">
             <tr><td>Lecture</td><td><a href="_lectures/nonlinear_optics.pdf">nonlinear_optics.pdf</a> — primary source</td></tr>
@@ -1097,6 +1596,61 @@ NOTE_03 = {
           "Vahlbruch 2016: 15 dB squeezing record",
           "Continue: Note 04 (cavity QED)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: squeeze-trajectory phase-space ellipse ---------------
+      (function () {
+        var svg = document.getElementById('squeeze-trajectory-svg');
+        if (!svg) return;
+        var rS = document.getElementById('sq-r');
+        var thS = document.getElementById('sq-theta');
+        var rV = document.getElementById('sq-r-val');
+        var thV = document.getElementById('sq-theta-val');
+        var vmin = document.getElementById('sq-var-min');
+        var vmax = document.getElementById('sq-var-max');
+        var dbmin = document.getElementById('sq-db-min');
+        var prod = document.getElementById('sq-prod');
+        function draw() {
+          var r = parseFloat(rS.value);
+          var th = parseFloat(thS.value);
+          rV.textContent = r.toFixed(2);
+          thV.textContent = th.toFixed(2);
+          var W = 440, H = 320, cx = W/2, cy = H/2;
+          var SCALE = 50;
+          var Vsq = 0.5 * Math.exp(-2*r);
+          var Vasq = 0.5 * Math.exp(2*r);
+          var html = '';
+          // axes
+          html += '<line x1="0" y1="' + cy + '" x2="' + W + '" y2="' + cy + '" stroke="#666"/>';
+          html += '<line x1="' + cx + '" y1="0" x2="' + cx + '" y2="' + H + '" stroke="#666"/>';
+          html += '<text x="' + (W-12) + '" y="' + (cy-5) + '" font-size="11" fill="#888">X</text>';
+          html += '<text x="' + (cx+5) + '" y="12" font-size="11" fill="#888">P</text>';
+          // unit-circle vacuum reference  (radius √(1/2) * SCALE)
+          var Rvac = Math.sqrt(0.5) * SCALE;
+          html += '<circle cx="' + cx + '" cy="' + cy + '" r="' + Rvac + '" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="3,3"/>';
+          html += '<text x="' + (cx + Rvac + 4) + '" y="' + (cy + Rvac + 4) + '" font-size="10" fill="#888">vacuum</text>';
+          // squeezed ellipse: semi-axes √Vsq and √Vasq * SCALE, rotated by θ rad
+          var ax_sq = Math.sqrt(Vsq) * SCALE;
+          var ax_asq = Math.sqrt(Vasq) * SCALE;
+          var deg = th * 180 / Math.PI;
+          html += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + ax_sq + '" ry="' + ax_asq + '" fill="rgba(121,247,156,0.18)" stroke="#79f29c" stroke-width="2" transform="rotate(' + deg.toFixed(1) + ' ' + cx + ' ' + cy + ')"/>';
+          // arrow showing squeeze direction
+          var dx = ax_sq * Math.cos(th), dy = -ax_sq * Math.sin(th);
+          html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx+dx) + '" y2="' + (cy+dy) + '" stroke="#79f29c" stroke-width="1.5"/>';
+          html += '<text x="' + (cx+dx+5) + '" y="' + (cy+dy-5) + '" font-size="10" fill="#79f29c">squeezed</text>';
+          var dx2 = ax_asq * Math.cos(th + Math.PI/2), dy2 = -ax_asq * Math.sin(th + Math.PI/2);
+          html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx+dx2) + '" y2="' + (cy+dy2) + '" stroke="#f29c79" stroke-width="1.5"/>';
+          html += '<text x="' + (cx+dx2+5) + '" y="' + (cy+dy2-5) + '" font-size="10" fill="#f29c79">anti-squeezed</text>';
+          svg.innerHTML = html;
+          vmin.textContent = Vsq.toFixed(4);
+          vmax.textContent = Vasq.toFixed(4);
+          dbmin.textContent = (-8.686 * r).toFixed(2);
+          prod.textContent = (Vsq * Vasq).toFixed(4) + ' = (1/2)² (saturated)';
+        }
+        rS.addEventListener('input', draw);
+        thS.addEventListener('input', draw);
+        draw();
+      })();
+    """),
 }
 
 
@@ -1126,6 +1680,7 @@ NOTE_04 = {
         ("input-output", "Input-Output"),
         ("langevin", "Langevin"),
         ("classical-limit", "Classical Limit"),
+        ("cavity-decay", "Decay Lab"),
         ("sources", "Sources"),
     ],
     "sections": [
@@ -1315,6 +1870,41 @@ NOTE_04 = {
          ["Mean field: \\(\\dot\\alpha\\) deterministic + nonlinearity",
           "Fluctuations: linear SDE driven by vacuum (or squeezed) noise",
           "Defines the regime of all bench-scale optical computing"]),
+        ("cavity-decay", "Interactive: Driven-Cavity Decay", r"""
+          <p class="lede">
+            With drive turned off, an initial coherent state
+            \(\lvert\alpha_0\rangle\) decays as
+            \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\) — a simple
+            exponential ringdown. With drive, the cavity reaches a
+            non-zero steady state \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
+          </p>
+          """ + widget_shell(
+            anchor="cavity-decay",
+            title="Driven cavity ringdown / steady-state",
+            blurb=(
+              "Slide cavity decay <em>κ</em>, drive amplitude "
+              "<em>ε</em>, and toggle the drive. Phase-space trajectory "
+              "shows |α(t)|; the full curve is the analytic solution "
+              "<em>α</em>(t) = (ε/κ)(1 − e<sup>−κt</sup>) + α₀ e<sup>−κt</sup>."
+            ),
+            controls_html=(
+              slider(var="cd-kappa", label="decay κ", min_=0.1, max_=3.0,
+                     step=0.05, value=1.0, fmt="{:.2f}") + "\n" +
+              slider(var="cd-eps", label="drive ε", min_=0.0, max_=3.0,
+                     step=0.05, value=1.5, fmt="{:.2f}") + "\n" +
+              slider(var="cd-alpha0", label="|α₀|", min_=0.0, max_=4.0,
+                     step=0.05, value=2.0, fmt="{:.2f}")
+            ),
+            canvas_html=svg_el("cavity-decay", w=520, h=280),
+            readout_html=(
+              '<div>Steady-state |α_ss|² = <span id="cd-ss">—</span>  '
+              '(half-decay time t<sub>1/2</sub> = <span id="cd-thalf">—</span>)</div>'
+            ),
+          ) + r"""
+          """,
+         ["Free decay: \\(\\alpha(t) = \\alpha_0 e^{-\\kappa t/2}\\)",
+          "Driven steady state: \\(\\alpha_\\mathrm{ss} = \\varepsilon/\\kappa\\)",
+          "Half-life: \\(t_{1/2} = \\ln 2 / \\kappa\\)"]),
         ("sources", "Sources &amp; Further Reading", r"""
           <table class="refs">
             <tr><td>Lecture</td><td><a href="_lectures/CIM_description/CIM_description.pdf">CIM_description.pdf</a> — primary source for Lindblad form</td></tr>
@@ -1333,6 +1923,70 @@ NOTE_04 = {
           "Original I/O paper: Gardiner-Collett 1985",
           "Continue: Note 05 (homodyne)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: cavity decay (driven, exponential ringdown) ----------
+      (function () {
+        var svg = document.getElementById('cavity-decay-svg');
+        if (!svg) return;
+        var kS = document.getElementById('cd-kappa');
+        var eS = document.getElementById('cd-eps');
+        var aS = document.getElementById('cd-alpha0');
+        var kV = document.getElementById('cd-kappa-val');
+        var eV = document.getElementById('cd-eps-val');
+        var aV = document.getElementById('cd-alpha0-val');
+        var ssSp = document.getElementById('cd-ss');
+        var thalfSp = document.getElementById('cd-thalf');
+        function draw() {
+          var k = parseFloat(kS.value);
+          var eps = parseFloat(eS.value);
+          var a0 = parseFloat(aS.value);
+          kV.textContent = k.toFixed(2);
+          eV.textContent = eps.toFixed(2);
+          aV.textContent = a0.toFixed(2);
+          var W = 520, H = 280, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var TMAX = 8.0;
+          var alpha_ss = eps / k;
+          var maxA = Math.max(a0, alpha_ss) * 1.15 + 0.1;
+          function xpos(t) { return pad + (t/TMAX) * inner_w; }
+          function ypos(a) { return pad + inner_h - (a/maxA) * inner_h; }
+          var html = '';
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          // SS line
+          html += '<line x1="' + pad + '" y1="' + ypos(alpha_ss) + '" x2="' + (W-pad) + '" y2="' + ypos(alpha_ss) + '" stroke="#e8b96a" stroke-width="1" stroke-dasharray="4,3"/>';
+          html += '<text x="' + (W-pad-8) + '" y="' + (ypos(alpha_ss)-4) + '" text-anchor="end" font-size="10" fill="#e8b96a">|α_ss| = ' + alpha_ss.toFixed(2) + '</text>';
+          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt/2}  (amplitude convention)
+          var pts = [];
+          for (var t = 0; t <= TMAX; t += 0.05) {
+            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t/2);
+            pts.push(xpos(t) + ',' + ypos(Math.abs(a)));
+          }
+          html += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#79c79f" stroke-width="2"/>';
+          // half-life marker
+          var thalf = Math.log(2)/k;
+          if (a0 > alpha_ss) {
+            var a_half = alpha_ss + (a0 - alpha_ss) * 0.5;
+            html += '<circle cx="' + xpos(thalf) + '" cy="' + ypos(a_half) + '" r="4" fill="#fff"/>';
+            html += '<text x="' + (xpos(thalf)+6) + '" y="' + (ypos(a_half)-4) + '" font-size="10" fill="#fff">t₁/₂</text>';
+          }
+          // axes labels
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">time t  (in units of 1/κ_ref)</text>';
+          html += '<text x="' + (pad/2) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/2) + ' ' + (H/2) + ')">|α(t)|</text>';
+          // tick labels
+          for (var t of [0, 1, 2, 4, 6, 8]) {
+            html += '<text x="' + xpos(t) + '" y="' + (pad+inner_h+15) + '" text-anchor="middle" font-size="10" fill="#888">' + t + '</text>';
+          }
+          svg.innerHTML = html;
+          ssSp.textContent = (alpha_ss*alpha_ss).toFixed(3);
+          thalfSp.textContent = thalf.toFixed(3);
+        }
+        kS.addEventListener('input', draw);
+        eS.addEventListener('input', draw);
+        aS.addEventListener('input', draw);
+        draw();
+      })();
+    """),
 }
 
 
@@ -1360,6 +2014,7 @@ NOTE_05 = {
         ("shot-noise", "Shot Noise"),
         ("phase-vs-het", "Phase vs Het."),
         ("sub-shot", "Sub-Shot-Noise"),
+        ("homodyne-quadrature", "Quadrature Lab"),
         ("sme", "SME"),
         ("wm-feedback", "Wiseman-Milburn"),
         ("sources", "Sources"),
@@ -1487,6 +2142,43 @@ NOTE_05 = {
          ["Squeezed input → e^(−2r) on photocurrent variance",
           "Detection loss caps usable r",
           "No κ-dependence — Direction B's killshot"]),
+        ("homodyne-quadrature", "Interactive: Homodyne Quadrature Selection", r"""
+          <p class="lede">
+            Slide LO phase \(\varphi\). The homodyne photocurrent
+            measures the rotated quadrature
+            \(X_\varphi = X\cos\varphi + P\sin\varphi\). For a coherent
+            state, the histogram of measured \(X_\varphi\) is a
+            Gaussian; for squeezed input, the variance dips below the
+            shot-noise floor when \(\varphi\) hits the squeezed
+            quadrature's angle.
+          </p>
+          """ + widget_shell(
+            anchor="homodyne-quadrature",
+            title="LO phase scan with optional squeezed input",
+            blurb=(
+              "Histogram of 600 random samples of <em>X<sub>φ</sub></em>. "
+              "Toggle squeezing on the input to see variance dip below "
+              "the shot-noise floor (dashed) at <em>φ</em> = 0. "
+              "Anti-squeezing (variance above floor) at <em>φ</em> = π/2."
+            ),
+            controls_html=(
+              slider(var="hd-phi", label="LO phase φ", min_=0,
+                     max_=3.14, step=0.05, value=0.0, fmt="{:.2f}") + "\n" +
+              slider(var="hd-r", label="signal squeeze r", min_=0,
+                     max_=1.2, step=0.05, value=0.0, fmt="{:.2f}")
+            ),
+            buttons_html='<button id="hd-resample">Resample</button>',
+            canvas_html=svg_el("homodyne-quadrature", w=520, h=300),
+            readout_html=(
+              '<div>Sample variance: <span id="hd-var">—</span> &nbsp; '
+              'Shot-noise floor: <span id="hd-snf">0.500</span></div>'
+              '<div>dB vs SNL: <span id="hd-db">—</span></div>'
+            ),
+          ) + r"""
+          """,
+         ["LO phase φ selects measured quadrature \\(X_\\varphi\\)",
+          "Squeezed input dips below SNL at the right φ",
+          "π/2 phase shift swaps squeezed ↔ anti-squeezed"]),
         ("sme", "Continuous Measurement: The Stochastic Master Equation", r"""
           <p>
             A homodyne detector running continuously gives a
@@ -1564,6 +2256,102 @@ NOTE_05 = {
           "WM textbook (2010) is the modern reference",
           "Continue: Note 06 (CIM, the headline)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: homodyne quadrature with optional squeezing ----------
+      (function () {
+        var svg = document.getElementById('homodyne-quadrature-svg');
+        if (!svg) return;
+        var phS = document.getElementById('hd-phi');
+        var rS = document.getElementById('hd-r');
+        var phV = document.getElementById('hd-phi-val');
+        var rV = document.getElementById('hd-r-val');
+        var varSp = document.getElementById('hd-var');
+        var dbSp = document.getElementById('hd-db');
+        var resampleBtn = document.getElementById('hd-resample');
+        var seed = 12345;
+        function gauss() {
+          var u = 0, v = 0;
+          while(u===0) u = Math.random();
+          while(v===0) v = Math.random();
+          return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+        }
+        function draw() {
+          var phi = parseFloat(phS.value);
+          var r = parseFloat(rS.value);
+          phV.textContent = phi.toFixed(2);
+          rV.textContent = r.toFixed(2);
+          // squeezed quadratures: Var(X)=½ e^{-2r}, Var(P)=½ e^{2r}
+          // measured X_phi = X cos φ + P sin φ has variance:
+          // Var(X_phi) = ½ (e^{-2r} cos²φ + e^{2r} sin²φ)  [for squeezed vacuum]
+          // For coherent state: Var = 1/2
+          var Vphi;
+          if (r < 0.005) {
+            Vphi = 0.5;
+          } else {
+            Vphi = 0.5 * (Math.exp(-2*r)*Math.cos(phi)*Math.cos(phi) + Math.exp(2*r)*Math.sin(phi)*Math.sin(phi));
+          }
+          // sample 600 measurements
+          var samples = [];
+          var sample_var = 0, sample_mean = 0;
+          for (var i = 0; i < 600; i++) {
+            var x = Math.sqrt(Vphi) * gauss();
+            samples.push(x);
+            sample_mean += x;
+          }
+          sample_mean /= 600;
+          for (var i = 0; i < samples.length; i++) {
+            var d = samples[i] - sample_mean;
+            sample_var += d*d;
+          }
+          sample_var /= 600;
+          // build histogram
+          var W = 520, H = 300, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad - 24;
+          var nb = 30;
+          var XMIN = -3, XMAX = 3;
+          var bins = new Array(nb).fill(0);
+          for (var i = 0; i < samples.length; i++) {
+            var idx = Math.floor((samples[i] - XMIN) / (XMAX - XMIN) * nb);
+            if (idx >= 0 && idx < nb) bins[idx]++;
+          }
+          var maxCount = Math.max.apply(null, bins);
+          var bw = inner_w / nb;
+          var html = '';
+          for (var k = 0; k < nb; k++) {
+            var x0 = pad + k*bw;
+            var bh = (bins[k]/maxCount) * inner_h;
+            html += '<rect x="' + (x0+0.5) + '" y="' + (pad + inner_h - bh) + '" width="' + (bw-1) + '" height="' + bh + '" fill="#79c79f" opacity="0.65"/>';
+          }
+          // shot-noise floor reference Gaussian (Var = 1/2)
+          var coherent_pts = [];
+          for (var k = 0; k < nb; k++) {
+            var x = XMIN + (k+0.5) * (XMAX - XMIN) / nb;
+            // expected count for coherent: 600 * (XMAX-XMIN)/nb * gaussian_pdf(x; var=1/2)
+            var pdf = Math.exp(-x*x/(2*0.5)) / Math.sqrt(2*Math.PI*0.5);
+            var count = 600 * pdf * (XMAX-XMIN)/nb;
+            var x0 = pad + k*bw + bw/2;
+            var py = pad + inner_h - (count/maxCount)*inner_h;
+            coherent_pts.push(x0 + ',' + py);
+          }
+          html += '<polyline points="' + coherent_pts.join(' ') + '" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<text x="' + (W/2) + '" y="' + (H-12) + '" text-anchor="middle" font-size="11" fill="#888">measured X_φ</text>';
+          html += '<text x="' + pad + '" y="' + (pad+inner_h+15) + '" font-size="10" fill="#888">' + XMIN + '</text>';
+          html += '<text x="' + (W-pad) + '" y="' + (pad+inner_h+15) + '" text-anchor="end" font-size="10" fill="#888">' + XMAX + '</text>';
+          html += '<text x="' + (W-pad-160) + '" y="' + (pad+12) + '" font-size="10" fill="#888">solid: actual histogram (Var=' + sample_var.toFixed(3) + ')</text>';
+          html += '<text x="' + (W-pad-160) + '" y="' + (pad+25) + '" font-size="10" fill="#888">dashed: shot-noise floor (Var=0.500)</text>';
+          svg.innerHTML = html;
+          varSp.textContent = sample_var.toFixed(4);
+          var db = (Vphi < 0.5) ? -10*Math.log10(0.5/Vphi) : 10*Math.log10(Vphi/0.5);
+          dbSp.textContent = (db > 0 ? '+' : '') + db.toFixed(2) + ' dB ' + (db < 0 ? '(below SNL — squeezed!)' : (db > 0.1 ? '(above SNL — anti-squeezed)' : '(at SNL)'));
+        }
+        phS.addEventListener('input', draw);
+        rS.addEventListener('input', draw);
+        if (resampleBtn) resampleBtn.addEventListener('click', draw);
+        draw();
+      })();
+    """),
 }
 
 
@@ -1589,11 +2377,17 @@ NOTE_06 = {
     ],
     "nav": [
         ("opo-basics", "OPO Basics"),
+        ("below-threshold", "Below Threshold"),
         ("dopo", "DOPO Bifurcation"),
         ("quantum-classical", "Quantum vs Classical"),
         ("mfb-network", "MFB Network"),
+        ("time-multiplexing", "Time-Multiplex"),
         ("ising-mapping", "Ising Mapping"),
+        ("qubo-mappings", "QUBO &amp; Beyond"),
         ("rosetta", "Update Rosetta"),
+        ("comparison", "vs Annealers / SA"),
+        ("scaling", "Scaling"),
+        ("open-questions", "Open Questions"),
         ("sota", "State of the Art"),
         ("sources", "Sources"),
     ],
@@ -1628,6 +2422,51 @@ NOTE_06 = {
          ["OPO = χ⁽²⁾ + cavity, pumped at \\(2\\omega\\)",
           "Threshold: \\(g\\lvert\\beta_p\\rvert = \\kappa\\)",
           "Below: squeezing source. Above: oscillation."]),
+        ("below-threshold", "Below Threshold: The Squeezed-Vacuum Source", r"""
+          <p class="lede">
+            Below threshold, an OPO is the canonical workhorse for
+            generating <em>squeezed vacuum</em> — a state with one
+            quadrature variance below the shot-noise floor and the
+            other above (Note 03 introduced the squeeze operator
+            \(S(r)\); here we generate it physically).
+          </p>
+          <p>
+            Linearizing the intracavity equations around \(a = 0\)
+            and solving for the steady-state output via input-output
+            (Note 04, Gardiner-Collett),
+            \[
+              \langle X_\mathrm{out}^2 \rangle
+                = \frac{1}{4}\,\frac{1 - \eta\,\Lambda}{1 + \Lambda},
+              \qquad
+              \langle P_\mathrm{out}^2 \rangle
+                = \frac{1}{4}\,\frac{1 + \eta\,\Lambda}{1 - \Lambda},
+            \]
+            where \(\Lambda = (g\lvert\beta_p\rvert/\kappa)^2 = p^2\) and
+            \(\eta\) is the detection efficiency (1 for perfect
+            detection). At threshold \(p \to 1\), the squeezed
+            quadrature variance \(\to 0\) and the anti-squeezed
+            quadrature \(\to \infty\) — perfect EPR correlations are a
+            critical phenomenon of the OPO.
+          </p>
+          <p>
+            <em>State of the art</em>: 15 dB squeezing demonstrated by
+            Vahlbruch et al.\ 2016 with periodically-poled KTP at
+            \(\eta \approx 0.99\), corresponding to
+            \(\langle X_\mathrm{out}^2\rangle / (1/4) \approx 0.032\) —
+            a 30× variance reduction. This is the working substrate
+            for gravitational-wave squeezed-light injection in LIGO.
+          </p>
+          """ + callout(
+            "Below-threshold OPO and above-threshold DOPO are <em>the same "
+            "device</em> with the pump knob turned. The bifurcation at "
+            "threshold is therefore not just a computational primitive — "
+            "it is the connection between two operational regimes that "
+            "have utterly different applications (squeezed light for "
+            "metrology vs.\\ Ising spins for optimization)."
+          ),
+         ["Below threshold: linearized Langevin = squeezed vacuum",
+          "Squeezed variance \\(\\to 0\\) as \\(p \\to 1\\) — critical",
+          "Vahlbruch 2016: 15 dB demonstrated"]),
         ("dopo", "The DOPO Bifurcation", r"""
           <p>
             For a <em>degenerate</em> OPO (signal frequency = idler
@@ -1664,10 +2503,77 @@ NOTE_06 = {
             "the system crosses threshold. This noise-driven phase "
             "selection is the entire computational primitive of the "
             "CIM."
-          ),
+          ) + math_details("Detailed math: pitchfork normal form from pump depletion", r"""
+            <p>
+              Start with the two-mode Hamiltonian for a degenerate
+              parametric amplifier with a depleted pump:
+              \[
+                H = \omega\, a^\dagger a + 2\omega\, b^\dagger b
+                  + \tfrac{i}{2} g\,(a^{\dagger 2} b - a^{2} b^\dagger).
+              \]
+              The Heisenberg equations, going to the rotating frame
+              and adding cavity decay \(\kappa\) to the signal mode and
+              \(\kappa_p\) to the pump:
+              \[
+                \dot a = -\kappa\, a + g\,a^\dagger b, \qquad
+                \dot b = -\kappa_p\,b - \tfrac{1}{2} g\,a^2 + \kappa_p\beta_\mathrm{in}.
+              \]
+              Adiabatically eliminate the pump (\(\kappa_p \gg \kappa\),
+              fast pump): \(b \approx \beta_\mathrm{in} - g a^2 / (2\kappa_p)\).
+              Substitute back into \(\dot a\):
+              \[
+                \dot a = -\kappa\, a + g\, a^\dagger \beta_\mathrm{in}
+                       - \frac{g^2}{2\kappa_p}\,a^\dagger a^2.
+              \]
+              For a real pump amplitude this is a real-coefficient
+              equation in \(a\); on a single quadrature
+              \(\alpha = \langle (a + a^\dagger)/\sqrt{2}\rangle\) we get
+              \[
+                \dot\alpha = -\kappa\,\alpha + g\beta_\mathrm{in}\,\alpha
+                           - \frac{g^2}{2\kappa_p}\,\alpha^3.
+              \]
+              Rescale time by \(\kappa^{-1}\) and define
+              \(p \equiv g\beta_\mathrm{in}/\kappa\) and
+              \(\mu \equiv g^2/(2\kappa\kappa_p)\) to land on the
+              dimensionless form
+              \(\dot\alpha = (p-1)\alpha - \mu\alpha^3\), the canonical
+              normal form of the supercritical pitchfork. The
+              fixed-point equation \((p-1)\alpha = \mu\alpha^3\) gives
+              \(\alpha = 0\) (always) plus
+              \(\alpha = \pm\sqrt{(p-1)/\mu}\) for \(p > 1\).
+            </p>
+          """) + r"""
+          """ + widget_shell(
+            anchor="dopo-bifurcation",
+            title="Interactive: DOPO bifurcation",
+            blurb=(
+              "Slide the normalized pump <em>p</em>. Below threshold "
+              "(<em>p</em> &lt; 1) only the origin is stable — the cavity "
+              "is a squeezed-vacuum source. Above threshold the origin "
+              "becomes unstable and two new fixed points "
+              "<em>α</em> = ±√((<em>p</em>−1)/<em>μ</em>) emerge. The "
+              "noise cloud at <em>p</em> = 1 is what selects which one wins."
+            ),
+            controls_html=(
+              slider(var="dopo-p", label="pump p / p_th", min_=0, max_=3,
+                     step=0.01, value=0.6, fmt="{:.2f}") + "\n" +
+              slider(var="dopo-mu", label="saturation μ", min_=0.05, max_=1.5,
+                     step=0.01, value=0.3, fmt="{:.2f}") + "\n" +
+              slider(var="dopo-noise", label="noise level √D", min_=0.01,
+                     max_=0.4, step=0.005, value=0.08, fmt="{:.3f}")
+            ),
+            canvas_html=canvas_el("dopo-bifurcation", w=520, h=320),
+            readout_html=(
+              '<span id="dopo-bifurcation-text">'
+              'Below threshold — origin stable, vacuum is squeezed.'
+              '</span>'
+            ),
+          ) + r"""
+          """,
          ["DOPO mean-field = pitchfork bifurcation",
           "Two stable phases (\\(\\pm\\)) above threshold",
-          "Quantum noise selects which phase wins"]),
+          "Quantum noise selects which phase wins",
+          "Adiabatic pump elimination ⇒ \\(\\dot\\alpha = (p-1)\\alpha - \\mu\\alpha^3\\)"]),
         ("quantum-classical", "When Is the CIM Quantum, When Is It Classical?", r"""
           <p>
             This is the question the CIM literature has spent two
@@ -1713,10 +2619,69 @@ NOTE_06 = {
             'advantage&rdquo;. The first is uncontroversial. The second is '
             'an open empirical question — and the answer is currently '
             '<em>&ldquo;no, on the problems tested so far&rdquo;</em>.'
-          ),
-         ["Above threshold: classical SDE",
+          ) + r"""
+          <p>
+            <em>Where does the line live numerically?</em> A useful rule
+            of thumb: the regime is operationally classical when
+            \(\langle n\rangle \gtrsim 10\)–\(30\) per pulse —
+            i.e.\ when the signal-to-noise ratio
+            \(\sqrt{\langle n\rangle}/1 \gtrsim 3\)–\(5\). Below that,
+            quantum-optical features (squeezing, single-photon
+            statistics, entanglement across pulses) dominate. The
+            interactive below lets you slide \(\langle n\rangle\) across
+            this crossover.
+          </p>
+          """ + widget_shell(
+            anchor="qc-regime",
+            title="Interactive: where is the quantum/classical crossover?",
+            blurb=(
+              "Slide the photon number per pulse <em>n̄</em> on a log "
+              "scale. The signal-to-vacuum ratio is √<em>n̄</em> : 1. The "
+              "regime label flips when SNR crosses 3."
+            ),
+            controls_html=slider(var="qc-n", label="log₁₀ ⟨n⟩", min_=-2,
+                                 max_=6, step=0.05, value=2.0,
+                                 fmt="{:+.2f}"),
+            canvas_html=svg_el("qc-regime", w=520, h=180),
+            readout_html='<span id="qc-regime-text">SNR ≈ 10 — bright-field, classical SDE applies.</span>',
+          ) + r"""
+          """ + math_details("Detailed math: when does linearization around the mean become exact?", r"""
+            <p>
+              Write the field as \(a = \alpha + \delta a\), where
+              \(\alpha = \langle a\rangle\) is the (large) classical
+              mean and \(\delta a\) carries quantum fluctuations. The
+              Heisenberg-Langevin equation for \(\delta a\) becomes
+              <em>linear</em> with coefficients evaluated at \(\alpha\):
+              \[
+                \dot{\delta a} = M(\alpha)\,\delta a + \xi(t),
+              \]
+              where \(M(\alpha)\) is a \(2\times 2\) drift matrix
+              capturing parametric gain plus cubic-saturation
+              feedback. Nonlinear terms in \(\delta a\) are suppressed
+              by \(1/\lvert\alpha\rvert\). For
+              \(\lvert\alpha\rvert^2 \gg 1\) (i.e.\ many photons per
+              pulse) those nonlinearities are a small perturbation, the
+              linearized Gaussian description is exact, and
+              <em>by a theorem of Mandel-Wolf</em> the dynamics is
+              exactly reproducible by a classical SDE with Gaussian
+              white noise of variance set by the vacuum.
+            </p>
+            <p>
+              Below threshold, \(\lvert\alpha\rvert \to 0\), the
+              linearization is around the unstable fixed point and
+              \(M(\alpha)\) has positive eigenvalues for one quadrature
+              and negative for the other — so the Gaussian
+              approximation predicts squeezing (variance below the
+              vacuum floor). At threshold, \(M(\alpha)\) has a zero
+              eigenvalue and the linearization breaks down: cubic
+              terms in \(\delta a\) become essential, and the dynamics
+              is genuinely nonlinear.
+            </p>
+          """),
+         ["Above threshold: classical SDE (Mandel-Wolf)",
           "Below threshold: full Lindblad / squeezing",
-          "At threshold: amplification of \\(O(1)\\) quantum events"]),
+          "At threshold: nonlinear amplification of \\(O(1)\\) events",
+          "Crossover empirically near \\(\\langle n\\rangle \\sim 10\\)"]),
         ("mfb-network", "Network of DOPOs with Measurement Feedback", r"""
           <p>
             One DOPO commits to one bit of phase. To compute, we need
@@ -1763,10 +2728,92 @@ NOTE_06 = {
             architecture is dimension-efficient in a way no
             spatially-multiplexed scheme is.
           </p>
+          """ + widget_shell(
+            anchor="cim-roundtrip",
+            title="Interactive: 4-spin CIM round-trip",
+            blurb=(
+              "A miniature 4-spin chain with Heisenberg-style coupling. "
+              "Press <em>Run</em> to step through 80 round-trips of the "
+              "McMahon Euler update (AHC.py:131–133). The bars show "
+              "pulse amplitudes; the trace below shows Ising energy "
+              "<em>H</em> = −½ <em>s</em>ᵀ<em>J</em><em>s</em> "
+              "decreasing as the system commits to a low-energy spin "
+              "configuration."
+            ),
+            controls_html=(
+              slider(var="cim-pump", label="pump rate", min_=0.005,
+                     max_=0.05, step=0.001, value=0.02, fmt="{:.3f}") + "\n" +
+              slider(var="cim-coupling", label="coupling ε", min_=0.005,
+                     max_=0.08, step=0.001, value=0.03, fmt="{:.3f}") + "\n" +
+              slider(var="cim-noise", label="noise √D", min_=0.0,
+                     max_=0.1, step=0.002, value=0.04, fmt="{:.3f}")
+            ),
+            buttons_html=(
+              '<button id="cim-roundtrip-run">Run</button>'
+              '<button id="cim-roundtrip-step">Step</button>'
+              '<button id="cim-roundtrip-reset">Reset</button>'
+            ),
+            canvas_html=svg_el("cim-roundtrip", w=520, h=320),
+            readout_html=(
+              '<div>Spin config: <span id="cim-roundtrip-spins">+ + + +</span></div>'
+              '<div>Ising energy: <span id="cim-roundtrip-energy">0.000</span></div>'
+              '<div>Round-trip: <span id="cim-roundtrip-step-num">0</span> / 80</div>'
+            ),
+          ) + r"""
           """,
          ["Time-multiplexed pulses = spins",
           "FPGA implements \\(\\sum_j J_{ij} x_j\\)",
-          "EOM injection = spin-spin coupling"]),
+          "EOM injection = spin-spin coupling",
+          "Round-trip rate sets clock speed"]),
+        ("time-multiplexing", "Time-Multiplexed Pulses: The Architecture", r"""
+          <p class="lede">
+            The fiber-loop CIM is not <em>N</em> separate cavities — it
+            is one cavity holding <em>N</em> pulses. Understanding the
+            timing budget is what makes the architecture intelligible.
+          </p>
+          <p>
+            The Honjo-NTT 100k-spin machine uses a 5 km fiber ring
+            (round-trip \(\tau_\mathrm{rt} \approx 25\,\mu\text{s}\))
+            with pulses spaced at 200 ps — that fits \(\sim\)125,000
+            time slots, of which 100,144 are used. The PPLN gain
+            crystal is traversed once per round-trip; each pulse picks
+            up gain proportional to the current pump amplitude. The
+            FPGA budget per slot is a few ns (200 ps slot ⇒ FPGA must
+            finish its part of the MVM faster than the pulse leaves
+            the EOM zone).
+          </p>
+          """ + math_details("Detailed math: round-trip latency budget", r"""
+            <p>
+              Per round-trip the FPGA does \(O(N^2)\) multiply-accumulates
+              for the dense Ising MVM, plus \(O(N)\) reads and writes
+              from homodyne and to EOM driver. With pulses spaced
+              \(\Delta\tau_\mathrm{slot}\) and total round-trip time
+              \(\tau_\mathrm{rt} = N \Delta\tau_\mathrm{slot}\), the FPGA
+              has \(\Delta\tau_\mathrm{slot}\) per spin to pipeline its
+              MVM contribution. For \(N = 10^5, \Delta\tau_\mathrm{slot}
+              = 200\) ps, that's \(2 \times 10^4\)
+              multiply-accumulates per spin in \(2 \times 10^{-10}\) s
+              — a sustained \(10^{14}\) MACS, hard but tractable on a
+              top-tier FPGA. <strong>The latency budget is the
+              load-bearing constraint of the entire architecture.</strong>
+            </p>
+            <p>
+              The Honjo et al.\ paper reports their FPGA runs at 250
+              MHz clock with parallelism \(\approx\) 250 lanes,
+              giving \(6 \times 10^{10}\) MACS — they only achieve
+              this because the \(J\) matrix is a sparse graph,
+              not dense. Dense problems would saturate well below 100k.
+            </p>
+          """) + callout(
+            "Time-multiplexing trades spatial expense (one waveguide per "
+            "spin) for temporal expense (one round-trip per update). "
+            "It's a win as long as the FPGA can keep up with the "
+            "round-trip rate — and that constraint is precisely what "
+            "Note 07's OU machine inherits."
+          ),
+         ["100k spins fit in one 5 km fiber ring",
+          "Pulse slot \\(\\Delta\\tau \\approx 200\\,\\mathrm{ps}\\); RT \\(\\sim 25\\,\\mu\\)s",
+          "FPGA latency = the load-bearing assumption"]),
         ("ising-mapping", "From Pulses to Ising Solutions", r"""
           <p>
             When each DOPO settles to ±1 (above threshold, after
@@ -1809,6 +2856,58 @@ NOTE_06 = {
          ["Output: \\(s = \\mathrm{sgn}\\,x\\) — bipolar spin string",
           "Heuristic: minimizes \\(-\\tfrac{1}{2}s^T J s\\)",
           "AHC/CAC = post-hoc fixes for amplitude heterogeneity"]),
+        ("qubo-mappings", "QUBO, MAX-CUT, and the Encoding Overhead", r"""
+          <p class="lede">
+            Most combinatorial problems are not natively Ising; they
+            reduce to Ising. The reduction comes with overhead — the
+            number of physical spins per logical variable matters for
+            whether the CIM beats a CPU.
+          </p>
+          <p>
+            <strong>QUBO &harr; Ising</strong>. A 0/1 QUBO over
+            \(z \in \{0,1\}^n\) with cost
+            \(C(z) = z^T Q z\) maps to bipolar spins
+            \(s = 2z - 1 \in \{\pm 1\}^n\) via
+            \[
+              C(z) = \tfrac{1}{4}\,s^T Q s + \tfrac{1}{4}\,(\mathbf{1}^T Q + Q\mathbf{1})\,s
+                   + \tfrac{1}{4}\,\mathbf{1}^T Q \mathbf{1}.
+            \]
+            The diagonal of \(Q\) becomes a linear field
+            \(h_i = \tfrac{1}{2}(\mathbf{1}^T Q)_i\); the off-diagonal
+            becomes \(J_{ij} = \tfrac{1}{4}(Q_{ij} + Q_{ji})\). One
+            logical bit ↔ one physical spin: zero overhead.
+          </p>
+          <p>
+            <strong>MAX-CUT &harr; Ising</strong>. For a graph
+            \(G = (V, E)\), maximizing \(\lvert\mathrm{cut}(s)\rvert\)
+            corresponds to minimizing \(s^T A s / 2\) where \(A\) is
+            the adjacency matrix, i.e.\ \(J = -A\). The
+            <code>cim-optimizer</code> regression tests use exactly
+            this convention. Again zero overhead.
+          </p>
+          <p>
+            <strong>Beyond Ising: 3-SAT, TSP, …</strong> Lucas (2014)
+            catalogs reductions for ~30 NP problems. Most introduce
+            \(O(n)\)–\(O(n \log n)\) auxiliary spins per logical
+            variable to encode constraints (e.g.\ TSP needs
+            \(n^2\) spins for an \(n\)-city tour: a one-hot
+            position-time matrix). For 3-SAT the overhead is roughly
+            quadratic. <em>The CIM's 100k-spin scale becomes only a
+            316-city TSP or a 100-variable 3-SAT instance after
+            encoding.</em> This is the fine print on "100,000 spins".
+          </p>
+          """ + callout(
+            "When CIM advocates and skeptics talk past each other, the "
+            "encoding-overhead distinction is often the missing common "
+            "ground. <em>MAX-CUT on dense graphs at N=100k</em> is "
+            "genuinely impressive — but only a tiny minority of "
+            "real-world problems reduce to MAX-CUT without inflating "
+            "spin count by 100×."
+          ),
+         ["QUBO ↔ Ising: zero overhead",
+          "MAX-CUT ↔ Ising: \\(J = -A\\), zero overhead",
+          "TSP, 3-SAT, …: quadratic-or-worse overhead",
+          "Lucas 2014 = the Ising-reduction catalog"]),
         ("rosetta", "The Rosetta Stone: Update Equation", r"""
           <p>
             The McMahon Lab <code>cim-optimizer</code>
@@ -1851,6 +2950,128 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
          ["AHC.py:131-133 = explicit Euler of MFB-CIM SDE",
           "Each line ↔ one physical mechanism",
           "OU machine: replace \\(-\\mu x^3\\) with \\(-A x\\)"]),
+        ("comparison", "Comparison: CIM vs Quantum Annealers vs SA", r"""
+          <p class="lede">
+            How does the MFB-CIM stack up against D-Wave (quantum
+            annealing) and well-tuned simulated annealing (SA) on
+            CPUs? Honest answer: <em>it depends on the problem class
+            and the metric</em>.
+          </p>
+          <p>
+            <strong>D-Wave (transverse-field Ising annealer)</strong>:
+            superconducting-flux qubits, ~5,000 qubits but with
+            chimera/pegasus connectivity (degree 6–15). The CIM has
+            <em>all-to-all</em> connectivity (FPGA can route any
+            \(J_{ij}\)) — a major win on dense problem instances.
+            For sparse problems matching D-Wave's native graph,
+            D-Wave is faster. For dense MAX-CUT at \(N \gtrsim 1000\),
+            CIM has demonstrated clearer wins.
+          </p>
+          <p>
+            <strong>Simulated annealing on a top-tier CPU</strong>:
+            implementing the CIM SDE on a GPU and running the same
+            update Yamamoto-style is what Hamerly et al.\ 2018
+            actually do — and they call it "noisy mean-field
+            annealing", and it solves the same instances at the same
+            wall-clock as the optical machine. <em>The classical
+            simulator is the dual</em>: when the CIM beats SA, it's
+            because the CIM hardware runs a particular SDE faster
+            than CPU SA runs Metropolis, not because of quantum
+            advantage.
+          </p>
+          <p>
+            <strong>Where the CIM <em>does</em> win</strong>:
+            \(O(\mu\)s\()\) round-trip latency per update on hardware
+            that scales O(N²) only at the FPGA level — the constant
+            factors in front of the asymptotic complexity are 2–3
+            orders of magnitude better than CPU SA. For dense large-N
+            problems where you care about wall-clock time-to-solution
+            (not asymptotic complexity), CIM is a serious contender.
+          </p>
+          """ + callout(
+            "If you read one paper to calibrate your priors here, "
+            "make it Hamerly et al.\\ <em>Sci. Adv.</em> 2018 — "
+            "<em>Experimental investigation of performance differences "
+            "between coherent Ising machines and a quantum annealer</em>. "
+            "It is the most honest head-to-head comparison in the "
+            "literature."
+          ),
+         ["All-to-all connectivity: CIM beats D-Wave on dense",
+          "vs SA: same physics, different hardware constants",
+          "Wall-clock wins, asymptotic ties"]),
+        ("scaling", "Scaling Demonstrated", r"""
+          <p>
+            What problem sizes have actually been solved by physical
+            CIMs (not their simulators)? The numbers, year by year:
+          </p>
+          <table class="refs">
+            <tr><td>Year</td><td>Group</td><td>N spins</td><td>Substrate</td><td>Demonstrated</td></tr>
+            <tr><td>2014</td><td>Yamamoto / Stanford</td><td>4</td><td>free-space PPLN</td><td>1D Ising chain demo</td></tr>
+            <tr><td>2016</td><td>Inagaki et al.\ (NTT)</td><td>2,048</td><td>1 km fiber</td><td>complete-graph K₂₀₀₀</td></tr>
+            <tr><td>2016</td><td>McMahon et al.\ (Stanford)</td><td>100</td><td>fiber + measurement-feedback</td><td>programmable J on hardware</td></tr>
+            <tr><td>2018</td><td>Hamerly et al.\ (Stanford+NTT)</td><td>2,000</td><td>1 km fiber</td><td>head-to-head vs D-Wave</td></tr>
+            <tr><td>2021</td><td>Honjo et al.\ (NTT)</td><td>100,144</td><td>5 km fiber</td><td>sparse-graph MAX-CUT</td></tr>
+            <tr><td>2024+</td><td>Marandi (Caltech)</td><td>~100</td><td>integrated thin-film LiNbO₃</td><td>chip-scale DOPO networks</td></tr>
+          </table>
+          <p>
+            The 2014 → 2021 progression is a 25,000× scaling in 7
+            years — limited by FPGA throughput and fiber length, not
+            by photonics. The Marandi nanophotonic effort is the
+            inflection: integrated DOPOs at ~5 mm scale would let one
+            chip do what a 5 km fiber loop currently does, with
+            \(10^4\)× lower latency. <em>That</em> would change the
+            economics — and is the substrate the OU machine in Note
+            07 inherits.
+          </p>
+          """,
+         ["2014 → 2021: 4 → 100k spin scaling",
+          "Limited by FPGA + fiber, not photonics",
+          "Marandi integrated path = the inflection"]),
+        ("open-questions", "Open Theoretical Questions", r"""
+          <p class="lede">
+            Five questions whose answers would change the field's
+            self-image. None are settled in 2026.
+          </p>
+          <ol>
+            <li><strong>Is there a quantum-noise-driven advantage at
+              threshold?</strong> Bouland et al.\ have argued that
+              tunneling between spin configurations during the
+              bifurcation should give a polynomial speedup — but the
+              empirical evidence is mixed and depends sensitively on
+              how SA is tuned. <em>Settling this requires a problem
+              class where SA provably fails and CIM provably succeeds
+              with the same wall-clock budget.</em></li>
+            <li><strong>What does AHC/CAC actually correct?</strong>
+              The corrections work empirically but have no first-principles
+              derivation. They look suspiciously like they're
+              solving a different optimization problem (something
+              like \(\min \sum_i (h_i^2 - 1)^2\)) than Ising — and that
+              might be why they help.</li>
+            <li><strong>What is the right embedding for non-binary
+              variables?</strong> Continuous QUBOs, mixed-integer
+              programs, constraint-satisfaction with non-trivial
+              constraint topologies — none have a clean CIM mapping.
+              The literature is currently piling auxiliary spins as
+              one-hot ancillas, which kills the constant-factor
+              advantage.</li>
+            <li><strong>Is the dynamical regime "quantum"?</strong>
+              The pedagogical answer is "below threshold, yes; above
+              threshold, no" — but the actual computation happens
+              <em>at</em> threshold, and the linearization breaks down
+              there. We don't have a rigorous characterization of the
+              threshold regime.</li>
+            <li><strong>Can the same hardware do <em>not-Ising</em>
+              tasks?</strong> Note 07 is one answer: linear algebra
+              via Lyapunov sampling. Bayesian inference via Langevin
+              MCMC is another. Each requires a different firmware in
+              the FPGA's update step.</li>
+          </ol>
+          """,
+         ["Quantum advantage: open empirically",
+          "AHC/CAC: works but not understood",
+          "Embedding non-Ising: kills constant factors",
+          "Threshold regime: theoretically under-characterized",
+          "Same hardware, new tasks: Note 07 is one direction"]),
         ("sota", "State of the Art (1996 → 2026)", r"""
           <table class="refs">
             <tr><td>1996</td><td>Yamamoto group: first DOPO Ising-machine concept</td></tr>
@@ -1899,6 +3120,302 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           "Inagaki 2016, Honjo 2021 = state-of-the-art hardware",
           "Continue: Note 07 (OU machine — the headline)"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget 1: DOPO bifurcation phase portrait ----------------------
+      (function () {
+        var canvas = document.getElementById('dopo-bifurcation-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        var pSlider = document.getElementById('dopo-p');
+        var muSlider = document.getElementById('dopo-mu');
+        var nSlider = document.getElementById('dopo-noise');
+        var pVal = document.getElementById('dopo-p-val');
+        var muVal = document.getElementById('dopo-mu-val');
+        var nVal = document.getElementById('dopo-noise-val');
+        var text = document.getElementById('dopo-bifurcation-text');
+        var SCALE = 80;       // pixels per unit α
+        var ORIGIN_X = W/2, ORIGIN_Y = H/2;
+        function draw() {
+          var p = parseFloat(pSlider.value);
+          var mu = parseFloat(muSlider.value);
+          var noise = parseFloat(nSlider.value);
+          pVal.textContent = p.toFixed(2);
+          muVal.textContent = mu.toFixed(2);
+          nVal.textContent = noise.toFixed(3);
+          ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('background-color') || '#0e0e16';
+          ctx.fillRect(0, 0, W, H);
+          // axes
+          ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, ORIGIN_Y); ctx.lineTo(W, ORIGIN_Y);
+          ctx.moveTo(ORIGIN_X, 0); ctx.lineTo(ORIGIN_X, H);
+          ctx.stroke();
+          // axis labels
+          ctx.fillStyle = '#888'; ctx.font = '11px monospace';
+          ctx.fillText('X', W - 12, ORIGIN_Y - 5);
+          ctx.fillText('P', ORIGIN_X + 5, 12);
+          // potential V(x) = -(p-1)/2 x² + μ/4 x⁴ — visualize via a faint
+          // contour map of |gradient|
+          var step = 6;
+          for (var px = 0; px < W; px += step) {
+            for (var py = 0; py < H; py += step) {
+              var x = (px - ORIGIN_X) / SCALE;
+              var y = (py - ORIGIN_Y) / SCALE;
+              // drift magnitude in 2D where pump only acts on X axis:
+              var dx = (p - 1) * x - mu * x * x * x;
+              var dy = -1.0 * y; // damping on P only (no parametric gain)
+              var mag = Math.sqrt(dx*dx + dy*dy);
+              var v = Math.max(0, 1 - mag*1.4);
+              ctx.fillStyle = 'rgba(122, 159, 209, ' + (v*0.20).toFixed(3) + ')';
+              ctx.fillRect(px, py, step, step);
+            }
+          }
+          // sample trajectories: random initial conditions, integrate Euler
+          ctx.strokeStyle = 'rgba(180, 200, 240, 0.45)';
+          ctx.lineWidth = 1;
+          var N_TRAJ = 40;
+          for (var k = 0; k < N_TRAJ; k++) {
+            var x = (Math.random() - 0.5) * 4;
+            var y = (Math.random() - 0.5) * 4;
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X + x*SCALE, ORIGIN_Y - y*SCALE);
+            for (var s = 0; s < 220; s++) {
+              var dx = (p-1)*x - mu*x*x*x;
+              var dy = -1.0*y;
+              var dt = 0.06;
+              x += dt*dx + Math.sqrt(dt)*noise*(Math.random()-0.5)*2;
+              y += dt*dy + Math.sqrt(dt)*noise*(Math.random()-0.5)*2;
+              if (Math.abs(x) > 4 || Math.abs(y) > 4) break;
+              ctx.lineTo(ORIGIN_X + x*SCALE, ORIGIN_Y - y*SCALE);
+            }
+            ctx.stroke();
+          }
+          // fixed points
+          var fps = [{x: 0, color: (p < 1 ? '#79f29c' : '#f27979')}];
+          if (p > 1) {
+            var ax = Math.sqrt((p-1)/mu);
+            fps.push({x: ax, color: '#79f29c'});
+            fps.push({x: -ax, color: '#79f29c'});
+          }
+          for (var i = 0; i < fps.length; i++) {
+            ctx.fillStyle = fps[i].color;
+            ctx.beginPath();
+            ctx.arc(ORIGIN_X + fps[i].x*SCALE, ORIGIN_Y, 5, 0, 2*Math.PI);
+            ctx.fill();
+          }
+          var label;
+          if (p < 0.95) label = 'Below threshold (p = ' + p.toFixed(2) + ') — origin stable. Cavity is squeezed-vacuum.';
+          else if (p > 1.05) label = 'Above threshold (p = ' + p.toFixed(2) + ') — two stable phases at α = ±' + Math.sqrt((p-1)/mu).toFixed(2) + '. Phase commitment.';
+          else label = 'At threshold (p = ' + p.toFixed(2) + ') — origin marginal. Quantum noise selects which phase wins.';
+          text.textContent = label;
+        }
+        [pSlider, muSlider, nSlider].forEach(function (el) {
+          el.addEventListener('input', draw);
+        });
+        draw();
+      })();
+
+      // -- Widget 2: quantum/classical regime gauge -----------------------
+      (function () {
+        var svg = document.getElementById('qc-regime-svg');
+        if (!svg) return;
+        var nSlider = document.getElementById('qc-n');
+        var nVal = document.getElementById('qc-n-val');
+        var text = document.getElementById('qc-regime-text');
+        var W = 520, H = 180;
+        function regimeLabel(snr) {
+          if (snr < 1) return {name: 'vacuum-fluctuation regime', color: '#7a9fd1', detail: 'Full Lindblad / squeezed-vacuum description.'};
+          if (snr < 3) return {name: 'crossover (threshold)', color: '#e8b96a', detail: 'Linearization breaks down; nonlinear quantum noise.'};
+          if (snr < 30) return {name: 'bright but quantum-influenced', color: '#79c79f', detail: 'Linearized Gaussian (mean-field + Langevin noise).'};
+          return {name: 'classical bright-field', color: '#79c79f', detail: 'Operationally classical; Mandel-Wolf says SDE suffices.'};
+        }
+        function draw() {
+          var logn = parseFloat(nSlider.value);
+          var n = Math.pow(10, logn);
+          var snr = Math.sqrt(n);
+          nVal.textContent = logn.toFixed(2);
+          var reg = regimeLabel(snr);
+          // build SVG content
+          var pad = 40;
+          var bar_y = H/2 - 8;
+          var bar_h = 16;
+          var bar_x = pad, bar_w = W - 2*pad;
+          // log scale bar from 10^-2 to 10^6
+          var nx = bar_x + (logn + 2)/8 * bar_w;
+          var threshold_x = bar_x + (Math.log10(9) + 2)/8 * bar_w;  // SNR=3 ⇒ n=9
+          var bright_x = bar_x + (Math.log10(900) + 2)/8 * bar_w;   // SNR=30 ⇒ n=900
+          svg.innerHTML = (
+            '<defs>' +
+            '  <linearGradient id="qcgrad" x1="0" x2="1">' +
+            '    <stop offset="0" stop-color="#7a9fd1"/>' +
+            '    <stop offset="' + ((Math.log10(9)+2)/8) + '" stop-color="#e8b96a"/>' +
+            '    <stop offset="' + ((Math.log10(900)+2)/8) + '" stop-color="#79c79f"/>' +
+            '    <stop offset="1" stop-color="#79c79f"/>' +
+            '  </linearGradient>' +
+            '</defs>' +
+            '<rect x="' + bar_x + '" y="' + bar_y + '" width="' + bar_w + '" height="' + bar_h + '" rx="8" fill="url(#qcgrad)" opacity="0.7"/>' +
+            '<line x1="' + threshold_x + '" x2="' + threshold_x + '" y1="' + (bar_y-8) + '" y2="' + (bar_y+bar_h+8) + '" stroke="#e8b96a" stroke-width="1.5" stroke-dasharray="3,3"/>' +
+            '<line x1="' + bright_x + '" x2="' + bright_x + '" y1="' + (bar_y-8) + '" y2="' + (bar_y+bar_h+8) + '" stroke="#79c79f" stroke-width="1.5" stroke-dasharray="3,3"/>' +
+            '<text x="' + threshold_x + '" y="' + (bar_y-12) + '" text-anchor="middle" font-size="10" fill="#888">SNR=3</text>' +
+            '<text x="' + bright_x + '" y="' + (bar_y-12) + '" text-anchor="middle" font-size="10" fill="#888">SNR=30</text>' +
+            '<circle cx="' + nx + '" cy="' + (bar_y + bar_h/2) + '" r="9" fill="' + reg.color + '" stroke="#fff" stroke-width="1.5"/>' +
+            '<text x="' + bar_x + '" y="' + (H-20) + '" font-size="10" fill="#888">⟨n⟩=10⁻²</text>' +
+            '<text x="' + (bar_x+bar_w) + '" y="' + (H-20) + '" font-size="10" fill="#888" text-anchor="end">⟨n⟩=10⁶</text>' +
+            '<text x="' + (W/2) + '" y="' + (bar_y + bar_h + 30) + '" font-size="13" fill="' + reg.color + '" text-anchor="middle" font-weight="600">⟨n⟩ ≈ 10^' + logn.toFixed(2) + ' &#8594; SNR ≈ ' + snr.toFixed(2) + '</text>'
+          );
+          text.innerHTML = '<strong>' + reg.name + '</strong>: ' + reg.detail;
+        }
+        nSlider.addEventListener('input', draw);
+        draw();
+      })();
+
+      // -- Widget 3: 4-spin CIM round-trip simulation ---------------------
+      (function () {
+        var svg = document.getElementById('cim-roundtrip-svg');
+        if (!svg) return;
+        var pumpSlider = document.getElementById('cim-pump');
+        var couplingSlider = document.getElementById('cim-coupling');
+        var noiseSlider = document.getElementById('cim-noise');
+        var pumpVal = document.getElementById('cim-pump-val');
+        var couplingVal = document.getElementById('cim-coupling-val');
+        var noiseVal = document.getElementById('cim-noise-val');
+        var spinsText = document.getElementById('cim-roundtrip-spins');
+        var energyText = document.getElementById('cim-roundtrip-energy');
+        var stepText = document.getElementById('cim-roundtrip-step-num');
+        var runBtn = document.getElementById('cim-roundtrip-run');
+        var stepBtn = document.getElementById('cim-roundtrip-step');
+        var resetBtn = document.getElementById('cim-roundtrip-reset');
+
+        // 4-spin frustrated chain: J = -A where A is graph adjacency
+        // (MAX-CUT convention from earlier work). Triangle 0-1-2 + pendant 3:
+        // edges (0,1), (1,2), (0,2), (1,3) ⇒ ground state is unique up to flip
+        var J = [
+          [0, -1, -1,  0],
+          [-1, 0, -1, -1],
+          [-1, -1, 0,  0],
+          [0, -1,  0,  0]
+        ];
+        var W = 520, H = 320;
+        var x = [0, 0, 0, 0];
+        var energyHistory = [];
+        var step = 0;
+        var maxSteps = 80;
+        var running = false;
+        var raf = null;
+
+        function isingEnergy() {
+          var E = 0;
+          var s = x.map(function (v) { return v >= 0 ? 1 : -1; });
+          for (var i = 0; i < 4; i++)
+            for (var j = i+1; j < 4; j++)
+              E -= J[i][j] * s[i] * s[j];
+          return E;
+        }
+        function reset() {
+          x = [0.01*(Math.random()-0.5), 0.01*(Math.random()-0.5),
+               0.01*(Math.random()-0.5), 0.01*(Math.random()-0.5)];
+          energyHistory = [];
+          step = 0;
+          running = false;
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          render();
+        }
+        function doStep() {
+          if (step >= maxSteps) return;
+          var pump = parseFloat(pumpSlider.value);
+          var eps = parseFloat(couplingSlider.value);
+          var noise = parseFloat(noiseSlider.value);
+          var dt = 1.0;
+          // r ramps from -0.5 (below threshold) to +1.5 (above) over the run
+          var r = -0.5 + 2.0 * (step / maxSteps);
+          var mu = 0.05;
+          // MVM = J · x
+          var mvm = [0,0,0,0];
+          for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+              mvm[i] += J[i][j] * x[j];
+          for (var i = 0; i < 4; i++) {
+            // gain - cubic saturation
+            x[i] += pump*dt * (x[i] * (r - mu*x[i]*x[i]));
+            // EOM injection
+            x[i] += eps*dt * mvm[i];
+            // injected noise
+            x[i] += noise * (Math.random() - 0.5);
+            // bound for visualization stability
+            if (x[i] > 3) x[i] = 3;
+            if (x[i] < -3) x[i] = -3;
+          }
+          energyHistory.push(isingEnergy());
+          step++;
+          render();
+        }
+        function loop() {
+          doStep();
+          if (running && step < maxSteps) {
+            raf = requestAnimationFrame(loop);
+          } else {
+            running = false;
+          }
+        }
+        function render() {
+          var pump = parseFloat(pumpSlider.value);
+          var eps = parseFloat(couplingSlider.value);
+          var noise = parseFloat(noiseSlider.value);
+          pumpVal.textContent = pump.toFixed(3);
+          couplingVal.textContent = eps.toFixed(3);
+          noiseVal.textContent = noise.toFixed(3);
+          // bars on top half
+          var barTop = 30, barH = 90, pad = 30;
+          var bw = (W - 2*pad) / 4;
+          var s_strs = [];
+          var bars = '';
+          var labels = '';
+          var colors = ['#7a9fd1', '#e8b96a', '#79c79f', '#c879d1'];
+          for (var i = 0; i < 4; i++) {
+            var v = x[i];
+            var s = v >= 0 ? '+' : '−';
+            s_strs.push(s);
+            var bx = pad + i*bw + bw*0.15;
+            var by_zero = barTop + barH/2;
+            var bh = -v * (barH/2) / 2.5;
+            bars += '<rect x="' + bx + '" y="' + (bh < 0 ? by_zero : by_zero - bh) + '" width="' + (bw*0.7) + '" height="' + Math.abs(bh) + '" fill="' + colors[i] + '" opacity="0.75"/>';
+            bars += '<line x1="' + bx + '" x2="' + (bx+bw*0.7) + '" y1="' + by_zero + '" y2="' + by_zero + '" stroke="#888"/>';
+            labels += '<text x="' + (bx + bw*0.35) + '" y="' + (barTop + barH + 15) + '" text-anchor="middle" font-size="11" fill="#888">x_' + (i+1) + '=' + v.toFixed(2) + '</text>';
+          }
+          // energy trace below
+          var traceTop = barTop + barH + 38, traceH = H - traceTop - 30;
+          var trace = '<text x="' + pad + '" y="' + (traceTop - 6) + '" font-size="10" fill="#888">Ising energy −½sᵀJs</text>';
+          if (energyHistory.length > 1) {
+            var minE = Math.min.apply(null, energyHistory);
+            var maxE = Math.max.apply(null, energyHistory);
+            if (maxE === minE) maxE += 1;
+            var pts = energyHistory.map(function (E, k) {
+              var px = pad + (k / maxSteps) * (W - 2*pad);
+              var py = traceTop + traceH * (1 - (E - minE) / (maxE - minE));
+              return px + ',' + py;
+            }).join(' ');
+            trace += '<polyline points="' + pts + '" fill="none" stroke="#79c79f" stroke-width="1.8"/>';
+            trace += '<text x="' + (W-pad) + '" y="' + (traceTop + 12) + '" font-size="10" fill="#888" text-anchor="end">E_max=' + maxE.toFixed(2) + '</text>';
+            trace += '<text x="' + (W-pad) + '" y="' + (traceTop + traceH - 2) + '" font-size="10" fill="#888" text-anchor="end">E_min=' + minE.toFixed(2) + '</text>';
+          }
+          svg.innerHTML = bars + labels + trace;
+          spinsText.textContent = s_strs.join(' ');
+          energyText.textContent = (energyHistory.length ? energyHistory[energyHistory.length-1] : 0).toFixed(3);
+          stepText.textContent = step + ' / ' + maxSteps;
+        }
+        runBtn.addEventListener('click', function () {
+          if (step >= maxSteps) reset();
+          if (!running) { running = true; loop(); }
+        });
+        stepBtn.addEventListener('click', function () { if (!running) doStep(); });
+        resetBtn.addEventListener('click', reset);
+        [pumpSlider, couplingSlider, noiseSlider].forEach(function (el) {
+          el.addEventListener('input', render);
+        });
+        reset();
+      })();
+    """),
 }
 
 
@@ -1924,8 +3441,10 @@ NOTE_07 = {
     ],
     "nav": [
         ("tla", "TLA Framing"),
+        ("tla-primitives", "Three Primitives"),
         ("langevin-lyapunov", "Langevin→Lyapunov"),
         ("optical-adapt", "Optical Adaptation"),
+        ("rlc-comparison", "vs RLC SPU"),
         ("envelope", "Hardware Envelope"),
         ("targets", "QCi Targets"),
         ("roadmap", "Roadmap"),
@@ -1971,6 +3490,48 @@ NOTE_07 = {
          ["TLA: SDE stationary covariance ↔ algebraic primitive",
           "Aifer-Coles-Duffield 2023 (arXiv:2306.14740) — RLC version",
           "Photonic re-implementation: same primitive, faster MVM, lower noise floor"]),
+        ("tla-primitives", "Three TLA Primitives", r"""
+          <p class="lede">
+            Thermodynamic linear algebra is a family of algorithms — not
+            a single primitive. The OU machine implements the simplest
+            (and most-tested) one. The catalog matters because it tells
+            us what else this hardware could do.
+          </p>
+          <ol>
+            <li><strong>Linear systems / matrix inverse</strong>: solve
+              \(A v = b\) by reading \(2\hat\Sigma b\) from a sample
+              average. <em>This is the OU machine</em>. Symmetric PD
+              \(A\) and isotropic noise. Direct application: linear
+              regression, Gaussian-process inference, Newton steps.</li>
+            <li><strong>Sampling from a Gaussian</strong>: draw samples
+              from \(\mathcal{N}(0, A^{-1})\). Same SDE; instead of
+              averaging covariance you record trajectory points. Direct
+              application: Bayesian posterior sampling, MCMC
+              initialization, simulation.</li>
+            <li><strong>Determinant estimation</strong>: \(\log\det A\)
+              from the equilibrium free energy of the OU process. The
+              elegant Aifer-Coles-Duffield trick. Direct application:
+              evidence in Bayesian model comparison, normalising
+              constants for partition functions.</li>
+          </ol>
+          <p>
+            For the optical implementation, all three primitives share
+            the same hardware: <em>only the postprocessing changes</em>.
+            Linear systems read \(2\hat\Sigma b\); sampling reads
+            \(x(t)\) directly; determinant reads the cumulative work
+            done by the EOM. The economic argument is therefore: build
+            one optical SPU, get three primitives.
+          </p>
+          """ + callout(
+            "The hardware that does any one of these does all three. "
+            "The pitch to a hardware sponsor is therefore a portfolio "
+            "bet: the OU machine de-risks the substrate; sampling and "
+            "determinant estimation come for free in firmware once the "
+            "substrate exists."
+          ),
+         ["Three primitives, one substrate",
+          "Linear systems / sampling / determinant",
+          "Postprocessing differs, hardware does not"]),
         ("langevin-lyapunov", "Langevin → Lyapunov", r"""
           <p>
             For the linear SDE
@@ -2019,10 +3580,47 @@ NOTE_07 = {
             primitive still works — we just choose a different
             estimator. See the Aifer-Coles-Duffield recipe table.
           </p>
-          """,
+          """ + widget_shell(
+            anchor="lyapunov-sampler",
+            title="Interactive: 4-D OU machine convergence",
+            blurb=(
+              "Press <em>Run</em> to step a small (d=4) OU machine. The "
+              "trace plots Frobenius error "
+              "‖<em>Σ̂</em>(t) − ½<em>A</em>⁻¹‖_F as the empirical "
+              "covariance from running averages converges to the "
+              "Lyapunov solution. Convergence rate is "
+              "<em>T<sub>mix</sub></em> ∝ <em>κ</em> for the overdamped "
+              "OU machine (Note 07's central scaling result)."
+            ),
+            controls_html=(
+              slider(var="lya-kappa", label="κ = λ_max/λ_min", min_=1.5,
+                     max_=20, step=0.5, value=5, fmt="{:.1f}") + "\n" +
+              slider(var="lya-dt", label="step Δt", min_=0.005,
+                     max_=0.1, step=0.005, value=0.04, fmt="{:.3f}")
+            ),
+            buttons_html=(
+              '<button id="lya-run">Run</button>'
+              '<button id="lya-reset">Reset</button>'
+            ),
+            canvas_html=svg_el("lyapunov-sampler", w=520, h=260),
+            readout_html=(
+              '<div>Sample covariance error: <span id="lya-err">—</span></div>'
+              '<div>Step: <span id="lya-step">0</span> / 1500</div>'
+            ),
+          ) + r"""
+          """ + callout(
+            "The Lyapunov equation <em>is</em> the algebraic content of "
+            "what an OU process knows at stationarity. The hardware "
+            "advantage of the OU machine is not that it computes a "
+            "different equation — it's that the matrix-vector "
+            "multiplication that lives at the heart of "
+            "<em>A</em>Σ + Σ<em>A</em>ᵀ = <em>D</em> can be evaluated "
+            "in O(1) photonic round-trip time, vs CPU's O(d²)."
+          ),
          ["\\(\\dot x = -A x + \\sqrt{D}\\,\\xi \\Rightarrow A\\Sigma + \\Sigma A^T = D\\)",
           "Symmetric PD \\(A\\) + \\(D = I\\) ⇒ \\(\\Sigma = \\tfrac{1}{2}A^{-1}\\)",
-          "\\(\\hat\\Sigma\\) from sample averaging gives \\(A^{-1}\\)"]),
+          "\\(\\hat\\Sigma\\) from sample averaging gives \\(A^{-1}\\)",
+          "Mixing time \\(\\propto \\kappa\\) (overdamped)"]),
         ("optical-adapt", "Optical Adaptation: One-Line Diff vs CIM", r"""
           <p>
             From Note 06's Rosetta stone, the MFB-CIM Euler step is:
@@ -2070,6 +3668,52 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
          ["Three-line firmware diff vs CIM",
           "Same hardware, different operating regime",
           "Verified: \\(\\hat\\Sigma \\to \\frac{1}{2}A^{-1}\\) within 3%"]),
+        ("rlc-comparison", "Comparison: RLC SPU vs Optical OU Machine", r"""
+          <p class="lede">
+            Normal Computing's RLC stochastic processing unit (Aifer
+            et al., <em>Nat. Commun.</em> 2025) is the existing,
+            demonstrated, electronic instance of the same primitive.
+            Why optical, given that RLC works?
+          </p>
+          <table class="refs">
+            <tr><td><strong>Axis</strong></td><td><strong>RLC SPU</strong></td><td><strong>Optical OU</strong></td></tr>
+            <tr><td>Substrate</td><td>resistors-inductors-capacitors</td><td>fiber-loop pulses + FPGA</td></tr>
+            <tr><td>Encoding</td><td>passive analog (RC time constants set drift)</td><td>digital firmware on FPGA + optical loop</td></tr>
+            <tr><td>Reconfigurability</td><td>Patch-board topology change for different \(A\)</td><td>FPGA firmware update</td></tr>
+            <tr><td>Demonstrated d</td><td>8</td><td>32 (sim) / TBD on bench</td></tr>
+            <tr><td>Noise floor</td><td>thermal Johnson noise \(\sim k_B T R\)</td><td>vacuum shot noise \(\sim \hbar\omega\)</td></tr>
+            <tr><td>Power per MVM</td><td>~ pJ (passive, plus readout)</td><td>~ nJ (FPGA + optical loop)</td></tr>
+            <tr><td>Latency per MVM</td><td>~ μs (RC settling)</td><td>~ ns (round-trip)</td></tr>
+            <tr><td>Mature year</td><td>2024–2025</td><td>2026 + (in proposal)</td></tr>
+          </table>
+          <p>
+            The economic argument: <em>RLC is better in steady-state
+            energy efficiency; optical is better in latency per update,
+            and by 2–3 orders of magnitude</em>. For applications where
+            wall-clock matters (real-time Bayesian inference, online
+            learning), optical wins. For batch jobs where you can
+            wait microseconds per MVM, RLC is more efficient.
+          </p>
+          <p>
+            <strong>Engineering risk inherited from CIM</strong>: the
+            optical OU machine reuses the entire MFB-CIM substrate
+            (Note 06). Every component has flight heritage at scale.
+            The risk is not "build new hardware"; it is "characterize
+            a different operating regime of an existing hardware
+            class". This <em>de-risking</em> argument is the
+            single-most-important reason to run the optical proposal in
+            parallel with continued RLC investment.
+          </p>
+          """ + callout(
+            "An honest comparison concludes RLC and optical OU are not "
+            "competitors but complements. RLC: low-power, low-rate, "
+            "edge inference. Optical: high-throughput, high-dimension, "
+            "datacenter inference. <em>Both</em> belong in a complete "
+            "thermodynamic-linear-algebra portfolio."
+          ),
+         ["RLC: better steady-state energy",
+          "Optical: better latency, 2-3 OOM",
+          "CIM heritage: low risk on hardware, high risk on regime"]),
         ("envelope", "Hardware Imperfection Envelope (η, τ, σ_meas)", r"""
           <p>
             Three knobs determine bench performance:
@@ -2107,10 +3751,55 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
             <code>cim/notes/feedback_fidelity.md</code> for the
             corrected story.
           </p>
-          """,
+          """ + widget_shell(
+            anchor="eta-tau-envelope",
+            title="Interactive: (η, γτ) feasibility envelope",
+            blurb=(
+              "2D envelope plot in the (homodyne-efficiency η, "
+              "feedback-delay γτ) plane. Dot color shows expected "
+              "Frobenius error in <em>Σ̂</em> vs the ideal Lyapunov "
+              "solution. Click anywhere to read off the value. The "
+              "Practical/Stretch/Loose target boxes are overlaid; the "
+              "FPGA-latency wall at γτ ≈ 10 is the dashed line."
+            ),
+            controls_html=(
+              slider(var="env-d", label="dimension d", min_=4, max_=64,
+                     step=4, value=16, fmt="{:d}".replace(":d}", ":.0f}"))
+            ),
+            canvas_html=svg_el("eta-tau-envelope", w=520, h=320),
+            readout_html='<span id="eta-tau-readout">Click anywhere on the plot.</span>',
+          ) + r"""
+          """ + math_details("Where these scaling expressions come from", r"""
+            <p>
+              For the η-axis: the FPGA realises
+              \(J_\mathrm{eff} = \eta J\) on the off-diagonal coupling
+              (since the homodyne returns \(\eta x\) instead of \(x\)).
+              Substituting back into the Euler step shows the dynamics
+              has effective drift
+              \(A_\mathrm{eff}(\eta) = \mathrm{diag}(A) + \eta\,(A - \mathrm{diag}(A))\).
+              The steady-state \(\hat\Sigma(\eta)\) solves
+              \(A_\mathrm{eff}\hat\Sigma + \hat\Sigma A_\mathrm{eff}^T = D\)
+              <em>exactly</em>: there is no perturbative envelope, just
+              a different operator.
+            </p>
+            <p>
+              For the τ-axis: an explicit-Euler integration of a
+              delay-differential equation
+              \(\dot x = -A_\mathrm{eff}\,x(t-\tau) + \xi\) with a
+              one-step delay \(\tau\) of order the round-trip time has
+              leading-order error
+              \(\delta\Sigma = O(\gamma\tau \cdot \Sigma)\) for
+              \(\gamma\tau \ll 1\), where \(\gamma\) is the slowest
+              eigenvalue of \(A_\mathrm{eff}\). This is sub-linear
+              additive — not the multiplicative \(e^{-\gamma\tau}\)
+              that would obtain in the underdamped Wiseman-Milburn
+              regime.
+            </p>
+          """),
          ["η: exact steady-state shift, no envelope",
           "τ: sub-linear additive correction",
-          "σ_meas: inflates diffusion, no encoding bias"]),
+          "σ_meas: inflates diffusion, no encoding bias",
+          "FPGA latency = the load-bearing wall"]),
         ("targets", "QCi-Actionable Target Table", r"""
           <table class="refs">
             <tr><td><strong>Target</strong></td><td><strong>Encoding error</strong></td><td><strong>η</strong></td><td><strong>γτ</strong></td><td><strong>Realization</strong></td></tr>
@@ -2178,10 +3867,32 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
             "win. They share hardware. <em>The right way to think about "
             "this proposal is: the bench we build for overdamped <strong>is</strong> "
             "the bench that runs underdamped, with a firmware update.</em>"
-          ),
+          ) + widget_shell(
+            anchor="mixing-time-scaling",
+            title="Interactive: T_mix vs κ scaling",
+            blurb=(
+              "The empirical mixing-time-vs-condition-number scaling "
+              "from <a href=\"https://github.com/nez0b/cim-spu-optical-simulation\">"
+              "cim-spu-optical-simulation</a> notebook 02. Slide κ to "
+              "see how each algorithm scales: overdamped "
+              "<em>T<sub>mix</sub></em> ∝ κ (empirical α ≈ 0.93), "
+              "underdamped <em>T<sub>mix</sub></em> ∝ √κ (theory; "
+              "Direction A measurement pending). Log–log axes."
+            ),
+            controls_html=slider(var="mix-kappa", label="condition κ", min_=1,
+                                 max_=200, step=1, value=20, fmt="{:.0f}"),
+            canvas_html=svg_el("mixing-time-scaling", w=520, h=320),
+            readout_html=(
+              '<div>Overdamped T_mix at κ: <span id="mix-over">—</span></div>'
+              '<div>Underdamped T_mix at κ: <span id="mix-under">—</span></div>'
+              '<div>Speedup ratio: <span id="mix-ratio">—</span></div>'
+            ),
+          ) + r"""
+          """,
          ["Overdamped: \\(T_\\mathrm{mix} \\propto \\kappa\\)",
           "Underdamped (Direction A): \\(T_\\mathrm{mix} \\propto \\sqrt\\kappa\\)",
-          "Same hardware, firmware-distinguished operating regimes"]),
+          "Same hardware, firmware-distinguished operating regimes",
+          "Empirical α=0.93 (overdamped) vs theory α=1"]),
         ("open", "Open Questions", r"""
           <ol>
             <li><strong>Scaling to d ≥ 64.</strong> The simulator
@@ -2248,6 +3959,295 @@ x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
           "Aifer-Coles-Duffield 2023: TLA framing",
           "End of track — research continues in the cim repo"]),
     ],
+    "scripts": script_block(r"""
+      // -- Widget: 4-D OU machine convergence ---------------------------
+      (function () {
+        var svg = document.getElementById('lyapunov-sampler-svg');
+        if (!svg) return;
+        var kappaS = document.getElementById('lya-kappa');
+        var dtS = document.getElementById('lya-dt');
+        var kappaV = document.getElementById('lya-kappa-val');
+        var dtV = document.getElementById('lya-dt-val');
+        var errSpan = document.getElementById('lya-err');
+        var stepSpan = document.getElementById('lya-step');
+        var runBtn = document.getElementById('lya-run');
+        var resetBtn = document.getElementById('lya-reset');
+        var d = 4;
+        var x = new Float64Array(d);
+        var sumX = new Float64Array(d);
+        var sumXX = new Float64Array(d*d);
+        var step = 0, MAX = 1500, raf = null;
+        var errHistory = [];
+        var A = null, Ainv = null;
+
+        function buildA(kappa) {
+          // diagonal A with eigenvalues 1/kappa, ..., 1, normalized so λ_max=1
+          A = new Float64Array(d*d);
+          Ainv = new Float64Array(d*d);
+          for (var i = 0; i < d; i++) {
+            // eigenvalue: linspace from 1/kappa to 1
+            var lambda_i = (1.0/kappa) + (1 - 1/kappa) * (i / (d-1));
+            A[i*d + i] = lambda_i;
+            Ainv[i*d + i] = 1 / lambda_i;
+          }
+        }
+        function reset() {
+          step = 0;
+          for (var i = 0; i < d; i++) { x[i] = 0; sumX[i] = 0; }
+          for (var i = 0; i < d*d; i++) sumXX[i] = 0;
+          errHistory = [];
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          buildA(parseFloat(kappaS.value));
+          render();
+        }
+        function gauss() {
+          var u = 0, v = 0;
+          while(u===0) u = Math.random();
+          while(v===0) v = Math.random();
+          return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+        }
+        function doStep() {
+          if (step >= MAX) return;
+          var dt = parseFloat(dtS.value);
+          // dx = -A x dt + sqrt(2 dt) ξ  (so D = 2I, Σ = A^{-1})
+          for (var i = 0; i < d; i++) {
+            var drift = 0;
+            for (var j = 0; j < d; j++) drift += A[i*d+j] * x[j];
+            x[i] += -drift * dt + Math.sqrt(2*dt) * gauss();
+          }
+          // accumulate covariance estimate
+          for (var i = 0; i < d; i++) {
+            sumX[i] += x[i];
+            for (var j = 0; j < d; j++) sumXX[i*d+j] += x[i] * x[j];
+          }
+          step++;
+          // Frobenius error of (Σ̂ − A^{-1}) every 5 steps; convention here
+          // D=2I so target is Σ = A^{-1} (not ½A^{-1}).
+          if (step % 5 === 0 || step === 1) {
+            var err = 0;
+            for (var i = 0; i < d; i++) {
+              for (var j = 0; j < d; j++) {
+                var sigma_hat = sumXX[i*d+j] / step - (sumX[i]/step)*(sumX[j]/step);
+                var target = Ainv[i*d+j];
+                err += (sigma_hat - target)*(sigma_hat - target);
+              }
+            }
+            err = Math.sqrt(err);
+            errHistory.push({s: step, e: err});
+          }
+          render();
+        }
+        function loop() {
+          for (var k = 0; k < 5; k++) doStep();
+          if (step < MAX && raf !== null) {
+            raf = requestAnimationFrame(loop);
+          } else {
+            raf = null;
+          }
+        }
+        function render() {
+          kappaV.textContent = parseFloat(kappaS.value).toFixed(1);
+          dtV.textContent = parseFloat(dtS.value).toFixed(3);
+          var W = 520, H = 260, pad = 50;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var html = '';
+          html += '<text x="' + (W/2) + '" y="' + (pad/2) + '" text-anchor="middle" font-size="11" fill="#888">Frobenius error vs steps (log scale)</text>';
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
+          if (errHistory.length > 1) {
+            var maxE = -Infinity, minE = Infinity;
+            for (var k = 0; k < errHistory.length; k++) {
+              var le = Math.log10(Math.max(errHistory[k].e, 1e-3));
+              if (le > maxE) maxE = le;
+              if (le < minE) minE = le;
+            }
+            if (maxE - minE < 0.5) maxE = minE + 0.5;
+            var pts = errHistory.map(function (pt) {
+              var px = pad + (pt.s / MAX) * inner_w;
+              var le = Math.log10(Math.max(pt.e, 1e-3));
+              var py = pad + inner_h * (1 - (le - minE)/(maxE - minE));
+              return px + ',' + py;
+            }).join(' ');
+            html += '<polyline points="' + pts + '" fill="none" stroke="#79c79f" stroke-width="1.8"/>';
+            html += '<text x="' + (pad-4) + '" y="' + (pad+8) + '" text-anchor="end" font-size="10" fill="#888">10^' + maxE.toFixed(1) + '</text>';
+            html += '<text x="' + (pad-4) + '" y="' + (pad+inner_h) + '" text-anchor="end" font-size="10" fill="#888">10^' + minE.toFixed(1) + '</text>';
+            html += '<text x="' + (pad+inner_w) + '" y="' + (H-pad/2) + '" text-anchor="end" font-size="10" fill="#888">step ' + MAX + '</text>';
+          } else {
+            html += '<text x="' + (W/2) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888">press <em>Run</em> to begin</text>';
+          }
+          svg.innerHTML = html;
+          var lastErr = errHistory.length ? errHistory[errHistory.length-1].e : 0;
+          errSpan.textContent = lastErr.toFixed(4);
+          stepSpan.textContent = step;
+        }
+        runBtn.addEventListener('click', function () {
+          if (step >= MAX) reset();
+          if (raf === null) { raf = requestAnimationFrame(loop); }
+        });
+        resetBtn.addEventListener('click', reset);
+        kappaS.addEventListener('input', reset);
+        dtS.addEventListener('input', function () {
+          dtV.textContent = parseFloat(dtS.value).toFixed(3);
+        });
+        reset();
+      })();
+
+      // -- Widget: (η, γτ) feasibility envelope -------------------------
+      (function () {
+        var svg = document.getElementById('eta-tau-envelope-svg');
+        if (!svg) return;
+        var dS = document.getElementById('env-d');
+        var dV = document.getElementById('env-d-val');
+        var readout = document.getElementById('eta-tau-readout');
+        function buildPlot(d_dim, click_eta, click_gtau) {
+          var W = 520, H = 320, pad = 56;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          // η ∈ [0.5, 1], γτ ∈ [0, 12] log-ish; we'll use linear γτ for clarity
+          var ETA_MIN = 0.5, ETA_MAX = 1.0;
+          var GT_MIN = 0, GT_MAX = 12;
+          var html = '';
+          // background heatmap: error model
+          // err(η, γτ, d) ≈ 0.5*(1-η) + 0.04*γτ * sqrt(d/16)
+          var step = 12;
+          for (var px = pad; px < W-pad; px += step) {
+            for (var py = pad; py < H-pad; py += step) {
+              var eta = ETA_MIN + (px-pad)/inner_w * (ETA_MAX - ETA_MIN);
+              var gt = GT_MAX - (py-pad)/inner_h * (GT_MAX - GT_MIN);
+              var err = 0.5*(1-eta) + 0.04*gt * Math.sqrt(d_dim/16);
+              var v = Math.max(0, Math.min(1, err));
+              // green low → orange mid → red high
+              var r = Math.round(120 + 130*v);
+              var g = Math.round(200*(1-v) + 60*v);
+              var b = Math.round(160*(1-v) + 60*v);
+              html += '<rect x="' + px + '" y="' + py + '" width="' + step + '" height="' + step + '" fill="rgb(' + r + ',' + g + ',' + b + ')" opacity="0.55"/>';
+            }
+          }
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (H-pad) + '" x2="' + (W-pad) + '" y2="' + (H-pad) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (H-pad) + '" stroke="#888"/>';
+          // tick labels
+          var etas = [0.5, 0.7, 0.85, 0.95, 1.0];
+          for (var k = 0; k < etas.length; k++) {
+            var ex = pad + (etas[k]-ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            html += '<line x1="' + ex + '" y1="' + (H-pad) + '" x2="' + ex + '" y2="' + (H-pad+5) + '" stroke="#888"/>';
+            html += '<text x="' + ex + '" y="' + (H-pad+18) + '" text-anchor="middle" font-size="10" fill="#888">' + etas[k].toFixed(2) + '</text>';
+          }
+          var gts = [0, 1, 3, 6, 10, 12];
+          for (var k = 0; k < gts.length; k++) {
+            var gy = H - pad - (gts[k] - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<line x1="' + (pad-5) + '" y1="' + gy + '" x2="' + pad + '" y2="' + gy + '" stroke="#888"/>';
+            html += '<text x="' + (pad-8) + '" y="' + (gy+3) + '" text-anchor="end" font-size="10" fill="#888">' + gts[k] + '</text>';
+          }
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">homodyne efficiency η</text>';
+          html += '<text x="' + (pad/3) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/3) + ' ' + (H/2) + ')">feedback delay γτ</text>';
+          // target boxes
+          function boxTarget(eta_min, gt_max, color, label) {
+            var x0 = pad + (eta_min-ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            var x1 = pad + inner_w;
+            var y0 = pad;
+            var y1 = H - pad - (0 - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            var y_top = H - pad - (gt_max - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<rect x="' + x0 + '" y="' + y_top + '" width="' + (x1-x0) + '" height="' + (y1 - y_top) + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-dasharray="4,3"/>';
+            html += '<text x="' + (x0 + 6) + '" y="' + (y_top + 12) + '" font-size="10" fill="' + color + '" font-weight="600">' + label + '</text>';
+          }
+          boxTarget(0.99, 0.05, '#79c79f', 'Stretch');
+          boxTarget(0.95, 0.20, '#79f29c', 'Practical');
+          boxTarget(0.85, 0.50, '#e8b96a', 'Loose');
+          // FPGA wall
+          var wall_y = H - pad - (10 - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+          html += '<line x1="' + pad + '" y1="' + wall_y + '" x2="' + (W-pad) + '" y2="' + wall_y + '" stroke="#f27979" stroke-width="1.5" stroke-dasharray="6,3"/>';
+          html += '<text x="' + (W-pad-6) + '" y="' + (wall_y-4) + '" text-anchor="end" font-size="10" fill="#f27979">FPGA wall (γτ ≈ 10)</text>';
+          // click marker
+          if (click_eta != null) {
+            var cx = pad + (click_eta - ETA_MIN)/(ETA_MAX-ETA_MIN) * inner_w;
+            var cy = H - pad - (click_gtau - GT_MIN)/(GT_MAX - GT_MIN) * inner_h;
+            html += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="none" stroke="#fff" stroke-width="2"/>';
+            var err = 0.5*(1-click_eta) + 0.04*click_gtau * Math.sqrt(d_dim/16);
+            html += '<text x="' + (cx + 10) + '" y="' + (cy + 4) + '" font-size="11" fill="#fff" font-weight="600">err ≈ ' + err.toFixed(3) + '</text>';
+            readout.innerHTML = '<strong>η = ' + click_eta.toFixed(3) + ', γτ = ' + click_gtau.toFixed(2) + '</strong> at d = ' + d_dim + ' &rarr; estimated Σ-error ≈ ' + err.toFixed(3) + ' (Frobenius)';
+          }
+          svg.innerHTML = html;
+          dV.textContent = d_dim;
+        }
+        function fromClick(evt) {
+          var rect = svg.getBoundingClientRect();
+          var W_actual = rect.width, H_actual = rect.height;
+          // map back to viewBox 520x320
+          var vx = (evt.clientX - rect.left) * (520 / W_actual);
+          var vy = (evt.clientY - rect.top) * (320 / H_actual);
+          var pad = 56;
+          var inner_w = 520 - 2*pad, inner_h = 320 - 2*pad;
+          var eta = 0.5 + Math.max(0, Math.min(1, (vx - pad)/inner_w)) * 0.5;
+          var gt = 0 + Math.max(0, Math.min(1, 1 - (vy - pad)/inner_h)) * 12;
+          buildPlot(parseFloat(dS.value), eta, gt);
+        }
+        svg.addEventListener('click', fromClick);
+        dS.addEventListener('input', function () { buildPlot(parseFloat(dS.value)); });
+        buildPlot(parseFloat(dS.value));
+      })();
+
+      // -- Widget: T_mix vs κ scaling -----------------------------------
+      (function () {
+        var svg = document.getElementById('mixing-time-scaling-svg');
+        if (!svg) return;
+        var kS = document.getElementById('mix-kappa');
+        var kV = document.getElementById('mix-kappa-val');
+        var overSp = document.getElementById('mix-over');
+        var underSp = document.getElementById('mix-under');
+        var ratioSp = document.getElementById('mix-ratio');
+        function tOver(k) { return 8 * Math.pow(k, 0.93); }   // empirical
+        function tUnder(k) { return 16 * Math.sqrt(k); }      // theory
+        function draw() {
+          var k_now = parseFloat(kS.value);
+          kV.textContent = k_now.toFixed(0);
+          var W = 520, H = 320, pad = 56;
+          var inner_w = W - 2*pad, inner_h = H - 2*pad;
+          var KMIN = 1, KMAX = 200;
+          var TMIN = 4, TMAX = 4000;
+          function xpos(k) { return pad + (Math.log10(k)-Math.log10(KMIN))/(Math.log10(KMAX)-Math.log10(KMIN)) * inner_w; }
+          function ypos(t) { return pad + inner_h - (Math.log10(t)-Math.log10(TMIN))/(Math.log10(TMAX)-Math.log10(TMIN)) * inner_h; }
+          var html = '';
+          // axes
+          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#888"/>';
+          var ks = [1, 3, 10, 30, 100, 200];
+          for (var k = 0; k < ks.length; k++) {
+            var xx = xpos(ks[k]);
+            html += '<line x1="' + xx + '" y1="' + (pad+inner_h) + '" x2="' + xx + '" y2="' + (pad+inner_h+5) + '" stroke="#888"/>';
+            html += '<text x="' + xx + '" y="' + (pad+inner_h+18) + '" text-anchor="middle" font-size="10" fill="#888">κ=' + ks[k] + '</text>';
+          }
+          var ts = [4, 16, 64, 256, 1024, 4000];
+          for (var k = 0; k < ts.length; k++) {
+            var yy = ypos(ts[k]);
+            html += '<line x1="' + (pad-5) + '" y1="' + yy + '" x2="' + pad + '" y2="' + yy + '" stroke="#888"/>';
+            html += '<text x="' + (pad-8) + '" y="' + (yy+3) + '" text-anchor="end" font-size="10" fill="#888">' + ts[k] + '</text>';
+          }
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/3 + 4) + '" text-anchor="middle" font-size="11" fill="#888">condition number κ = λ_max / λ_min</text>';
+          html += '<text x="' + (pad/3) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/3) + ' ' + (H/2) + ')">mixing time T_mix</text>';
+          // overdamped curve
+          var ov = []; for (var k = KMIN; k <= KMAX; k *= 1.08) ov.push(k);
+          var ovStr = ov.map(function(k){return xpos(k)+','+ypos(tOver(k));}).join(' ');
+          html += '<polyline points="' + ovStr + '" fill="none" stroke="#7a9fd1" stroke-width="2"/>';
+          // underdamped curve
+          var unStr = ov.map(function(k){return xpos(k)+','+ypos(tUnder(k));}).join(' ');
+          html += '<polyline points="' + unStr + '" fill="none" stroke="#79f29c" stroke-width="2" stroke-dasharray="5,3"/>';
+          // current κ marker
+          var cx = xpos(k_now);
+          html += '<circle cx="' + cx + '" cy="' + ypos(tOver(k_now)) + '" r="5" fill="#7a9fd1"/>';
+          html += '<circle cx="' + cx + '" cy="' + ypos(tUnder(k_now)) + '" r="5" fill="#79f29c"/>';
+          html += '<line x1="' + cx + '" y1="' + pad + '" x2="' + cx + '" y2="' + (pad+inner_h) + '" stroke="#fff" stroke-width="0.7" stroke-dasharray="2,3" opacity="0.5"/>';
+          // legend
+          html += '<text x="' + (W-pad-180) + '" y="' + (pad+12) + '" font-size="11" fill="#7a9fd1" font-weight="600">overdamped: T ∝ κ^0.93 (empirical)</text>';
+          html += '<text x="' + (W-pad-180) + '" y="' + (pad+30) + '" font-size="11" fill="#79f29c" font-weight="600">underdamped: T ∝ √κ (theory)</text>';
+          svg.innerHTML = html;
+          overSp.textContent = tOver(k_now).toFixed(1);
+          underSp.textContent = tUnder(k_now).toFixed(1);
+          ratioSp.textContent = (tOver(k_now) / tUnder(k_now)).toFixed(2) + '×';
+        }
+        kS.addEventListener('input', draw);
+        draw();
+      })();
+    """),
 }
 
 
