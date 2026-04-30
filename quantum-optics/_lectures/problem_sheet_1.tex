@@ -1,0 +1,92 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Problems related to Zeno effect and density operators}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small The aim of this worksheet is to have a mixture of hard and easy questions, do not feel like they need to be answered in order, feel free to skip around and come up with partial answers wherever possible; feel free to use maple/matlab/python/wolfram alpha to aid in calculations.}
+
+\begin{enumerate}
+\item Consider the Zeno effect where weak instantaneous phase kicks are performed $U_{\mathrm{phase}}=\exp(i \phi \hat{Z})=\left( \begin{array}{cc} \exp(i \phi) & 0 \\ 0 & \exp(-i \phi) \end{array} \right)$ (hint: since global phase is irrelevant, it may be more useful to consider a globally phase shifted version $\left( \begin{array}{cc} 1 & 0 \\ 0 & \exp(-2 i \phi) \end{array} \right)$) at $n$ evenly spaced intervals interrupting evolution for a total time $\tau$ of the form (the same as the example in the notes with projective measurement)
+\begin{equation}
+\ket{\psi(t)}=\exp\left(\frac{i t \pi }{2 \tau} X\right)\ket{0}=\cos(\frac{ t \pi }{2 \tau})\ket{0}+i \sin(\frac{ t \pi }{2 \tau})\ket{1}
+\end{equation}
+\begin{enumerate}
+\item Argue that if $0<\phi<\pi$ and is independent of $n$ that the system will remain in the $\ket{0}$ state in the limit $n \rightarrow \infty$.
+\item Now assume that we reduce the strength of the phase kicks as we increase $n$ such that $\phi=\frac{\phi_0}{n^\alpha}$, how big does $\alpha$ have to be before we no longer are guaranteed to remain in $\ket{0}$?
+\end{enumerate}
+\item Consider a decaying system similar to the one in the notes , but with decay from the $\ket{+}=\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$ state such that time evolution is performed by taking $\exp\left(\frac{i t \pi }{2 \tau} (\hat{X}+i\Gamma\ketbra{+}{+})\right)$
+\begin{enumerate}
+\item Calculate the eigenvalues and eigenvectors of $\hat{X}+i\Gamma\ketbra{+}{+}$, is there a state which can be prepared which does not decay, does $\Gamma$ have to be large for this to happen? Is the reason the state does not decay because of a Zeno effect or for another reason?
+\item Now consider I change the dynamics of the system such that the evolution is governed by $\exp\left(\frac{i t \pi }{2 \tau} (\hat{Z}+i\Gamma\ketbra{+}{+})\right)$, is there a Zeno effect in this case, if so what state is maintained in the limit of large $\Gamma$?
+\end{enumerate}
+\item Consider a two level system where the time evolution is described by a Pauli X operator ($\hat{H}=-\hat{X}$), bit which undergoes decoherence which can be described by a Lindblad equation with $\hat{L}=\hat{Z}=\left( \begin{array}{cc} 1& 0 \\ 0 & -1 \end{array} \right)$ and a bath coupling strength $\gamma$.
+\begin{enumerate}
+\item Consider starting in the $\ket{0}$ state, calculate the density matrix of the system as a function of time (hint: it may be easier to decompose the density matrix into Pauli operators and the identities and then solve the differential equation for them; also, the solution may not simplify to a ``nice'' form).
+\item Based on this solution is it possible to have a Zeno effect from decoherence of this form? argue why or why not
+\item Show that your solution reduces to closed system dynamics when $\gamma=0$
+\end{enumerate}
+
+\end{enumerate}
+
+
+
+
+
+
+\end{document}

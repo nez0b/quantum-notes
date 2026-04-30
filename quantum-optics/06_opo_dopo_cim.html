@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OPO, DOPO, and the Coherent Ising Machine</title>
+    <meta name="description" content="Optical parametric oscillator dynamics, the DOPO bifurcation, and how a network of measurement-feedback DOPOs solves Ising minimization. When is the machine quantum, when classical, and what does the bifurcation actually do?" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+
+      /* Better paragraph wrapping in modern browsers */
+      p, li {
+        text-wrap: pretty;
+      }
+
+      h1, h2, h3, h4 {
+        text-wrap: balance;
+      }
+
+      /* Tabular numerals everywhere they should be (calculators, tables, status cards) */
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      /* Section numbering — automatic via CSS counters.
+         Only counts h2s in the main content sections, not the header. */
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      /* Anchor mark on h2 hover (distill-style) */
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 {
+        position: relative;
+      }
+
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after {
+        opacity: 0.55;
+      }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: #17456f;
+      }
+
+      img,
+      svg {
+        max-width: 100%;
+        display: block;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        background: var(--page-accent);
+        color: white;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 26ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+
+      .header-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .meta-line {
+        margin-top: 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+      }
+
+      .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        padding: 0.38rem 0.8rem;
+        color: var(--page-muted);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.92rem;
+      }
+
+      .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+      }
+
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+
+      .top-nav-shell a:hover,
+      .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main {
+        padding: 2.2rem 0 5rem;
+      }
+
+      .section-shell,
+      .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+
+      /* Subtle hairline divider between major sections.
+         Use grid-column: 1 / -1 so the ::before doesn't break grid layouts
+         on .section-shell (which is display: grid). */
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      /* Unified h2 size across section-shell, figure-band, and section-band-shell.
+         Previously figure-band h2s defaulted to browser ~1.5em while section-shell
+         used clamp(1.85rem, 3vw, 2.55rem) — visibly different sizes between
+         widget-containing and plain sections. */
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+
+      .section-shell h3,
+      .figure-band h3,
+      .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Collapsible alternate-view: when the .section-collapse details is closed,
+         hide the sidebar and let the main column span the full grid width
+         (otherwise the keypoints box leaves a tall empty rail). */
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main {
+        min-width: 0;
+      }
+
+      .section-shell > .section-side {
+        position: sticky;
+        top: 5rem;
+      }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .keypoints ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .keypoints li + li {
+        margin-top: 0.5rem;
+      }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+
+      .math-details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+
+      .math-details[open] summary::before {
+        content: "−";
+      }
+
+      .math-details .details-body {
+        padding: 1rem 1.05rem 1.1rem;
+      }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .figure-band-header {
+        padding: 1.2rem 1.3rem 0.25rem;
+      }
+
+      .figure-band-header h2,
+      .figure-band-header h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      .figure-band-header p {
+        margin: 0;
+        color: var(--page-muted);
+      }
+
+      .figure-band-content {
+        padding: 1.15rem 1.3rem 1.3rem;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .control {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 9rem;
+        flex: 1 1 10rem;
+      }
+
+      .control label {
+        color: var(--page-muted);
+        font-size: 0.9rem;
+      }
+
+      .control select,
+      .control input[type="range"],
+      .control input[type="number"] {
+        width: 100%;
+      }
+
+      .control input[type="range"] {
+        accent-color: var(--page-accent);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .button-row button,
+      .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .button-row button:hover,
+      .button-row button:focus-visible,
+      .segmented button:hover,
+      .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .status-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-value.small {
+        font-size: 1rem;
+      }
+
+      .two-up,
+      .three-up {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .two-up {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .panel h3,
+      .panel h4 {
+        margin-bottom: 0.55rem;
+      }
+
+      .figure-caption {
+        margin-top: 0.7rem;
+        font-size: 0.93rem;
+        color: var(--page-muted);
+      }
+
+      .amp-svg,
+      .plane-svg,
+      .chart-svg,
+      .posterior-svg,
+      .complexity-svg,
+      .small-svg {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note {
+        font-size: 0.96rem;
+        color: var(--page-muted);
+      }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .quiz-card h3 {
+        font-size: 1.08rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+
+      .faq-list summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+
+      .footer-note {
+        color: var(--page-muted);
+        font-size: 0.95rem;
+      }
+
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.1rem 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid,
+        .section-shell,
+        .two-up,
+        .three-up {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell > .section-side {
+          position: static;
+        }
+      }
+
+      /* Multi-marked side-by-side trio */
+      .multi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .multi-col {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem;
+      }
+
+      .multi-col h4 {
+        font-size: 1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .multi-col .micro-status {
+        font-family: var(--ui-font);
+        font-size: 0.82rem;
+        color: var(--page-muted);
+        margin-top: 0.4rem;
+        line-height: 1.45;
+      }
+
+      .multi-col .micro-status b {
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 760px) {
+        .multi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SOTA card grid */
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+
+      .sota-card p {
+        margin: 0;
+        font-size: 0.94rem;
+      }
+
+      .padding-diagram {
+        display: block;
+        margin: 1rem auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Collapsible whole-section wrapper */
+      .section-collapse {
+        margin: 0.6rem 0 1.2rem;
+      }
+
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+
+      .section-collapse > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-collapse > summary::before {
+        content: "▸ ";
+        margin-right: 0.2rem;
+      }
+
+      .section-collapse[open] > summary::before {
+        content: "▾ ";
+      }
+
+      .section-collapse[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* Pedagogical 2D-collapse worked example styling */
+      .twod-collapse {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.1rem;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .twod-collapse h3 {
+        margin-top: 0;
+      }
+
+      .twod-collapse table {
+        border-collapse: collapse;
+        margin: 0.7rem auto;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+      }
+
+      .twod-collapse th, .twod-collapse td {
+        border: 1px solid var(--page-border);
+        padding: 0.35rem 0.7rem;
+        text-align: center;
+      }
+
+      .twod-collapse th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+
+      .overshoot-block {
+        margin: 1.2rem 0;
+      }
+
+      .overshoot-svg {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+      }
+
+      /* Circuit diagram */
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      /* Composing-Grover and No-speedup card grids */
+      .compose-card, .no-speedup-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.05rem;
+      }
+
+      .compose-card h4, .no-speedup-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .no-speedup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.2rem;
+      }
+
+      .no-speedup-card {
+        border-left: 3px solid var(--page-warm);
+        position: relative;
+      }
+
+      .no-speedup-card h4 {
+        color: var(--page-ink);
+        padding-right: 1.4rem;
+      }
+
+      .no-speedup-card h4::before {
+        content: "✗";
+        position: absolute;
+        top: 0.85rem;
+        right: 0.95rem;
+        color: var(--page-warm);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .no-speedup-card .ns-cost {
+        font-family: var(--num-font);
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin: 0.32rem 0;
+        letter-spacing: -0.01em;
+      }
+
+      .no-speedup-card .ns-cost b {
+        color: var(--page-ink);
+        font-weight: 600;
+      }
+
+      .feasibility-badge {
+        display: inline-block;
+        padding: 0.14rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--ui-font);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-left: 0.45rem;
+        vertical-align: 0.12em;
+      }
+
+      .feasibility-badge.trivial { background: #dceedf; color: #1f5e1f; }
+      .feasibility-badge.feasible { background: #dde9f4; color: #15406b; }
+      .feasibility-badge.infeasible { background: #f3e1c5; color: #7a4310; }
+      .feasibility-badge.cosmic { background: #efc8c8; color: #7a1010; }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+
+      .geo-table th:first-child,
+      .geo-table td:first-child {
+        text-align: left;
+      }
+
+      .geo-table tbody tr:nth-child(even) {
+        background: var(--page-panel);
+      }
+
+      .geo-table tbody tr:last-child {
+        border-top: 1px solid var(--page-rule);
+      }
+
+      @media (max-width: 640px) {
+        .header-shell {
+          padding-top: 3.5rem;
+        }
+
+        h1 {
+          max-width: none;
+        }
+
+        .figure-band-content,
+        .figure-band-header,
+        .panel,
+        .quiz-card,
+        .source-item,
+        .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  
+    <style>
+  .page-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--page-rule);
+    padding: 2rem 0;
+  }
+  .footer-shell {
+    width: min(calc(100% - 2rem), var(--content-width));
+    margin: 0 auto;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+  .footer-meta {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .keypoints h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .keypoints ul {
+    margin: 0;
+    padding-left: 1.05rem;
+    font-size: 0.93rem;
+  }
+  .keypoints li {
+    margin-bottom: 0.35rem;
+  }
+  .lede {
+    font-size: 1.04rem;
+    margin-top: 0;
+  }
+  table.refs {
+    margin-top: 0.6rem;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.refs td {
+    padding: 0.18rem 0.7rem 0.18rem 0;
+    vertical-align: top;
+  }
+  table.refs td:first-child {
+    white-space: nowrap;
+    color: var(--page-muted);
+  }
+  .pre-req {
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+  <div class="header-shell">
+    <div class="eyebrow">Quantum Optics · Coherent Ising Machine</div>
+    <div class="header-grid">
+      <div>
+        <h1>OPO, DOPO, and the Coherent Ising Machine</h1>
+        <p class="header-subtitle">The headline applied note. We assemble the OPO physics from Note 03, the open-system formalism from Note 04, and the homodyne feedback from Note 05 into the canonical Inagaki/Yamamoto measurement-feedback CIM. We also confront — explicitly — when the machine is operating in a quantum regime versus a purely classical one.</p>
+      </div>
+      <aside class="header-card">
+        <h2>What This Note Covers</h2>
+        <ul>
+              <li>OPO: χ⁽²⁾ medium in a cavity, threshold dynamics</li>
+      <li>DOPO bifurcation: pump depletion as cubic saturation</li>
+      <li>Quantum vs classical regime: where the line lives</li>
+      <li>Network of DOPOs with measurement feedback (Inagaki / Marandi)</li>
+      <li>Mapping onto Ising minimization: the heuristic argument</li>
+      <li>The discrete-time round-trip update equation, annotated</li>
+      <li>State of the art: 2k → 100k spins; what these machines actually solve</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+  <div class="top-nav-shell">
+        <a href="#opo-basics">OPO Basics</a>
+<a href="#dopo">DOPO Bifurcation</a>
+<a href="#quantum-classical">Quantum vs Classical</a>
+<a href="#mfb-network">MFB Network</a>
+<a href="#ising-mapping">Ising Mapping</a>
+<a href="#rosetta">Update Rosetta</a>
+<a href="#sota">State of the Art</a>
+<a href="#sources">Sources</a>
+  </div>
+</nav>
+
+    <main id="main-content">
+      <section class="section-shell" id="opo-basics">
+  <div class="section-main">
+    <h2>OPO: A χ⁽²⁾ Medium in a Cavity</h2>
+
+  <p class="lede">
+    Place a periodically-poled LiNbO₃ crystal (Note 03) inside
+    a fiber-ring or free-space cavity (Note 04). Pump it at
+    \(2\omega\) with a classical coherent field of amplitude
+    \(\beta_p\). The intracavity signal mode \(a\) at \(\omega\)
+    obeys, in the rotating frame and undepleted-pump
+    approximation,
+    \[
+      \dot a = -\kappa\, a + g\,\beta_p\, a^\dagger
+        - \sqrt{2\kappa}\,a_\mathrm{in}.
+    \]
+    The first term is cavity decay; the second is parametric
+    amplification (the squeezing-generation term from Note 03);
+    the third is vacuum input from the output mirror.
+  </p>
+  <p>
+    Linear stability of the steady state \(a = 0\): the
+    characteristic exponents are \(\pm(g\lvert\beta_p\rvert - \kappa)\).
+    For \(g\lvert\beta_p\rvert < \kappa\) (below threshold),
+    both modes decay — the cavity is a squeezed-vacuum source.
+    For \(g\lvert\beta_p\rvert > \kappa\) (above threshold),
+    one mode grows exponentially until pump depletion
+    saturates it. <strong>The OPO threshold is exactly when
+    parametric gain equals cavity loss.</strong>
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>OPO = χ⁽²⁾ + cavity, pumped at \(2\omega\)</li>
+      <li>Threshold: \(g\lvert\beta_p\rvert = \kappa\)</li>
+      <li>Below: squeezing source. Above: oscillation.</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="dopo">
+  <div class="section-main">
+    <h2>The DOPO Bifurcation</h2>
+
+  <p>
+    For a <em>degenerate</em> OPO (signal frequency = idler
+    frequency, same mode), the gain term in the Hamiltonian is
+    \(\sim a^{\dagger 2}\) — same as the squeeze operator
+    generator. Above threshold, pump depletion enters and the
+    mean-field equation becomes (e.g. Drummond, McNeil, Walls
+    1980):
+    \[
+      \dot\alpha = (p - 1)\alpha - \mu\lvert\alpha\rvert^2 \alpha
+        + \xi(t),
+    \]
+    where \(p = g\lvert\beta_p\rvert/\kappa\) is the normalized
+    pump (1 at threshold), \(\mu \propto g^2/\kappa\) is the
+    saturation coefficient, and \(\xi(t)\) is the linearized
+    quantum noise (vacuum input). The dynamics is exactly the
+    normal form of a <strong>pitchfork bifurcation</strong>.
+  </p>
+  <p>
+    Below threshold (\(p < 1\)): the only stable fixed point is
+    \(\alpha = 0\) — squeezed vacuum. Above threshold (\(p > 1\)):
+    two stable fixed points at \(\alpha = \pm\sqrt{(p-1)/\mu}\),
+    and the unstable origin. The cubic saturation
+    \(-\mu\lvert\alpha\rvert^2\alpha\) is what bounds the
+    oscillation amplitude. Because the gain term respects
+    \(\alpha \to -\alpha\), the steady-state phase is
+    spontaneously selected — by quantum noise during the
+    crossing of threshold.
+  </p>
+  <div class="callout">The DOPO is a noise-driven coin flip. The phase the device commits to is selected by the quantum-noise fluctuation that happens to be largest at the moment the system crosses threshold. This noise-driven phase selection is the entire computational primitive of the CIM.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>DOPO mean-field = pitchfork bifurcation</li>
+      <li>Two stable phases (\(\pm\)) above threshold</li>
+      <li>Quantum noise selects which phase wins</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="quantum-classical">
+  <div class="section-main">
+    <h2>When Is the CIM Quantum, When Is It Classical?</h2>
+
+  <p>
+    This is the question the CIM literature has spent two
+    decades arguing about. The honest answer has three
+    ingredients:
+  </p>
+  <ol>
+    <li><strong>Far above threshold</strong>
+      (\(p \gg 1, \lvert\alpha\rvert \gg 1\)): the field is
+      bright, fluctuations are a small perturbation around the
+      mean, mean-field theory is exact to leading order in
+      \(1/\lvert\alpha\rvert\). The dynamics is operationally
+      <em>classical</em>: it can be simulated by an SDE with
+      the same equations of motion, no Hilbert space needed.</li>
+    <li><strong>Far below threshold</strong>
+      (\(p \ll 1, \lvert\alpha\rvert \to 0\)): the field is
+      vacuum-fluctuation-scale; the full Lindblad master
+      equation is needed; entanglement and squeezing are
+      intrinsically non-classical features. The cavity is in a
+      squeezed-vacuum state.</li>
+    <li><strong>At threshold</strong> (\(p \approx 1\)): both
+      limits fail. The system is sensitive to a finite (\(O(1)\))
+      number of quantum-fluctuation noise events, which then
+      get amplified by the pitchfork instability into
+      macroscopic phase commitments. This is where the
+      "quantum advantage" arguments live.</li>
+  </ol>
+  <p>
+    The empirical evidence so far (Hamerly et al.\ 2018, Honjo
+    et al.\ 2021, Marandi et al.\ ongoing): for the Ising
+    problems CIMs have been benchmarked on,
+    <em>classical-noise-driven simulators of the same equations
+    of motion solve them just as well as the actual machines.</em>
+    Whether there exist problem classes where the genuine
+    quantum noise at threshold outperforms classical noise
+    (e.g.\ via tunneling through saddle points) remains
+    open. That's the live research question, not a settled
+    claim.
+  </p>
+  <div class="callout">Don't conflate &ldquo;the dynamics involves quantum optics&rdquo; with &ldquo;the device offers a quantum computational advantage&rdquo;. The first is uncontroversial. The second is an open empirical question — and the answer is currently <em>&ldquo;no, on the problems tested so far&rdquo;</em>.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Above threshold: classical SDE</li>
+      <li>Below threshold: full Lindblad / squeezing</li>
+      <li>At threshold: amplification of \(O(1)\) quantum events</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+       <section class="section-shell" id="mfb-network">
+   <div class="section-main">
+     <h2>Network of DOPOs with Measurement Feedback</h2>
+
+   <p>
+     One DOPO commits to one bit of phase. To compute, we need
+     interactions between bits. The Inagaki/Yamamoto/Marandi
+     <strong>measurement-feedback CIM</strong> (MFB-CIM)
+     architecture, in pictures:
+   </p>
+   <pre style="background: var(--page-panel); padding: 0.8rem; border-radius: 0.3rem; font-size: 0.86rem; white-space: pre; overflow-x: auto;">
+┌─────────────────────────────────────────────────────┐
+│  pulse loop (fiber ring + DOPO gain medium)         │
+│  N pulses circulating, one slot per spin            │
+└──────────────┬──────────────────────────────────────┘
+               │ tap output ~1%
+               ▼
+   balanced homodyne   ──► measures X-quadrature x_i
+               │
+               ▼
+   FPGA: compute MVM = J · x   (the Ising coupling)
+               │
+               ▼
+   electro-optic modulator
+   inject ε·MVM into next round-trip slot
+               │
+               ▼
+   [also inject calibrated stochastic noise √D·ξ]
+               │
+               └─► back into the loop
+   </pre>
+   <p>
+     Pulses are time-multiplexed in a fiber ring: each
+     round-trip the FPGA reads the X-quadratures via balanced
+     homodyne (Note 05), computes the Ising matrix-vector
+     product \(\sum_j J_{ij} x_j\), and injects the result back
+     into the next pulse via an electro-optic modulator. This
+     <em>is</em> the spin-spin coupling — it lives in the
+     digital feedback loop, not in the optics.
+   </p>
+   <p>
+     Why time-multiplexed? You can fit \(N\) pulses
+     (one per spin) into one fiber loop and the whole thing
+     runs at the round-trip rate. The Honjo et al.\ 2021
+     machine has \(N = 100{,}144\) — over 100k spins on a
+     single fiber loop, all processed by one FPGA. The
+     architecture is dimension-efficient in a way no
+     spatially-multiplexed scheme is.
+   </p>
+
+   </div>
+   <div class="section-side">
+     <aside class="keypoints">
+       <h3>Key takeaways</h3>
+       <ul>
+               <li>Time-multiplexed pulses = spins</li>
+       <li>FPGA implements \(\sum_j J_{ij} x_j\)</li>
+       <li>EOM injection = spin-spin coupling</li>
+       </ul>
+     </aside>
+   </div>
+ </section>
+      <section class="section-shell" id="ising-mapping">
+  <div class="section-main">
+    <h2>From Pulses to Ising Solutions</h2>
+
+  <p>
+    When each DOPO settles to ±1 (above threshold, after
+    relaxation), the spin configuration
+    \(s = (\mathrm{sgn}\,x_1, \dots, \mathrm{sgn}\,x_N)\) is
+    the output. The quantity the dynamics minimizes — argued
+    heuristically by Yamamoto and others — is the Ising
+    energy
+    \[
+      H_\mathrm{Ising}(s) = -\tfrac{1}{2} s^T J s.
+    \]
+    The argument: each pulse's phase wants to align with the
+    phase of \(\sum_j J_{ij} x_j\), which is the phase that
+    maximizes coherent build-up; that is the phase that
+    minimizes the local field \(-\sum_j J_{ij} s_j\) seen by
+    spin \(i\), which collectively minimizes \(H_\mathrm{Ising}\).
+  </p>
+  <p>
+    <em>Caveat:</em> the heuristic is not a proof. The
+    machine is doing something like simulated bifurcation,
+    where the pump is ramped from below to above threshold;
+    the system commits to a low-energy attractor of an
+    effective dynamical system that is closely related to —
+    but not identical to — the Ising landscape.
+    Amplitude-Heterogeneity-Correction (AHC, Leleu et al.\ 2019)
+    and Chaotic-Amplitude-Control (CAC, Leleu et al.\ 2021)
+    are post-hoc corrections that improve performance on
+    hard instances. The McMahon Lab
+    <code>cim-optimizer</code> implements all three variants
+    (see <code>~/Code/Ideas/cim/vendor/cim-optimizer/</code>).
+  </p>
+  <div class="callout">MAX-CUT on a graph with adjacency \(A\) maps to Ising with \(J = -A\). This is the encoding used in the <code>cim-optimizer</code> regression test (<code>experiments/exp01_cim_baseline.py</code>) which hits the ground state on a 16-spin Erdős-Rényi instance 100% of the time.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Output: \(s = \mathrm{sgn}\,x\) — bipolar spin string</li>
+      <li>Heuristic: minimizes \(-\tfrac{1}{2}s^T J s\)</li>
+      <li>AHC/CAC = post-hoc fixes for amplitude heterogeneity</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+              <section class="section-shell" id="rosetta">
+          <div class="section-main">
+            <h2>The Rosetta Stone: Update Equation</h2>
+
+          <p>
+            The McMahon Lab <code>cim-optimizer</code>
+            (<code>vendor/cim-optimizer/cim_optimizer/AHC.py</code>,
+            lines 130–133) implements the discrete-time MFB-CIM as
+            an explicit Euler step:
+          </p>
+          <pre style="background: var(--page-panel); padding: 0.7rem; border-radius: 0.3rem; font-size: 0.82rem; overflow-x: auto;">
+MVM = x @ J                                          # FPGA matrix-vector multiply
+x += time_step * (x * ((r[t] - 1) - mu * x_squared)) # gain - cubic saturation
+x += time_step * eps[t] * (MVM * error_var)          # measurement-feedback injection
+x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
+          </pre>
+          <p>
+            And the Yamamoto-Inagaki continuous-time SDE this
+            discretizes:
+            \[
+              \dot x_i = (p - 1)\,x_i - \mu\,x_i^3
+                + \zeta \sum_j J_{ij}\,x_j
+                + \sqrt{d_n}\,\xi_i(\tau).
+            \]
+          </p>
+          <table class="refs">
+            <tr><td>simulator</td><td>physical role</td></tr>
+            <tr><td><code>x @ J</code></td><td>FPGA MVM \(\Sigma_j J_{ij} x_j\) — homodyne photocurrent processed</td></tr>
+            <tr><td><code>x*(r-1)</code></td><td>linear gain (above threshold) or loss (below)</td></tr>
+            <tr><td><code>-mu*x³</code></td><td>pump-depletion saturation in the χ⁽²⁾ medium — what makes CIM bistable</td></tr>
+            <tr><td><code>eps*MVM*error_var</code></td><td>EOM injection via the FPGA loop; \(error\_var\) is Leleu's correction</td></tr>
+            <tr><td><code>eps*noise*uniform</code></td><td>stochastic injection; vacuum diffusion in the literature</td></tr>
+            <tr><td><code>time_step</code></td><td>round-trip time in dimensionless cavity-decay units</td></tr>
+          </table>
+          <p>
+            <em>Substituting</em> \(-\mu x^3 \to -A\,x\) (linear damping
+            instead of cubic saturation) <em>turns this exact code into
+            an Ornstein-Uhlenbeck linear-system solver</em> — the OU
+            machine of Note 07. Same hardware, different dynamical
+            regime.
+          </p>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>AHC.py:131-133 = explicit Euler of MFB-CIM SDE</li>
+              <li>Each line ↔ one physical mechanism</li>
+              <li>OU machine: replace \(-\mu x^3\) with \(-A x\)</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+      <section class="section-shell" id="sota">
+  <div class="section-main">
+    <h2>State of the Art (1996 → 2026)</h2>
+
+  <table class="refs">
+    <tr><td>1996</td><td>Yamamoto group: first DOPO Ising-machine concept</td></tr>
+    <tr><td>2014</td><td>Wang et al.\ (Yamamoto): 4-spin demo, free-space</td></tr>
+    <tr><td>2016</td><td>Inagaki et al., <em>Science</em>: 2,048-spin MFB-CIM at NTT</td></tr>
+    <tr><td>2016</td><td>McMahon et al., <em>Science</em>: 100-spin programmable CIM at Stanford (the codebase we use)</td></tr>
+    <tr><td>2018</td><td>Hamerly et al., <em>Sci. Adv.</em>: dual-polarization CIM scaling demo</td></tr>
+    <tr><td>2019</td><td>Leleu et al., <em>PRL</em>: amplitude-heterogeneity-correction</td></tr>
+    <tr><td>2021</td><td>Honjo et al., <em>Sci. Adv.</em>: 100,144-spin CIM, single fiber loop</td></tr>
+    <tr><td>2025</td><td>Marandi group ongoing: integrated nanophotonic DOPO networks at Caltech</td></tr>
+  </table>
+  <p>
+    What these machines actually solve: spin-glass instances,
+    MAX-CUT, MIS, BIQ. They are heuristic solvers — competitive
+    with simulated annealing on many problem classes, sometimes
+    faster wall-clock — but no rigorous quantum advantage has
+    been demonstrated against well-tuned classical solvers.
+    The interesting research front is now (a) physically
+    integrated implementations (Marandi nanophotonic) and (b)
+    re-purposing the same hardware for non-Ising tasks
+    (linear algebra: Note 07; sampling: Bayesian inference;
+    etc.).
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>1996–2025: 1 → 100k spins</li>
+      <li>Heuristic Ising solvers, competitive with SA</li>
+      <li>No rigorous quantum-advantage demonstration</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="sources">
+  <div class="section-main">
+    <h2>Sources &amp; Further Reading</h2>
+
+  <table class="refs">
+    <tr><td>Lecture</td><td><a href="_lectures/OPOs_and_coherent_Ising.pdf">OPOs_and_coherent_Ising.pdf</a> — primary source</td></tr>
+    <tr><td>Lecture</td><td><a href="_lectures/CIM_description/CIM_description.pdf">CIM_description.pdf</a> — Lindblad form</td></tr>
+    <tr><td>Paper</td><td><a href="_lectures/papers/Coherent_Ising_mahcines.pdf">Yamamoto et al., <em>npj Quantum Inf.</em> <strong>3</strong>, 49 (2017)</a> — the canonical review</td></tr>
+    <tr><td>Paper</td><td>Inagaki et al., "A coherent Ising machine for 2000-node optimization problems", <em>Science</em> <strong>354</strong>, 603 (2016)</td></tr>
+    <tr><td>Paper</td><td>Honjo et al., "100,000-spin coherent Ising machine", <em>Sci. Adv.</em> <strong>7</strong>, eabh0952 (2021)</td></tr>
+    <tr><td>Code</td><td><a href="https://github.com/mcmahon-lab/cim-optimizer">mcmahon-lab/cim-optimizer</a> — McMahon Lab simulator</td></tr>
+    <tr><td>Project</td><td><code>~/Code/Ideas/cim/notes/cim_to_ou_rosetta.md</code> — the rosetta stone in markdown form</td></tr>
+  </table>
+  <p class="pre-req">
+    <strong>Next note:</strong> §07 — Thermodynamic LA and the
+    OU machine proposal. We re-purpose the MFB-CIM
+    substrate as a Lyapunov sampler for linear-algebra
+    primitives.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Yamamoto 2017 = the canonical CIM review</li>
+      <li>Inagaki 2016, Honjo 2021 = state-of-the-art hardware</li>
+      <li>Continue: Note 07 (OU machine — the headline)</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+    </main>
+
+    <footer class="page-footer">
+  <div class="footer-shell">
+    <p>
+      <a href="index.html">↑ All quantum-optics notes</a>
+      &nbsp;&middot;&nbsp;
+      <a href="../index.html">↑↑ All tracks</a>
+    </p>
+    <p class="footer-meta">
+      Part of <a href="https://github.com/nez0b/quantum-notes">quantum-notes</a>.
+      Source PDFs in <a href="_lectures/"><code>_lectures/</code></a>.
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

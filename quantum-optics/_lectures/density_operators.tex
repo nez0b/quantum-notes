@@ -1,0 +1,194 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Density Operators}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+
+\section{How to treat incoherent superpositions of quantum states}
+
+\begin{itemize}
+\item Wavevectors don't support incoherent superposition, always a definite phase relationship between different elements (unless one is $0$)
+\item Need a representation where probabilities, rather than probability amplitudes sum
+\item Outer product of two wavevectors $\ketbra{\psi}{\psi}$, matrix elements can be defined as 
+\begin{equation}
+\hat{\rho}_{j,k}=\braket{j}{\psi}\braket{\psi}{k}=\psi_j\psi^*_k
+\end{equation}
+\item Diagonal elements are probabilities $|\psi_k|^2$, superimposing will give sum of probabilities
+\item A density operator (sometimes called a density matrix because usually represented as a matrix), can be written as 
+\begin{equation}
+\hat{\rho}=\sum_j p_j\ketbra{\phi}{\phi}_j
+\end{equation}
+\item $p_j$ are probabilities of observing different states, note that $\ket{\phi}_j$ \textbf{do not need to be orthogonal}
+\item Because density operators are built from copies of state vectors stuck together, it is easy to generalize many operations
+\begin{itemize}
+\item Operator expectation:
+\begin{equation}
+\average{\hat{A}}=\sandwich{\psi}{\hat{A}}{\psi}=\mathrm{Tr}[\hat{A}\ketbra{\psi}{\psi}]=\mathrm{Tr}[\hat{A}\hat{\rho}]
+\end{equation}
+\item $\mathrm{Tr}$ is the trace operation $\mathrm{Tr}[\hat{A}]=\sum_j\sandwich{j}{\hat{A}}{j}$, where $\ket{j}$ is \textbf{any} set states which form a complete orthonormal basis.
+\item Schr{\"o}dinger equation\footnote{using theorists units where I have scaled out $\hbar$} $\frac{\partial}{\partial t}\ket{\psi}=-i\hat{H}\ket{\psi}$, apply to left and right spaces separately (note extra minus sign from complex conjugation):
+\begin{align}
+(\frac{\partial}{\partial t}\ket{\psi})\bra{\psi}+\ket{\psi}(\frac{\partial}{\partial t}\bra{\psi})=-i\hat{H}\ketbra{\psi}{\psi}+i\ketbra{\psi}{\psi}\hat{H} \Rightarrow \\
+\frac{\partial}{\partial t}(\ket{\psi}\bra{\psi})=-i[\hat{H},\ketbra{\psi}{\psi}]\Rightarrow \\
+i\frac{\partial}{\partial t}\hat{\rho}=[\hat{H},\hat{\rho}]
+\end{align}
+\item This last equation is known as the von Neumann equation (or sometimes Liouville-von Neumann equation), and describes density matrix evolution in a closed system (identical to Schr{\"o}dinger evolution of each component)
+\end{itemize}
+\item Easy to tell if a system is in a pure state (i.e. can be described as a state vector), density operator has a single eigenvalue which takes value $1$ (always diagonalizable because Hermitian by construction), this can be checked for instance by taking $\mathrm{Tr}[\hat{\rho}^2]$ and seeing if it is less than $1$ (this is equivalent to asking if a system is entangled with other systems)
+\item If we want to know what a subsystem within a quantum system is doing, we can take a ``partial trace'' which gives a density operator describing the subsystem, assuming a system can be divided into subsystems $A$ and $B$
+\begin{equation}
+\hat{\rho}_A=\mathrm{Tr}_B[\hat{\rho}]=\sum_j(1_A\otimes\bra{j}_B)\hat{\rho}(1_A\otimes\ket{j}_B)
+\end{equation}
+\item Nothing is done to subsystem $A$ ($1_A$ is an identity matrix), but we perform a trace using an orthonormal basis describing subsystem $B$
+\item Easy to tell if two subsystems are entangled within a pure state $\ket{\psi}$, take partial trace and see if it is pure (mathematically, if $\mathrm{Tr}[\mathrm{Tr}_B[\hat{\ketbra{\psi}{\psi}}]^2]=1$), trick doesn't work if overall system cannot be described as a state vector
+\item Much more to be said here, but this is probably enough to get started
+
+\end{itemize}
+
+\section{Measurements and noise in the density operator formalism}
+
+\begin{itemize}
+\item Since density operators are able to represent incoherent superpositions, we can consider multiple potential outcomes of a projective measurement simultaneously
+\item Consider a projective measurement with $n$ unique outcomes, where we project into each outcome with a projector matrix $P_j$ which are mutually exclusive and therefore simultaneously diagonalizable
+\item The effect of a projective measurement on $\hat{\rho}$ is $\hat{\rho} \rightarrow \sum^{n-1}_{j=0} P_j\hat{\rho}P^\dagger_j$
+\begin{itemize}
+\item The diagonal (in the diagonal basis of $P_j$) elements of $\hat{\rho}$ are unaffected, measurement cannot change probabilities, off diagonal elements between different $P_j$ will be set to zero
+\item Projective measurement can be seen as setting off diagonal elements between different outcomes to zero
+\item Very simple example, start with $\ketbra{+}{+}=\frac{1}{2}\left(\begin{array}{cc} 1 & 1 \\ 1 & 1 \end{array}\right)$ and measure in $\{\ket{0},\ket{1}\}$ basis, projectors will be $P_0=\left(\begin{array}{cc} 1 & 0 \\ 0 & 0 \end{array}\right)$ and $P_1=\left(\begin{array}{cc} 0 & 0 \\ 0 & 1 \end{array}\right)$
+\begin{align}
+P_0\ketbra{+}{+}P^\dagger_0=\frac{1}{2}\left(\begin{array}{cc} 1 & 0 \\ 0 & 0 \end{array}\right) \\
+P_1\ketbra{+}{+}P^\dagger_1=\frac{1}{2}\left(\begin{array}{cc} 0 & 0 \\ 0 & 1 \end{array}\right)\\
+P_0\ketbra{+}{+}P^\dagger_0+P_1\ketbra{+}{+}P^\dagger_1=\frac{1}{2}\left(\begin{array}{cc} 1 & 0 \\ 0 & 1 \end{array}\right)
+\end{align}
+\item Diagonal terms stay the same, but off-diagonal coherence terms are lost
+\end{itemize} 
+\item Can also consider continuous noise processes (the ``right way'' rather than just adding imaginary terms to Hamiltonians)
+\item For continuous processes, add more terms to von Neumann equation, but we need to do this in a way which the density matrix remains a ``good'' density matrix, need to ensure two things\footnote{If you want to know the formal term for this, the operations need to be completely positive and trace preserving maps, often abbreviated CPTP}
+\begin{enumerate}
+\item Trace preserving, probabilities must sum to $1$
+\item Positivity preserving, probabilities must always be $\ge 0$ no matter what probability is measured
+\end{enumerate}
+\item Preserving positivity is equivalent to guaranteeing that eigenvalues of $\hat{\rho}$ are $\ge 0$ for any valid starting state
+\item These properties greatly limit the form the differential equation can take, property is only guaranteed for master equations of Lindblad form
+\begin{equation}
+\frac{\partial}{\partial t}\hat{\rho}=-i[\hat{H},\hat{\rho}]+\sum_{j}\gamma_{j}\left(\hat{L}_j\hat{\rho}\hat{L}^\dagger_j-\frac{1}{2}(\hat{L}^\dagger_j\hat{L}_j\hat{\rho}+\hat{\rho}\hat{L}^\dagger_j\hat{L}_j)\right) \label{Eq:Lindblad}
+\end{equation}
+\item Where the operators $\hat{L}_i$ describe different ways the system can interact with it's environment, and $\gamma_j$ describes the strength of the interaction
+\item Simple examples include $\hat{L}_i$ consisting of single off-diagonal terms which correspond to decay from one state into another, or diagonal versions which correspond to dephasing
+\item Deriving what values these terms take to model real systems is hard work, and involves a lot of approximations, I advise against doing it unless you are an ``expert'' at it (I am not an expert at this)
+\item Example: spontaneous decay described by the Lindblad equation
+\begin{itemize}
+\item Two state atomic system, initially in $\ket{+}$ state ($\ketbra{+}{+}=\frac{1}{2}\left(\begin{array}{cc} 1 & 1 \\ 1 & 1 \end{array}\right)$), phase oscillation due to level spacing $\hat{H}=\Delta Z$, decay to lower energy state ($\ket{1}$ state) at rate $\gamma$, $\hat{L}=\left(\begin{array}{cc} 0 & 1 \\ 0 & 0 \end{array}\right)$
+\item We note that $\hat{L}^\dagger \hat{L}=\left(\begin{array}{cc} 1 & 0 \\ 0 & 0 \end{array}\right)$
+\item Taking $\hat{\rho}=\left(\begin{array}{cc} \rho_{00} & \rho_{01} \\ \rho_{10} & \rho_{11} \end{array}\right)$ and plugging in, we get the following set of differential equations
+\begin{align}
+\frac{\partial}{\partial t}\rho_{00}=-\gamma \rho_{00}\\
+\frac{\partial}{\partial t}\rho_{11}=\gamma \rho_{00}\\
+\frac{\partial}{\partial t}\rho_{01}=(-2 i\Delta -\gamma) \rho_{01}\\
+\frac{\partial}{\partial t}\rho_{10}=(2 i\Delta -\gamma) \rho_{10}
+\end{align}
+\item These equations can readily be solved for the given initial conditions
+\begin{equation}
+\hat{\rho}(t)=\frac{1}{2}\left(\begin{array}{cc} \exp(-\gamma t) & \exp(-2 i\Delta t-\gamma t) \\ \exp(2 i\Delta t-\gamma t) & 2-\exp(-\gamma t) \end{array}\right)
+\end{equation}
+\item In the long time will be found in the $\ket{1}$ state with probability $1$, off diagonal elements both oscillate and decay, but decay rate depends only on bath coupling, not energy separation, $\mathrm{Tr}[\hat{\rho}(t)]=1$ at all times, remains Hermitian at all times because $\rho_{01}$ and $\rho_{10}$ are complex conjugates
+\item Exercise: diagonalize and show eigenvalues remain $\ge 0$ at all times
+\end{itemize}
+\end{itemize}
+
+\section{A brief digression about superoperators}
+
+\begin{itemize}
+\item Note that equation \ref{Eq:Lindblad} is linear in $\hat{\rho}$, this means that it can be written as a matrix operating on a ``vectorized'' version of $\hat{\rho}$,  $\hat{\rho}$ becomes $\vec{\rho}$ \footnote{multiple ways to do this, one way is to just take each column of the matrix and put them into a vector one after another}, the equation than becomes
+\begin{equation}
+\frac{\partial}{\partial t}\vec{\rho}=\mathcal{L}\vec{\rho}
+\end{equation}
+\item $\mathcal{L}$ is just a big matrix describing the linear transformations on the elements of the density matrix (it is also know as a ``superoperator'' if you want it to sound ``cool'' and ``scary''), this admits a formal solution
+\begin{equation}
+\vec{\rho}(t)=\exp(\mathcal{L} t)\vec{\rho}(0)
+\end{equation}
+\item Computers are generally good at exponentiating matrices, so this formal solution  is actually a good way to solve the equation numerically (for time dependent Hamiltonians this can be generalized by performing many short evolutions)
+\item $\mathcal{L}$ is not Hermitian in general, so not guaranteed to be diagonalizable, but it often is diagonalizable in practice, and can always be put into a slightly more general ``almost diagonal'' form known as the Jordan form, eigenvalues (or Jordan blocks) can tell us a lot about how the system will behave
+\item Quantum mechanics is linear even when open system effects are considered! (projective measurements can be written as linear operators using similar tricks, as can partial trace, as well as a ton of other operations)
+\end{itemize}
+\section{Zeno and adiabatic effects in the density operator formalism}
+\begin{itemize}
+\item Consider the differential equation for an individual matrix element under von Neumann equation
+\begin{equation}
+\frac{\partial}{\partial t}\hat{\rho}_{j,l}=-i\sum_{k}H_{j,k}\hat{\rho}_{k,l}+i\sum_{k}H_{k,l}\hat{\rho}_{j,k}
+\end{equation}
+\item Equipped with the density matrix formalism it is much easier to see the Zeno effect mathematically, consider time dependence of diagonal element under von Neumann equation
+\begin{equation}
+\frac{\partial}{\partial t}\hat{\rho}_{j,j}=-i\sum_{k}H_{j,k}\hat{\rho}_{k,j}+i\sum_{k}H_{k,j}\hat{\rho}_{j,k}=2\mathrm{Im}[\sum_k H_{j,k}\hat{\rho}_{k,j}]
+\end{equation}
+\item Where the last equality takes advantage of the fact that both $\hat{H}$ and $\hat{\rho}$ are Hermitian, so therefore $\hat{H}_{j,k}\hat{\rho}_{j,k}=\hat{H}^*_{k,j}\hat{\rho}^*_{k,j}$\footnote{Hermiticity also implies that $\mathrm{Im}[\hat{H}_{k,k}\hat{\rho}_{k,k}]=0$}
+\item The derivative of diagonal elements of $\hat{\rho}$ only depends on off-diagonal elements, therefore anything which eliminates off diagonal elements will stop von Neumann equation dynamics
+\item Projective measurements turn coherent superpositions to incoherent ones, kill these off diagonal elements, and stop dynamics
+\item Note: from equation \ref{Eq:Lindblad}, we notice that $\hat{L}_j\hat{\rho}\hat{L}^\dagger_j$ can directly move probability around without first going through off-diagonal elements, open system operations to not need coherence to operate
+\item Adiabatic theorem is also nicer to see, in the diagonal basis of the Hamiltonian, the differential equation for off diagonal elements becomes simple $\frac{\partial}{\partial t}\hat{\rho}_{j,k}=i\hat{\rho}_{j,k}(E_j-E_k)$, simple solution is only oscillating phases $\hat{\rho}_{j,k}(t)=\exp[i(E_j-E_k)t]\hat{\rho}_{j,k}(t)$
+\item If phase rotation is much faster than change in basis, than interference will occur before a significant off diagonal element can be built up
+\item A related trick which works under general assumptions (non-degenerate gaps, the spacing between every pair of energy levels is unique\footnote{n.b.~the harmonic oscillator does not fall under these assumptions}), is to set the off diagonal elements between all energy levels to $0$, this is effectively the average result for measuring at a random (potentially long) time, allows us to extract ``infinite time averages''
+\end{itemize}
+
+
+
+
+\end{document}

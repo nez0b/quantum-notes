@@ -1,0 +1,104 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Some intuition on the classical parts of Bells' inequality (which often gets skimmed over)}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+This will be a joint discussion run by myself and Raouf, these are just a bit of notes on the part of the Bell inequality which usually gets skimmed over and I always have to look up to remind myself (intuition behind the classical bound)
+
+\section{How to visualise the classical bound in the Bell inequality}
+
+\begin{itemize}
+\item Consider the following situation:
+\begin{itemize}
+\item I have four envelops and I can write +1 or -1 on a (classical) card in each envelope , I can do this however I want, I can always write +1, always -1 or have any complicated way to choose them I like, but they must take definite values
+\item I send two envelopes $b_1$ and $b_2$ to Bob and two to Alice, $a_1$ and $a_2$
+\item We then determine the slightly complicated quantity (where each term indicates the number in the envelope)
+\begin{equation}
+(a_1+a_2)b_1+(a_1-a_2)b_2=a_1b_1+a_2b_1+a_1b_2-a_2b_2
+\end{equation}
+\item If we open all $4$ envelopes than we can see that there is no way that this quantity can be greater than $2$, since either $a_1-a_2=0$ or $a_1+a_2=0$ for all values, therefore, since no instance can be greater than $2$ it follows that $\average{a_1b_1+a_2b_1+a_1b_2-a_2b_2}<2$
+\item Up to statistical fluctuations, this has to also be true if they flip a coin, to choose which envelope and burn the other, this follows because $\average{a_1b_1+a_2b_1+a_1b_2-a_2b_2}=\average{a_1b_1}+\average{a_2b_1}+\average{a_1b_2}-\average{a_2b_2}$
+\end{itemize}
+\item Importantly none of this depends on how I pick the values I put in the envelope, but it does implicitly depend on the fact that these values are ``real'' in the sense that they take a definite value, and ``local'' in the sense that what Bob chooses to do is independent of what Alice chooses to do
+\item What is a classical way to make one of the values non-real, the simplest one is a scenario where Bob lies about the value based on which envelope Alice opens and what she saw (thus making the value not ``real'' until we know Alice's result), Bob can make the value be $4$ using the following strategy:
+\begin{itemize}
+\item if Alice opened $a_1$ than always just say the same value of what Alice says if she gets $+1$, Bob says $+1$, if $-1$ than $-1$, flip a coin to decide whether to say this was $b_1$ or $b_2$
+\item if Alice opened $a_2$ than Bob flips a coin, if heads he says he measured $b_1$ and got the same as Alice, if tails he says he opened $b_2$ and measured the $\textbf{opposite}$ of what Alice measured
+\end{itemize}
+\item By cheating Bob can make $\average{a_1b_1}=\average{a_2b_1}=\average{a_1b_2}=-\average{a_2b_2}=1$, therefore the sum will be $4$
+\end{itemize}
+
+\section{Can quantum mechanics do as well as Bob cheating?}
+
+\begin{itemize}
+\item If we replace our four classical envelopes with entangled photons in a Bell state and measure the polarisations as described in G+K, we can make $\average{a_1b_1}=\average{a_2b_1}=\average{a_1b_2}=-\average{a_2b_2}=\frac{1}{\sqrt{2}}$, and therefore $\average{a_1b_1}+\average{a_2b_1}+\average{a_1b_2}-\average{a_2b_2}=\frac{4}{\sqrt{2}}=2\sqrt{2}$
+\item This is stronger correlation than possible classically (assuming everyone is honest) because $2\sqrt{2}>2$, but we haven't thrown locality or reality completely out the window because $4>2$
+\item There are therefore (non-physical) theories which can have even stronger correlation than QM 
+\item Various people in foundations of QM play around with what different (non-physically motivated) theories would do in this situation (for example what if we made the amplitude equal to the 3rd root of the probability?)
+\end{itemize}
+
+
+
+
+
+
+
+\end{document}

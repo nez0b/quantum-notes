@@ -1,0 +1,136 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Problems related to Zeno effect and density operators}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+{\small These solutions show one way to solve the problem, there are likely other, equivalently good ways}
+
+\begin{enumerate}
+\item The main trick to solve this problem is to consider the change in probability amplitude to be in the $\ket{1}$ state after at time $\frac{\tau}{n}$
+\begin{align}
+\braket{1}{\phi(t+\frac{\tau}{n})}=\exp(2i  \phi) \braket{1}{\phi(t)}+\braket{0}{\phi(t)}\sin(\frac{\pi}{n})\\
+\approx \exp(2i  \phi) \braket{1}{\phi(t)}+\braket{0}{\phi(t)}\frac{\pi}{n}
+\end{align}
+Since we aren't looking for exact values, it is sufficient to assume that except possibly at the very end $\braket{0}{\phi(t+\frac{\tau}{n})}$ is of order $1$ and is real
+\begin{enumerate}
+\item The easiest argument here is to assume that $\braket{1}{\phi(t)}\gg \frac{1}{n}$, we can than argue that the phase will be relatively unaffected by adding amplitude, it will take $\frac{\pi}{\phi}$ cycles for the phase interference to switch from being constructive (real parts have relative + phase) to destructive (relative - phase), during this time the amount of amplitude which is transferred will be of the order $\frac{1}{n}$ and therefore will tend toward $0$ as $n\rightarrow \infty$, for this reason significant amplitude cannot accumulate in the $\ket{1}$ state
+\item Following from the previous argument, we can argue that as long as the amplitude transferred in a cycle scales toward $0$ as $n\rightarrow \infty$ this will occur as long as $\alpha<1$ (the switch from constructive to destructive will interfere after $\frac{\pi n^\alpha}{\phi_0}$ cycles), therefore the measurements will lead to a Zeno effect as long as  $\alpha<1$
+\end{enumerate}
+\item (answers to individual parts below)
+\begin{enumerate}
+\item The eigenvalue equation is 
+\begin{equation}
+\det\left(\begin{array}{cc}i \Gamma-\lambda & 1+i \Gamma \\ 1+ i \Gamma & i\Gamma-\lambda \end{array}\right)=0
+\end{equation}
+Which leads to the quadratic equation $\lambda^2-2i\Gamma \lambda-2 i\Gamma-1=0$ by inspection we can see that $\lambda=-1$ is a solution to this equation applying the quadratic formula gives
+\begin{equation}
+\lambda=i \Gamma \pm \sqrt{-\Gamma^2+2 i \Gamma+1}=i \Gamma \pm \sqrt{(1+i \Gamma)^2}
+\end{equation}
+which gives $\lambda=-1$ and $\lambda=1+2 i\Gamma$
+the plugging into the eigenvector equation for $\lambda=-1$ gives $i \Gamma a+b+i \Gamma b=-a$ and therefore $a=-b$, because eigenvectors have to be orthogonal this implies  that one eigenvector is $\ket{-}=\frac{1}{\sqrt{2}}(\ket{0}-\ket{1})$ with an eigenvalue of $-1$ and the other is $\ket{+}=\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$ with an eigenvalue of $1+2 i \Gamma$.
+Since the first state has a purely real eigenvalue it will not decay, regardless of the value of $\Gamma$, the cause however is \textbf{not} a Zeno effect, but rather because $\hat{X}$ and $\ketbra{+}{+}$ are diagonal in the same basis and therefore there is no dynamics between the decaying and the non-decaying subspace
+\item The eigenvalue equation in this case is 
+\begin{equation}
+\det\left(\begin{array}{cc}i \Gamma+1-\lambda & i \Gamma \\ i \Gamma & i\Gamma-1-\lambda \end{array}\right)=0
+\end{equation}
+with a corresponding eigenvalue equation of $\lambda^2-2i\Gamma \lambda-1=0$
+\begin{equation}
+\lambda= i \Gamma \pm \sqrt{-\Gamma^2+1})
+\end{equation}
+In the limit of large $\Gamma$ we again see that one of the eigenvalues is $-1$,  in the large $\Gamma$ limit we can throw away all constant terms leaving an approximate eigenvalue equation of
+\begin{equation}
+i \Gamma a+i\Gamma b=0
+\end{equation}
+which is solved if $a=-b$ and therefore as before $\ket{-}=\frac{1}{\sqrt{2}}(\ket{0}-\ket{1})$ is an eigenvector in the large $\Gamma$ limit with a real eigenvalue, this is a Zeno effect which prevents decay of the $\ket{-}$ state
+\end{enumerate}
+\item (individual parts answered below)
+\begin{enumerate}
+\item Since trace is conserved under evolution with the Lindblad equation we know that the identity matrix component of the density matrix will remain constant, our initial state can be written as $\hat{\rho}(0)=\left(\begin{array}{cc} 1 & 0 \\ 0 & 0 \end{array}\right)=\frac{1}{2}(1_2+\hat{Z})$ the coherent time evolution portion of the Lindblad equation will give $-i[-\hat{X},\hat{Z}]=\hat{Y}$ and $-i[-\hat{X},\hat{Y}]=-\hat{Z}$. $\hat{L}^\dagger\hat{L}=1_2$, the 2x2 identity matrix. Using either brute force matrix multiplication, or the fact that $\hat{Y}$ and $\hat{Z}$ anticommute, we further identify that $\hat{Z}\hat{Y}\hat{Z}=-\hat{Y}$ so therefore $\hat{L}\hat{Y}\hat{L}^\dagger-\frac{1}{2}(\hat{L}^\dagger\hat{L}\hat{Y}+\hat{Y}\hat{L}^\dagger\hat{L})=-2\hat{Y}$. It also  can be shown fairly straightforwardly that $\hat{L}\hat{Z}\hat{L}^\dagger-\frac{1}{2}(\hat{L}^\dagger\hat{L}\hat{Z}+\hat{Z}\hat{L}^\dagger\hat{L})=0$.
+
+Therefore, If I write my density matrix as $1_2+a \hat{Z}+b\hat{Y}$, than I can see that $a$ and $b$ obey the following matrix differential equation
+\begin{equation}
+\frac{\partial}{\partial t}\left(\begin{array}{c} a \\ b \end{array}\right)=\left(\begin{array}{cc} 0 & 1 \\ -1 & -2 \gamma \end{array} \right)\left(\begin{array}{c} a \\ b \end{array}\right)
+\end{equation}
+The eigenvalue equation becomes $\lambda^2-2 \gamma \lambda+1=0$
+ We therefore have $\lambda_{\pm}=-\gamma\pm\sqrt{\gamma^2-1}$. The eigenvector equation takes a simple form $\frac{b}{a}=\lambda_{\pm}$, the normalized eigenvectors are therefore $\frac{1}{\sqrt{1+|\lambda_\pm|^2}}\left(\begin{array}{c} 1 \\ \lambda_\pm \end{array}\right)$, where the overlap of the initial state with each eigenstate is $\frac{1}{\sqrt{1+|\lambda_\pm|^2}}$ putting this all together we have
+\begin{align}
+\hat{\rho}(t)=
+\frac{1}{2}(1_2+\left(\frac{\exp(\lambda_+ t)}{1+|\lambda_+|^2}+\frac{\exp(\lambda_-  t)}{1+|\lambda_-|^2}\right)\hat{Z}+ \nonumber\\ \left(\frac{\lambda_+\exp(\lambda_+ t)}{1+|\lambda_+|^2}+\frac{\lambda_-\exp(\lambda_-  t)}{1+|\lambda_-|^2}\right)\hat{Y})
+\end{align}
+\item There is a Zeno effect, if we examine $\lambda_{+}$, we see that as $\gamma \rightarrow \infty$ this eigenvalue approaches $0$ indicating all dynamics are very slow, furthermore since $\frac{b}{a}=\lambda_{+}$, this means that the corresponding eigenvector will be the state with $a=1$ and $b=0$ which corresponds to starting in the $\ket{0}$ state.
+\item In this case $\lambda_{\pm}=\pm i$, the density operator simplifies to 
+\begin{align}
+\hat{\rho}(t)=
+\frac{1}{2}(1_2+\left(\frac{\exp(it)}{2}+\frac{\exp(-i t)}{2}\right)\hat{Z}+ \nonumber\\ \left(\frac{i\exp(it)}{2}+\frac{-i\exp(-it)}{2}\right)\hat{Y})
+\end{align}
+Applying the defninition of $\sin$ and $\cos$ gives:
+\begin{equation}
+\hat{\rho}(t)=
+\frac{1}{2}(1_2+\cos(t)\hat{Z}-\sin(t)\hat{Y})
+\end{equation}
+which is the correct closed-system dynamics written in density matrix form
+\end{enumerate}
+
+\end{enumerate}
+
+
+
+
+
+
+\end{document}

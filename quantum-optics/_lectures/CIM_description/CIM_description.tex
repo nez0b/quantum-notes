@@ -1,0 +1,87 @@
+\documentclass[english]{article}
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\bigket}[1]{\Bigl \lvert#1  \Bigr \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \middle \vert #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \middle \vert #2 \middle \vert #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+\section*{Basic CIM equation}
+
+Note that these notes don't necessarily follow any standard notation, from any source,  since I am not taking this from a paper but rather my own knowledge of how these devices operate.
+
+Because photon loss is a fundamental process in a CIM (otherwise photons would just be added forever), it needs to be represented using open quantum system formalism rather than simply a Hamiltonian,  since it gaurantees a completely positive trace preserving (CPTP) map, the Lindblad equation is a good starting point 
+
+\begin{equation}
+\frac{\partial \hat{\rho}}{\partial t}=-i[\hat{H}_\mathrm{CIM},\hat{\rho}]+\gamma \left[\sum_i\hat{L}_i\hat{\rho} \hat{L}^\dagger_i-\frac{1}{2}(\hat{L}^\dagger_i\hat{L}_i\hat{\rho}+\hat{\rho}\hat{L}^\dagger_i\hat{L}_i)\right]
+\end{equation}
+
+to represent photon loss we simply make $\hat{L}_i=\hat{a}_i$, the annihilation operator.  It will become important later on that this loss happens in an \textbf{incoherent} way, in other words, it doesn't care about the relative phase between the $n$
+photon density matrix element and the $n-1$ density matrix element. The loss is very important, and is not just an undesired effect, without it, the CIM description would not make sense.
+
+As for the Hamiltonian, it can be divided into several parts
+
+\begin{equation}
+\hat{H}_\mathrm{CIM}=\hat{H}_\mathrm{vacuum}+\hat{H}_\mathrm{gain}(t)+\hat{H}_\mathrm{Ising}
+\end{equation}
+
+First the most trivial part (which can actually be ignorned in practice but is being included for completeness) is 
+
+\begin{equation}
+\hat{H}_\mathrm{vacuum}=\sum_i (\omega \hat{a}_i^\dagger\hat{a}_i+\frac{1}{2})
+\end{equation}
+
+the reason this can be ignorned in practice is that it applies the same phase to all of the modes, so won't lead to any intersting interference effects.
+
+Next we have the gain, this comes from the nonlinear crystal and can be written as
+
+\begin{equation}
+\hat{H}_\mathrm{gain}=\chi^{(2)}g\sum_i(\hat{a}_\mathrm{pump}\hat{a}_i^\dagger\hat{a}_i^\dagger+\hat{a}^\dagger_\mathrm{pump}\hat{a}_i\hat{a}_i),
+\end{equation}
+
+Note that this Hamiltonian does not have explicit time dependence, the time dependence comes from modifying the pump strength, $g$ represents geometric factors which determine how strongly the field interacts with the nonlinear crystal.
+
+The usual approximation is to assume that the pump laser is much stronger,  than the fields in any of the modes and that the nonlinearity is sufficiently weak that we can approximate that the pump is unchanged by interacting with the system, under this assumption, this becomes
+
+\begin{equation}
+\hat{H}_\mathrm{gain}(t)=G(t) \sum_i(\hat{a}_i^\dagger\hat{a}_i^\dagger+\hat{a}_i\hat{a}_i).
+\end{equation}
+
+An important remark before we move on to the Ising encoding, the gain Hamiltonian only ever creates (or annihilates) pairs of photons it doesn't directly couple states with an odd number of photons to states with an even number of photons. Time dependence is added to emphasise that in practice this is how a CIM operates, the pump strength is increased until gain dominates over loss. Furthermore the loss, does couple between the two, but only incoherently,  this means that the relative phase between number states does not matter, this means that a coherent state with negative quadrature
+
+\begin{equation}
+\hat{\rho}_{-|\alpha|,i}=\exp(-|\alpha| (\hat{a}_i^\dagger+\hat{a}_i))\ketbra{0}{0}\exp(-|\alpha| (\hat{a}_i^\dagger+\hat{a}_i))
+\end{equation}
+
+will be amplified (and suffer loss) exactly as much as a state with positive quadrature
+
+\begin{equation}
+\hat{\rho}_{|\alpha|,i}=\exp(|\alpha| (\hat{a}_i^\dagger+\hat{a}_i))\ketbra{0}{0}\exp(|\alpha| (\hat{a}_i^\dagger+\hat{a}_i))
+\end{equation}
+
+these two quadratures can effectively act as an Ising variable. Now for the Ising part of the coherent Ising machine, so far there is no coupling between modes (lets only consider how to implement $J$ for the moment, not $h$, but this can also be done fairly easily), if we consider delay lines which mix modes we can write this as
+
+\begin{equation}
+\hat{H}_\mathrm{Ising}=-\sum_i\sum_jJ_{ij}(\hat{a}^\dagger_i\hat{a}_j+\hat{a}_i\hat{a}^\dagger_j)+\hat{H}_\mathrm{fields}
+\end{equation}
+
+since a single application of this operator only creates or annihilates one photon in each mode,  it very much will matter whether the phase between odd and even photon number states (the quadrature) is positive or negative,  in particular,  if $J_{ij}$ is positive and the states in $i$ and $j$ have opposite quadratures, there will be constructive interference,  similarly if $J_{ij}$ is negaive and the quadratures are the same,  otherwise the interference is destructive.  Note that this Hamiltonian is exponentiated and the even terms of the Taylor series will lead to constructive interference even in the antiferromagnetic case.  The point is there will be \textbf{more} constructive interference when they are in the same quadrature.\footnote{a good analogy is adding two positive real numbers $a$ and $b$,  if we take $a+b$, the norm will be $a+b$,  but taking $a\pm ib$ will only give a norm of $\sqrt{a^2+b^2}<a+b$,  which is more than $a$ or $b$ individually always less then adding them coherently.}  This all assumes $|\alpha|$ is the same for each mode,  (making sure this is true is a problem sometimes in CIM) then the state which is the ground state of the Ising Hamiltonian will have the most constructive interference, and therefore suffer the least loss. 
+
+Fields can be implemented through a displacement Hamiltonian, which physically corresponds to coupling light into the system with a desired quadrature,  (note minus sign because we pump on the mode we want to enhance rather than suppress).
+
+\begin{equation}
+\hat{H}_\mathrm{fields}=-\sum_ih_i(\hat{a}^\dagger_i+\hat{a}_i).
+\end{equation}
+
+
+
+
+
+\end{document}

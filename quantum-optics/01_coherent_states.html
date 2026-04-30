@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coherent States and the Quadrature Picture</title>
+    <meta name="description" content="Field quantization, vacuum fluctuations, displacement, squeezing, and the Wigner picture — the language for everything that follows." />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+
+      /* Better paragraph wrapping in modern browsers */
+      p, li {
+        text-wrap: pretty;
+      }
+
+      h1, h2, h3, h4 {
+        text-wrap: balance;
+      }
+
+      /* Tabular numerals everywhere they should be (calculators, tables, status cards) */
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      /* Section numbering — automatic via CSS counters.
+         Only counts h2s in the main content sections, not the header. */
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      /* Anchor mark on h2 hover (distill-style) */
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 {
+        position: relative;
+      }
+
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after {
+        opacity: 0.55;
+      }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: #17456f;
+      }
+
+      img,
+      svg {
+        max-width: 100%;
+        display: block;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        background: var(--page-accent);
+        color: white;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 26ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+
+      .header-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .meta-line {
+        margin-top: 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+      }
+
+      .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        padding: 0.38rem 0.8rem;
+        color: var(--page-muted);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.92rem;
+      }
+
+      .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+      }
+
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+
+      .top-nav-shell a:hover,
+      .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main {
+        padding: 2.2rem 0 5rem;
+      }
+
+      .section-shell,
+      .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+
+      /* Subtle hairline divider between major sections.
+         Use grid-column: 1 / -1 so the ::before doesn't break grid layouts
+         on .section-shell (which is display: grid). */
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      /* Unified h2 size across section-shell, figure-band, and section-band-shell.
+         Previously figure-band h2s defaulted to browser ~1.5em while section-shell
+         used clamp(1.85rem, 3vw, 2.55rem) — visibly different sizes between
+         widget-containing and plain sections. */
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+
+      .section-shell h3,
+      .figure-band h3,
+      .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Collapsible alternate-view: when the .section-collapse details is closed,
+         hide the sidebar and let the main column span the full grid width
+         (otherwise the keypoints box leaves a tall empty rail). */
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main {
+        min-width: 0;
+      }
+
+      .section-shell > .section-side {
+        position: sticky;
+        top: 5rem;
+      }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .keypoints ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .keypoints li + li {
+        margin-top: 0.5rem;
+      }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+
+      .math-details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+
+      .math-details[open] summary::before {
+        content: "−";
+      }
+
+      .math-details .details-body {
+        padding: 1rem 1.05rem 1.1rem;
+      }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .figure-band-header {
+        padding: 1.2rem 1.3rem 0.25rem;
+      }
+
+      .figure-band-header h2,
+      .figure-band-header h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      .figure-band-header p {
+        margin: 0;
+        color: var(--page-muted);
+      }
+
+      .figure-band-content {
+        padding: 1.15rem 1.3rem 1.3rem;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .control {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 9rem;
+        flex: 1 1 10rem;
+      }
+
+      .control label {
+        color: var(--page-muted);
+        font-size: 0.9rem;
+      }
+
+      .control select,
+      .control input[type="range"],
+      .control input[type="number"] {
+        width: 100%;
+      }
+
+      .control input[type="range"] {
+        accent-color: var(--page-accent);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .button-row button,
+      .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .button-row button:hover,
+      .button-row button:focus-visible,
+      .segmented button:hover,
+      .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .status-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-value.small {
+        font-size: 1rem;
+      }
+
+      .two-up,
+      .three-up {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .two-up {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .panel h3,
+      .panel h4 {
+        margin-bottom: 0.55rem;
+      }
+
+      .figure-caption {
+        margin-top: 0.7rem;
+        font-size: 0.93rem;
+        color: var(--page-muted);
+      }
+
+      .amp-svg,
+      .plane-svg,
+      .chart-svg,
+      .posterior-svg,
+      .complexity-svg,
+      .small-svg {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note {
+        font-size: 0.96rem;
+        color: var(--page-muted);
+      }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .quiz-card h3 {
+        font-size: 1.08rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+
+      .faq-list summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+
+      .footer-note {
+        color: var(--page-muted);
+        font-size: 0.95rem;
+      }
+
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.1rem 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid,
+        .section-shell,
+        .two-up,
+        .three-up {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell > .section-side {
+          position: static;
+        }
+      }
+
+      /* Multi-marked side-by-side trio */
+      .multi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .multi-col {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem;
+      }
+
+      .multi-col h4 {
+        font-size: 1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .multi-col .micro-status {
+        font-family: var(--ui-font);
+        font-size: 0.82rem;
+        color: var(--page-muted);
+        margin-top: 0.4rem;
+        line-height: 1.45;
+      }
+
+      .multi-col .micro-status b {
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 760px) {
+        .multi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SOTA card grid */
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+
+      .sota-card p {
+        margin: 0;
+        font-size: 0.94rem;
+      }
+
+      .padding-diagram {
+        display: block;
+        margin: 1rem auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Collapsible whole-section wrapper */
+      .section-collapse {
+        margin: 0.6rem 0 1.2rem;
+      }
+
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+
+      .section-collapse > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-collapse > summary::before {
+        content: "▸ ";
+        margin-right: 0.2rem;
+      }
+
+      .section-collapse[open] > summary::before {
+        content: "▾ ";
+      }
+
+      .section-collapse[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* Pedagogical 2D-collapse worked example styling */
+      .twod-collapse {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.1rem;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .twod-collapse h3 {
+        margin-top: 0;
+      }
+
+      .twod-collapse table {
+        border-collapse: collapse;
+        margin: 0.7rem auto;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+      }
+
+      .twod-collapse th, .twod-collapse td {
+        border: 1px solid var(--page-border);
+        padding: 0.35rem 0.7rem;
+        text-align: center;
+      }
+
+      .twod-collapse th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+
+      .overshoot-block {
+        margin: 1.2rem 0;
+      }
+
+      .overshoot-svg {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+      }
+
+      /* Circuit diagram */
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      /* Composing-Grover and No-speedup card grids */
+      .compose-card, .no-speedup-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.05rem;
+      }
+
+      .compose-card h4, .no-speedup-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .no-speedup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.2rem;
+      }
+
+      .no-speedup-card {
+        border-left: 3px solid var(--page-warm);
+        position: relative;
+      }
+
+      .no-speedup-card h4 {
+        color: var(--page-ink);
+        padding-right: 1.4rem;
+      }
+
+      .no-speedup-card h4::before {
+        content: "✗";
+        position: absolute;
+        top: 0.85rem;
+        right: 0.95rem;
+        color: var(--page-warm);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .no-speedup-card .ns-cost {
+        font-family: var(--num-font);
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin: 0.32rem 0;
+        letter-spacing: -0.01em;
+      }
+
+      .no-speedup-card .ns-cost b {
+        color: var(--page-ink);
+        font-weight: 600;
+      }
+
+      .feasibility-badge {
+        display: inline-block;
+        padding: 0.14rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--ui-font);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-left: 0.45rem;
+        vertical-align: 0.12em;
+      }
+
+      .feasibility-badge.trivial { background: #dceedf; color: #1f5e1f; }
+      .feasibility-badge.feasible { background: #dde9f4; color: #15406b; }
+      .feasibility-badge.infeasible { background: #f3e1c5; color: #7a4310; }
+      .feasibility-badge.cosmic { background: #efc8c8; color: #7a1010; }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+
+      .geo-table th:first-child,
+      .geo-table td:first-child {
+        text-align: left;
+      }
+
+      .geo-table tbody tr:nth-child(even) {
+        background: var(--page-panel);
+      }
+
+      .geo-table tbody tr:last-child {
+        border-top: 1px solid var(--page-rule);
+      }
+
+      @media (max-width: 640px) {
+        .header-shell {
+          padding-top: 3.5rem;
+        }
+
+        h1 {
+          max-width: none;
+        }
+
+        .figure-band-content,
+        .figure-band-header,
+        .panel,
+        .quiz-card,
+        .source-item,
+        .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  
+    <style>
+  .page-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--page-rule);
+    padding: 2rem 0;
+  }
+  .footer-shell {
+    width: min(calc(100% - 2rem), var(--content-width));
+    margin: 0 auto;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+  .footer-meta {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .keypoints h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .keypoints ul {
+    margin: 0;
+    padding-left: 1.05rem;
+    font-size: 0.93rem;
+  }
+  .keypoints li {
+    margin-bottom: 0.35rem;
+  }
+  .lede {
+    font-size: 1.04rem;
+    margin-top: 0;
+  }
+  table.refs {
+    margin-top: 0.6rem;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.refs td {
+    padding: 0.18rem 0.7rem 0.18rem 0;
+    vertical-align: top;
+  }
+  table.refs td:first-child {
+    white-space: nowrap;
+    color: var(--page-muted);
+  }
+  .pre-req {
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+  <div class="header-shell">
+    <div class="eyebrow">Quantum Optics · Coherent States</div>
+    <div class="header-grid">
+      <div>
+        <h1>Coherent States and the Quadrature Picture</h1>
+        <p class="header-subtitle">Foundational note. The language of single-mode states — coherent, squeezed, thermal — that we will reuse for every photonic device in this track.</p>
+      </div>
+      <aside class="header-card">
+        <h2>What This Note Covers</h2>
+        <ul>
+              <li>Single-mode quantization: \(a, a^\dagger, [a, a^\dagger]=1\)</li>
+      <li>Coherent states \(\lvert\alpha\rangle\) as displaced vacuum, minimum uncertainty</li>
+      <li>Quadratures \(X, P\); phase-space picture; Wigner functions</li>
+      <li>Squeezed vacuum and the squeeze operator \(S(r)\)</li>
+      <li>Density operators in the Fock and coherent bases; thermal vs vacuum</li>
+      <li>Why coherent states behave like classical fields, and where that breaks</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+  <div class="top-nav-shell">
+        <a href="#quantization">Quantization</a>
+<a href="#coherent">Coherent States</a>
+<a href="#quadratures">Quadratures</a>
+<a href="#wigner">Wigner</a>
+<a href="#squeezing">Squeezing</a>
+<a href="#density">Density Ops</a>
+<a href="#classical-limit">Classical Limit</a>
+<a href="#sources">Sources</a>
+  </div>
+</nav>
+
+    <main id="main-content">
+      <section class="section-shell" id="quantization">
+  <div class="section-main">
+    <h2>Single-Mode Quantization</h2>
+
+  <p class="lede">
+    Pick one optical mode — one frequency, one polarization, one
+    spatial profile. Promote its complex amplitude to an operator
+    \(a\), with hermitian conjugate \(a^\dagger\). The defining
+    commutator
+    \[
+      [a, a^\dagger] = 1
+    \]
+    is what makes everything quantum.
+  </p>
+  <p>
+    From this single relation everything in the field-theory
+    chapter of an optics textbook follows: the number operator
+    \(N = a^\dagger a\) with eigenstates \(\lvert n\rangle\) and
+    integer eigenvalues, the ladder action
+    \(a \lvert n\rangle = \sqrt{n}\,\lvert n-1\rangle\) and
+    \(a^\dagger \lvert n\rangle = \sqrt{n+1}\,\lvert n+1\rangle\),
+    and the Hamiltonian
+    \[
+      H = \hbar\omega\bigl(a^\dagger a + \tfrac{1}{2}\bigr).
+    \]
+    That \(\tfrac{1}{2}\) is the zero-point energy, and it is the
+    first hint that the vacuum \(\lvert 0\rangle\) is not "nothing".
+  </p>
+  <div class="callout">The vacuum is not empty — it has nonzero energy and nonzero quadrature variance. This is the bedrock fact behind every shot-noise calculation in this track.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Mode = (frequency, polarization, spatial profile)</li>
+      <li>\([a, a^\dagger] = 1\) is the entire quantum input</li>
+      <li>Vacuum has zero photons but nonzero energy and quadrature variance</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+              <section class="section-shell" id="coherent">
+          <div class="section-main">
+            <h2>Coherent States as Displaced Vacuum</h2>
+
+          <p>
+            The coherent state \(\lvert\alpha\rangle\) is the eigenstate of
+            the (non-Hermitian) annihilation operator:
+            \[
+              a\,\lvert\alpha\rangle = \alpha\,\lvert\alpha\rangle,
+              \qquad \alpha \in \mathbb{C}.
+            \]
+            Equivalently, it is the displaced vacuum:
+            \[
+              \lvert\alpha\rangle = D(\alpha)\,\lvert 0\rangle,\quad
+              D(\alpha) = \exp\!\bigl(\alpha a^\dagger - \alpha^* a\bigr).
+            \]
+          </p>
+          <p>
+            Coherent states have Poissonian photon-number statistics with
+            \(\langle N\rangle = \lvert\alpha\rvert^2\) and
+            \(\mathrm{Var}(N) = \lvert\alpha\rvert^2\). They are
+            <em>minimum-uncertainty</em> states — saturating
+            \(\Delta X\,\Delta P = \tfrac{1}{2}\) — with equal X and P
+            variance. They are the closest quantum mechanical states to
+            classical sinusoidal oscillations of the field.
+          </p>
+          <details class="math-details">
+  <summary>Why D(α) gives a coherent state</summary>
+
+    <p>
+      Use the Baker-Campbell-Hausdorff identity for displacement
+      operators and the fact that
+      \(D(\alpha)^\dagger a D(\alpha) = a + \alpha\). Then
+      \[
+        a\, D(\alpha)\lvert 0\rangle = D(\alpha)\bigl(a + \alpha\bigr)\lvert 0\rangle
+        = \alpha\, D(\alpha)\lvert 0\rangle,
+      \]
+      since \(a\lvert 0\rangle = 0\). Hence
+      \(D(\alpha)\lvert 0\rangle\) is an eigenstate of \(a\) with
+      eigenvalue \(\alpha\) — by definition,
+      \(\lvert\alpha\rangle\).
+    </p>
+
+</details>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Coherent state = eigenstate of \(a\), not of \(N\)</li>
+              <li>Displaced vacuum: \(\lvert\alpha\rangle = D(\alpha)\lvert 0\rangle\)</li>
+              <li>Photon-number statistics are Poissonian</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+      <section class="section-shell" id="quadratures">
+  <div class="section-main">
+    <h2>Quadratures and Phase Space</h2>
+
+  <p>
+    Define the dimensionless quadratures
+    \[
+      X = \tfrac{1}{\sqrt{2}}\bigl(a + a^\dagger\bigr),
+      \qquad
+      P = \tfrac{1}{i\sqrt{2}}\bigl(a - a^\dagger\bigr),
+    \]
+    so that \([X, P] = i\). They are the optical analogue of
+    position and momentum for a harmonic oscillator, except they
+    both refer to amplitude (in-phase and out-of-phase) of a
+    single optical mode.
+  </p>
+  <p>
+    The vacuum has
+    \(\langle X\rangle = \langle P\rangle = 0\) and
+    \(\langle X^2\rangle = \langle P^2\rangle = \tfrac{1}{2}\) —
+    the canonical "1/2 unit of vacuum noise". Coherent states
+    have the same variances, with means
+    \(\langle X\rangle = \sqrt{2}\,\Re\alpha\),
+    \(\langle P\rangle = \sqrt{2}\,\Im\alpha\): a Gaussian blob
+    of variance 1/2 displaced to \((\Re\alpha,\Im\alpha)\) in
+    phase space.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>\(X\), \(P\) are conjugate quadratures with \([X,P] = i\)</li>
+      <li>Vacuum: \(\langle X^2\rangle = \langle P^2\rangle = 1/2\)</li>
+      <li>Coherent states are vacuum-shaped Gaussians displaced in phase space</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="wigner">
+  <div class="section-main">
+    <h2>The Wigner Function</h2>
+
+  <p>
+    Phase-space pictures of quantum states use the Wigner
+    quasiprobability distribution
+    \[
+      W(x, p) = \tfrac{1}{\pi}\int dy\, e^{-2ipy}\,
+        \langle x+y\,\lvert\,\rho\,\rvert\,x-y\rangle.
+    \]
+    For Gaussian states (vacuum, coherent, squeezed, thermal), W
+    is a Gaussian and is everywhere non-negative — these states
+    behave classically in phase space. For Fock states with
+    \(n \ge 1\), W has negative regions: an unambiguous quantum
+    signature.
+  </p>
+  <p>
+    The vacuum Wigner function is
+    \(W_0(x,p) = \tfrac{1}{\pi}e^{-(x^2+p^2)}\): an isotropic
+    Gaussian centered at the origin with covariance matrix
+    \(\Sigma = \tfrac{1}{2}I\). All Gaussian states share that
+    functional form with a different mean \(\bar r\) and
+    covariance \(\Sigma\).
+  </p>
+  <div class="callout">Negative Wigner = nonclassicality. Coherent and squeezed states are <em>not</em> nonclassical in this technical sense — their Wigner functions are positive Gaussians. But squeezing is the first Gaussian state that has no classical electromagnetic-field analogue.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Wigner W(x,p) = phase-space density for \(\rho\)</li>
+      <li>Gaussian states ↔ Gaussian Wigner ↔ classical-like</li>
+      <li>Negative Wigner ⇒ Fock-like \(n \ge 1\) state</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="squeezing">
+  <div class="section-main">
+    <h2>Squeezed States</h2>
+
+  <p>
+    The single-mode squeeze operator
+    \[
+      S(r) = \exp\!\bigl[\tfrac{r}{2}\bigl(a^2 - (a^\dagger)^2\bigr)\bigr],
+      \qquad r \in \mathbb{R},
+    \]
+    generates a squeezed vacuum
+    \(\lvert 0, r\rangle = S(r)\lvert 0\rangle\) with reduced
+    X-variance and inflated P-variance:
+    \[
+      \langle X^2\rangle_r = \tfrac{1}{2}e^{-2r},
+      \qquad
+      \langle P^2\rangle_r = \tfrac{1}{2}e^{+2r}.
+    \]
+    For \(r=1\) (about 8.7 dB of X-quadrature squeezing), \(X\)
+    has variance \(0.07\) — sub-shot-noise. The product
+    \(\Delta X\,\Delta P = 1/2\) still saturates the uncertainty
+    relation: squeezing redistributes noise, not eliminates it.
+  </p>
+  <p>
+    Real squeezed-light sources — sub-threshold optical
+    parametric oscillators (Note 03), Kerr media, electro-optic
+    squeezers — typically deliver \(r \le 1\) reliably. Above
+    that, decoherence and detection-loss eat the squeezing
+    faster than the χ⁽²⁾ medium can produce it.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Squeezing redistributes vacuum noise between X and P</li>
+      <li>X-variance: \(\tfrac{1}{2}e^{-2r}\) (below shot noise)</li>
+      <li>Detection loss \(1-\eta\) caps usable \(r\) on a real bench</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="density">
+  <div class="section-main">
+    <h2>Density Operators: Pure vs Mixed</h2>
+
+  <p>
+    For a pure state \(\lvert\psi\rangle\) the density operator
+    is \(\rho = \lvert\psi\rangle\langle\psi\rvert\). For an
+    ensemble (or after partial tracing over an environment),
+    \(\rho\) is a positive Hermitian operator with
+    \(\mathrm{Tr}\rho = 1\) but generically rank > 1.
+  </p>
+  <p>
+    Two diagonal representations matter for us:
+  </p>
+  <ul>
+    <li><strong>Fock:</strong>
+      \(\rho = \sum_n p_n \lvert n\rangle\langle n\rvert\) with
+      \(p_n \ge 0,\ \sum_n p_n = 1\). Photon-number diagonal.
+      Thermal states have \(p_n = (1-\bar n^{-1})\bar n^{n}/(\bar n+1)^{n+1}\)
+      — well, almost; see exercises.</li>
+    <li><strong>Glauber-Sudarshan P:</strong>
+      \(\rho = \int d^2\alpha\, P(\alpha)
+      \lvert\alpha\rangle\langle\alpha\rvert\). For thermal and
+      classical mixtures \(P\) is a (possibly broad) probability
+      density; for Fock states \(P\) is a singular
+      distribution.</li>
+  </ul>
+  <p>
+    The thermal state at mean photon number \(\bar n\) has
+    covariance \(\Sigma = \bigl(\bar n + \tfrac{1}{2}\bigr) I\)
+    — adds vacuum-plus-thermal noise on both quadratures
+    equally. The vacuum is \(\bar n = 0\).
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Pure: rank-1 \(\rho\); mixed: higher rank</li>
+      <li>Thermal state inflates both X and P symmetrically</li>
+      <li>P-representation singular ⇒ a "nonclassical" state</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="classical-limit">
+  <div class="section-main">
+    <h2>Where Coherent States Are Classical</h2>
+
+  <p>
+    For \(\lvert\alpha\rvert \gg 1\), the coherent-state field is
+    indistinguishable from a classical sinusoid with amplitude
+    \(\lvert\alpha\rvert\) up to vacuum-fluctuation noise. The
+    relative noise on the photon number is
+    \(\Delta N / \langle N\rangle = 1/\lvert\alpha\rvert\), which
+    vanishes for bright fields.
+  </p>
+  <p>
+    This explains why a 100 mW laser beam is well-modeled by a
+    Maxwell-equation simulator: with \(\sim 10^{18}\) photons
+    per second and shot noise of order \(10^9\), the classical
+    field is a 9-decimal approximation. The cases where this
+    fails — and where we need quantum optics — are precisely
+    (i) <em>weak fields</em> (single photons, threshold OPOs,
+    sub-threshold squeezing), and (ii) <em>nonlinear
+    interactions where weak fields amplify into bright ones
+    with quantum-statistical structure</em>. The Coherent Ising
+    Machine (Note 06) lives entirely in the second case.
+  </p>
+  <div class="callout">Classical vs quantum on a photonic bench is not a binary — it is a continuum parameterized by the photon number per mode. The interesting physics happens at the bifurcation, where the field is large enough that mean-field theory starts to apply <em>and</em> small enough that quantum fluctuations select among classical attractors.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Bright coherent state \(\lvert\alpha\rvert \gg 1\) ≈ classical EM wave</li>
+      <li>Quantum optics matters at low photon number per mode</li>
+      <li>CIM operates at the bifurcation — quantum noise selects classical attractor</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="sources">
+  <div class="section-main">
+    <h2>Sources &amp; Further Reading</h2>
+
+  <table class="refs">
+    <tr><td>Lecture</td><td><a href="_lectures/coherent_states.pdf">coherent_states.pdf</a> — primary source for §1–§4</td></tr>
+    <tr><td>Lecture</td><td><a href="_lectures/density_operators.pdf">density_operators.pdf</a> — §6</td></tr>
+    <tr><td>Lecture</td><td><a href="_lectures/L1_wavepackets_and_such.pdf">L1_wavepackets_and_such.pdf</a> — single-mode quantization</td></tr>
+    <tr><td>Reference</td><td>Walls &amp; Milburn, <em>Quantum Optics</em> (2nd ed., Springer, 2008), Ch. 2–4</td></tr>
+    <tr><td>Reference</td><td>Lvovsky &amp; Raymer, "Continuous-variable optical quantum-state tomography", <em>Rev. Mod. Phys.</em> <strong>87</strong>, 803 (2015) — Wigner reconstruction in practice</td></tr>
+  </table>
+  <p class="pre-req">
+    <strong>Next note:</strong> §02 — Linear optics: beam splitters
+    and networks. We extend single-mode states to multi-mode by
+    mixing modes through passive linear devices.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Lecture PDFs in `_lectures/` are the primary source</li>
+      <li>Walls &amp; Milburn for graduate-level reference</li>
+      <li>Continue: Note 02 (linear optics)</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+    </main>
+
+    <footer class="page-footer">
+  <div class="footer-shell">
+    <p>
+      <a href="index.html">↑ All quantum-optics notes</a>
+      &nbsp;&middot;&nbsp;
+      <a href="../index.html">↑↑ All tracks</a>
+    </p>
+    <p class="footer-meta">
+      Part of <a href="https://github.com/nez0b/quantum-notes">quantum-notes</a>.
+      Source PDFs in <a href="_lectures/"><code>_lectures/</code></a>.
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

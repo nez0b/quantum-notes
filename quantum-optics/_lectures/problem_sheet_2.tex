@@ -1,0 +1,114 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Non-signalling, Fourier transforms, and particle statistics}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small The aim of this worksheet is to have a mixture of hard and easy questions, do not feel like they need to be answered in order, feel free to skip around and come up with partial answers wherever possible; feel free to use maple/matlab/python/wolfram alpha to aid in calculations.}
+
+\begin{enumerate}
+\item Consider a quantum system which can initially be described by a density matrix $\hat{\rho}$, and has subsystems $A$ and $B$, which may or may not be entangled. [Hint: it may be worth recalling some of the properties of the trace operation, in particular the fact that it is cyclic $\mathrm{Tr}[PQR]=\mathrm{Tr}[QRP]\quad \forall P,R,Q$]
+\begin{itemize}
+\item Show that the measured value of an observable $\hat{O}_A=\hat{O}\otimes 1_B$ on $A$ is unaffected by applying a unitary to system $B$ ($\hat{U}_B=1_A\otimes \hat{U}$).
+\item Now consider that we apply a projective measurement on $B$, which projects the system into a single state (represented mathematically by applying $\hat{\Pi}_B=1_A \otimes \ketbra{\phi}{\phi}$), will this change our observed values? Is this compatible with relativity?
+\item What if we instead consider a projective measurement with an unknown outcome each potential outcome performing a projection $\hat{\Pi}_{B,j}$? [hint: remember that quantum mechanics is a linear theory and density matrices obey the superposition principle, the expectation of a sum of density matrices is the sum of their individual expectations. Furthermore for probability to be conserved we must have $\sum_j \hat{\Pi}_{B,j}=1_{A}\otimes 1_{B}$ ] What does this imply for the ability to send information instantaneously by taking measurements if the outcome is not communicated?
+\item Now consider the completely general case, where system $B$ is operated on by a general open system process described by the Lindblad equation,
+\begin{equation}
+\frac{\partial \hat{\rho}}{\partial t}=-\frac{i}{\hbar}\left[\hat{\rho}, \hat{H}\right]+\sum_j\gamma_j\left(\hat{L}_j\hat{\rho}\hat{L}_j^\dagger-\frac{1}{2}\hat{L}_j^\dagger \hat{L}_j\hat{\rho}-\frac{1}{2}\hat{\rho}\hat{L}_j^\dagger \hat{L}_j\right)
+\end{equation}
+ what property of $\hat{H}$, $\hat{L}_j$, and $\gamma_j\ge 0$  is sufficient to guarantee that the measurement value is unchanged? How could this be ensured if we are allowed completely a general $\hat{O}$ in $\hat{O}_A=\hat{O}\otimes 1_B$?  what does this mean physically?
+\end{itemize}
+\item For this question we define the Fourier transform as $\tilde{g}(\omega)=\mathcal{F}[g(t)](\omega)= \int_{-\infty}^\infty dt\, g(t)\exp(-i\omega t)$ and the inverse Fourier transform as $g(t)=\mathcal{F}^{-1}[\tilde{g}(\omega)](t)=\frac{1}{2\pi} \int_{-\infty}^\infty d\omega\, \tilde{g}(\omega)\exp(i\omega t)$ there are several widely used conventions/notations here but we pick this one for concreteness
+\begin{itemize}
+\item Show that $\mathcal{F}[g(a t)](\omega)=\mathcal{F}[g(t)](\frac{\omega}{a})$, and that it follows that the products of the second moment will be invariant under this scaling
+\begin{align}
+\left(\int_{-\infty}^{\infty}dt\, t^2 g(a t)\right)\times \left(\int_{-\infty}^{\infty}d\omega\,\omega^2 \mathcal{F}[g(a t)](\omega) \right)=\\
+\left(\int_{-\infty}^{\infty}dt\, t^2 g(t)\right)\times \left(\int_{-\infty}^{\infty}d\omega\,\omega^2 \mathcal{F}[g(t)](\omega) \right)
+\end{align}
+\item Prove the convolution theorem, in other words show that 
+\begin{equation}
+\mathcal{F}[g(t)h(t)](\omega)=\int_{-\infty}^\infty d\omega' \mathcal{F}[g(t')](\omega')\mathcal{F}[h(t)](\omega-\omega'),
+\end{equation}
+ and argue the equivalent holds for the inverse Fourier transform. [hint: the following identity may be helpful $ \int_{-\infty}^\infty d\omega'  \exp(i\omega'(t-t'))=\delta(t-t')$, where $\delta$ is the Dirac delta]
+\item By the convolution theorem argue that the frequency distribution of a wavepacket of shape $g(t)$ put through a shutter which opens at time $-t_0$ and closes at time $t_0$ will be $\int_{-\infty}^\infty d\omega'\mathcal{F}[g(t')](\omega') \frac{2\sin((\omega-\omega') t_0)}{\omega-\omega'}$
+\item Use the previous result to argue that the frequency distribution attained by applying a shutter to a single mode at $\omega_p$ will give a frequency distribution of $\tilde{g}(\omega)=\frac{2\sin((\omega-\omega_p) t_0)}{\omega-\omega_p}$
+\item Find the Fourier transform of the following function, corresponding to a system which is turned on and has an exponential decay envelope defined by $\gamma$, where $\Theta$ is the Heviside Theta function)
+\begin{equation}
+\Theta(t)\exp(i \omega_p t-\gamma t) 
+\end{equation}
+Show that it gives
+\begin{equation}
+ \tilde{g}(\omega)=-\frac{1}{i(\omega_p-\omega)-\gamma}
+ \end{equation}
+separate into real and imaginary parts and argue that in the limit $\gamma \rightarrow 0$, the real part of this function becomes a Dirac delta centred at $\omega=\omega_p$, while the imaginary part remains a function with finite width, what does this finite width mean physically? [hint: a useful identity which can be shown by contour integration (or Wolfram alpha), that  $\int_{-\infty}^{\infty}d\omega\frac{\gamma}{\omega^2+\gamma^2}=\pi$ independent of $\gamma$]
+\end{itemize}
+\item Consider the Hong-Ou-Mandel setup (single beamsplitter with one particle in each input mode) but with labelled particles $\hat{a}$ and $\hat{b}$, we will label the modes $0$, $1$, $2$, $3$ as in the notes
+\begin{itemize}
+\item Show that if we start with $\hat{a}^\dagger_0\hat{b}^\dagger_1\ket{0}$ the probabilities of each configuration will be no different than if the directions were decided by a classical coin flip
+\item Now consider a symmetric superposition of $\hat{a}$ and $\hat{b}$ particles $\frac{1}{\sqrt{2}}(\hat{a}^\dagger_0\hat{b}^\dagger_1+\hat{a}^\dagger_1\hat{b}^\dagger_0)\ket{0}$, show that this recovers the Hong-Ou-Mandel result, what does this mean physically? [hint: the creation operators for $a$ and $b$ will commute]
+\item Now consider taking an anti-symmetric superposition  $\frac{1}{\sqrt{2}}(\hat{a}^\dagger_0\hat{b}^\dagger_1-\hat{a}^\dagger_1\hat{b}^\dagger_0)\ket{0}$, what kind of particle would this correspond to and what does the result mean physically?
+\end{itemize}
+\end{enumerate}
+
+
+
+
+
+
+
+\end{document}

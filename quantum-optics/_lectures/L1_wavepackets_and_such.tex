@@ -1,0 +1,164 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Wavepackets and multi (frequency) mode states}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+\textcolor{red}{Assumed Raouf has already done quantisation of fields if not it needs to come before this}
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+\section{Wavepackets of light}
+
+\begin{itemize}
+\item Electric field operator for a single mode (G+K eq.~2.127): 
+\begin{equation}
+\hat{\vec{E}}(z)=i\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}\vec{e}_x[\hat{a}e^{i\vec{k}\cdot \vec{r}-i \omega t}-\hat{a}^\dagger e^{-i\vec{k}\cdot\vec{r}+i \omega t}]
+\end{equation}
+\item Only think about direction of propagation and a single polarisation, 1D problem
+\begin{equation}
+\hat{E}(z)=i\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}[\hat{a}e^{i k z-i \omega t}-\hat{a}^\dagger e^{-ik z+i \omega t}]
+\end{equation}
+\item Infinite physical extent (in three dimensions, but let's focus on the direction of propagation)... but our devices have finite size, we need more modes!
+\item Multimode field in 1D 
+\begin{equation}
+\hat{E}(z)=i\int_kdk\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}[\hat{a}_ke^{i k z-i \omega_k t}-\hat{a}_k^\dagger e^{-ik z+i \omega_k t}]
+\end{equation}
+\item How do we build a wavepacket of finite extent $\rightarrow$ if we take $\average{E}$ (and also note that in free space $\omega_k=c k$ where $c$ is the speed of light)
+\begin{equation}
+\average{\hat{E}(z)}=i\int_kdk\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}[\average{\hat{a}_k}e^{i k z-i c k t}-\average{\hat{a}_k^\dagger} e^{-ik z+i c k t}]
+\end{equation}
+\begin{itemize}
+\item Propagates in the $+z$ direction at the speed of light $c$ by definition, replace $z$ with $z(t)=z-ct$
+\begin{equation}
+\average{\hat{E}(z)}=i\int_kdk\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}[\average{\hat{a}_k}e^{i k z(t)}-\average{\hat{a}_k^\dagger} e^{-ik z(t)}]
+\end{equation}
+\item Fun side-note/exercise, if we instead had $\omega_k= \frac{\hbar k^2}{2 m}$, this would describe a (non-relativistic) massive particle, and speed would be $\frac{\partial \omega}{\partial k}=\frac{\hbar k}{m}$, the relationship between $\omega$ and $k$ is known as the \textbf{dispersion relation} and is fundamental in almost all wave physics, light can also have more complicated dispersion in some materials
+\end{itemize}
+\item Then this looks like a Fourier transform with $\average{\hat{a}_k}$ and $\average{\hat{a}_k^\dagger}$ as the Fourier coefficients $\rightarrow$ we can make wavepackets of arbitary shape; 
+Problem? $E$ is a physical observable, it must be real valued everywhere
+\begin{itemize}
+\item $\average{\hat{a}_k}$ and $\average{\hat{a}_k^\dagger}$ are not independent!
+\item Consider $\ket{\psi}=C_n\ket{n}+C_{n+1}\ket{n+1}$, $\average{\hat{a}_k}_{\psi}=C_nC^\star_{n+1}$ but $\average{\hat{a}_k^\dagger}_\psi=C^\star_nC_{n+1}$
+\item Follows that $\average{\hat{a}_k^\dagger}=\average{\hat{a}_k}^\star$
+\item Using the definition of sin and cosine\footnote{In case you have forgotten, or not seen, these definitions: $\sin(x)=\frac{\exp(ix)-\exp(-ix)}{2i}$ and $\cos(x)=\frac{\exp(ix)+\exp(-ix)}{2}$ } (and the fact that cosine is an even function): 
+\begin{equation}
+\average{\hat{E}(z)}=2\int_kdk\left(\frac{\hbar \omega}{2 \epsilon_0 V}\right)^\frac{1}{2}[\mathrm{Re}(\average{\hat{a}_k}) \sin(k z-  c k t)-\mathrm{Im}(\average{\hat{a}_k}) \cos(k z-  c k t)]
+\end{equation}
+\item Purely real by definition
+\end{itemize}
+\end{itemize}
+\section{Multimode wavepackets in practice}
+\begin{itemize}
+\item A problem and its resolution:
+\begin{itemize}
+\item Potential problem? Don't operators describing different frequency modes commute $[\hat{a}_k,\hat{a}_{k'}]=0$ for $k\neq k'$? since we have a continuum of $k$ how do we see any quantum effects at all?
+\item Resolution: Instead of treating creation/annihilation operators for single modes, consider creation/annihilation for multimode wavepackets $[\hat{a}[\Psi],\hat{a}[\Phi]]\propto \braket{\psi}{\phi}$, where $\hat{a}[\Psi]=\int dk\Psi(k) a_k$, overlap of wavefunctions is \textbf{distinguishability} $\rightarrow$ identical wavepackets (including phases, which indicate when they arrive) are indistinguishable
+\item Making indistinguishable wavepackets is key to many quantum optics applications, such as Boson sampling
+\item ``Easy''\footnote{relative to other experiments, none of this is really easy} to measure indistinguishability technically  with single photon wave packets, send both wavepackets into a beam splitter, measure how many times detectors click simultaneously, Hong-Ou-Mandel effect (see: \href{arXiv:quant-ph/0212017}{https://arxiv.org/abs/quant-ph/0212017})
+\end{itemize}
+ An uncertainty relationship between $k$ and $z$:
+\item Taking the Fourier transform of $k$ gives $k=-i\frac{\partial}{\partial z}$, taking $\average{\Delta k}=\average{k^2}-\average{k}^2=-\int_z dz\frac{\partial^2E^2(z)}{\partial z^2}+\int_zdz(\frac{\partial E^2(z)}{\partial z})^2$ 
+\begin{itemize}
+\item n.b.~ I have used $\average{E^2(z)}$ in my definition so it even works for states like number states where $\average{E(z)}$ is zero everywhere.\footnote{This has the complication that $\average{E^2(z)}$ is non-zero for vacuum, but this can be mitigated by integrating over a finite extent and considering states of many photons so the vacuum contribution is small}
+\end{itemize}
+\item Conceptually: a narrow peak requires a large negative curvature, therefore smaller $\Delta z$ leads to larger $\Delta k$
+\item Mathematically: $[k,z]=-i\frac{\partial}{\partial  z} z+i z \frac{\partial}{\partial z}$ by the product rule $-i\frac{\partial}{\partial  z}  (z E^2(z))=-iE^2(z)-i z \frac{\partial}{\partial z}$, cancelling terms and taking expectation $\average{[k,z]}=-i\int_zdzE^2(z)$
+\item Therefore $\average{\Delta k \Delta z}\ge \int_zdzE^2(z)$ (note that $E^2(z)$ is not normalized like a wavefunction so can't just cancel to $1$)
+\item Converse is not necessarily true, possible to have large (or even infinite) $\Delta k$ and $\Delta z$ simultaneously
+\item But wait! none of this depended on the system being quantum, isn't this just a statement about classical Fourier transforms which would also hold for very classical systems like water waves? Yes and no
+\begin{itemize}
+\item The relationship between spread of position and momentum holds for classical systems
+\item Can be thought of as a ``classical uncertainty principle'' but arguably not a ``real'' uncertainty principle since classical systems do not have projective measurements so all quantities can be known simultaneously
+\end{itemize}
+\item Visible light has wavelength ($\lambda$) of the order 100s of nanometers $\sim 10^{-7} m$, plenty of space in experiments for many wavepackets even if $\Delta z \gg \lambda$ 
+\item Lots of other fun Fourier transform identities relating $k$ and $z$ I don't think they are relevant but we can discuss if you want
+\end{itemize}
+\section{Photons in wavepackets}
+\begin{itemize}
+\item We can make a wavepacket with a single photon (a Gaussian wavepacket in this example)
+\begin{equation}
+\ket{\psi_\mathrm{Gauss}}=\frac{1}{\mathcal{N}}\int_kdk\exp\left[-\frac{(k-k_0)^2}{\sigma^2}\right]\hat{a}^\dagger_k\ket{0}
+\end{equation}
+\item Superposition of frequencies, but all states involve only $(\hat{a}^\dagger_k)^1$ so only one photon
+\item Since an atom emits a photon over a finite period of time, it will always contain a superposition of frequencies (although Lorentzian/Voight, not Gaussian distributed)
+\begin{equation}
+\ket{\psi_\mathrm{Lorentz}}=\frac{1}{\mathcal{N}}\int_kdk \frac{\gamma^2}{\gamma^2+(k-k_0)^2}\hat{a}^\dagger_k\ket{0}
+\end{equation}
+\item Depending on the experiment may be justified in approximating as single frequency
+\item Can also have multi-photon distributions, for example a distribution of coherent states
+\begin{equation}
+\ket{\psi_\mathrm{coh\,homo}}=\frac{1}{\mathcal{N}}\int_kdk \frac{\gamma^2}{\gamma^2+(k-k_0)^2} \exp(\alpha \hat{a}_k^\dagger-\alpha^\star \hat{a}_k)\ket{0}
+\end{equation}
+\item The above state is a bit artificial, why? Once one photon is measured all others must have the same $k$ (perfect correlation), this can happen (to a decent approximation) in a laser if all emitters are effected in the same way and is called \textbf{homogeneous broadening} 
+\item If we assume photon frequencies are independent than we should have \textbf{inhomogeneous broadening} 
+\begin{equation}
+\ket{\psi_\mathrm{coh\,inhomo}}= \exp\left(\frac{1}{\mathcal{N}}\int_kdk\exp\left[-\frac{(k-k_0)^2}{\sigma^2}\right](\alpha \hat{a}_k^\dagger-\alpha^\star \hat{a}_k)\right)\ket{0}
+\end{equation}
+\item Of course we can also have both
+\begin{align}
+\ket{\psi_\mathrm{broad}}=\nonumber \\ \frac{1}{\mathcal{N}'}\int_{k'}dk' \frac{\gamma^2}{\gamma^2+(k'-k_0)^2} \exp\left(\int_kdk\exp\left[-\frac{(k-k')^2}{\sigma^2}\right](\alpha \hat{a}_k^\dagger-\alpha^\star \hat{a}_k)\right)\ket{0}
+\end{align}
+\item Which is a decent approximation of a wavepacket from a laser with Lorentzian homogenous broadening and Gaussian inhomogeneous broadening...  
+\item If we wanted a continuous beam which is broadened rather than a wavepacket, we could add phases to the terms or consider an incoherent superposition of frequencies
+\end{itemize}
+
+
+
+
+
+\end{document}

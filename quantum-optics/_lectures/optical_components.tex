@@ -1,0 +1,196 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Some optical components and the principles behind how they work}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+These notes are based partially on ``Nonlinear Optics'' by Robert Boyd ISBN: 978-0-12-369470-6, available for purchase at\footnote{while this is a good book in general I don't necessarily think that everyone needs a copy of  it the way we all have a copy of G+K (get QCI to buy you one if you don't already have it), maybe only get it if you want to know how the experiments work}:\\ \href{https://www.elsevier.com/books/nonlinear-optics/boyd/978-0-12-369470-6}{https://www.elsevier.com/books/nonlinear-optics/boyd/978-0-12-369470-6} as well as Gerry and Knight. 
+
+Note that these notes are not meant to be an exhaustive description of everything you might find in an optics lab, just a tour of how some important devices work. Often in real devices there will be extra ``tricks'' to get more performance, the point here is to get the concepts across not describe every trick.
+
+
+\section{Motivation}
+\begin{itemize}
+\item While we don't need to know the details of how every optical component works, it is worth having a conceptual understanding of the ones which come up a lot
+\item  This will allow us to ``speak the same language'' as people from a QPhoton background to an extent
+\item Knowing how these work conceptually can help us understand what may be easy versus difficult to do in the lab, which can help in making suggestions about what how ideas designs can be modified or improved
+\end{itemize}
+
+\section{A quick aside about polarisation}
+
+\begin{itemize}
+\item We haven't really explicitly talked about polarisation of light because it hasn't been important, polarisation is the direction in which the electric field fluctuates (which also determines the direction of the magnetic field by Maxwell's equations)
+\item Easiest to think about in the linear polarisation basis, in free space the E-field is perpendicular to the direction of travel, two orthogonal directions it can point in, therefore two polarisations\footnote{(very) technical note: by the spin-statistics theorem, since photons are Bosons they should have integer spin, and indeed they do, photons are spin-1 particles technically, but the $0$ spin state is forbidden because they are massless, leaving only $1$ and $-1$}
+\item We can also have superpositions of the polarisations:
+\begin{itemize}
+\item Phase difference of $1$ or $-1$ $\rightarrow$ linear polarisation, but not along any of the two angles, relative magintudes determine direction
+\item Phase difference of $i$ or $-i$ and equal magnitude $\rightarrow$ circular polarisation, direction of polarisation follows a helical path over space/time
+\item Anything else $\rightarrow$ elliptical polarisation, effectively a mixture of the two
+\end{itemize}
+\item This behaviour can all be derived from equation 2.83/2.120 (depending whether you want to be quantum or classical) of G+K: 
+\begin{itemize}
+\item Each polarisation corresponds to an orthogonal direction of $\vec{e}_s$, with $s \in \{0,1\}$\footnote{G+K uses letters rather than numbers} being an index over the two polarisations (let's only consider one value of $k$ for now).
+\begin{equation}
+\vec{E}=\sum_{s\in \{0,1\}}\omega\vec{e}_s\left[A\exp\left(i(k z-\omega t)\right)-A^*\exp\left(-i(k z-\omega t)\right)\right] \label{eq:simp_E}
+\end{equation}
+\item The phase in $|A_s|\exp(i \phi_s)=|\average{\hat{a}_s}|\exp(i \phi_s)=\average{\hat{a}_s}$ will lead to an electric field of $\sin(k z-\omega t+\phi_s)$ in each polarisation: $\vec{E}=2\vec{e}_0|A_0|\sin(k z-\omega t+\phi_0)+2\vec{e}_1|A_1|\sin(k z-\omega t+\phi_1)$
+\item If $\phi_0=\phi_1$ than both will be in phase and the direction won't change, but if $|A_0|=|A_1|$ and $\phi_0=\phi_1+(2n+1) \pi$, than they will be out of phase (and able to completely cancel) and the polarisation will rotate in time
+\end{itemize}
+\item Given that the terms in Eq.~\ref{eq:simp_E} oscillate with $z$ than slowing down one polarisation relative to the other will induce a relative phase and change the total polarisation 
+\item This trick can also be played by slowing down circular polarisations relative to each other, all you need is a molecule which is not mirror symmetric (like ordinary sugar or almost anything else which is produced by living organisms), since a linear polarisation can be written as a sum of circular polarisations, this means that linearly polarised light will rotate it's polarisation when travelling through sugar water\footnote{Scotch tape is (often) made with cellulose and also does this, and as a result this neat art/science project is possible: \href{https://www.exploratorium.edu/snacks/polarized-light-mosaic}{https://www.exploratorium.edu/snacks/polarized-light-mosaic}}
+\end{itemize}
+
+
+\section{Linear components}
+\begin{itemize}
+\item Beamsplitters: we already learned about these, consists of a partially reflective mirror at an angle to the beam path, often ``50/50'' but don't have to be, if the reflecting surface is orthogonal to the beam then the reflection just occurs in the opposite direction
+\item Polarizers: Allows one polarisation of light to be transmitted while another is absorbed. Can be made of many thin strips of conducting material which are thinner than the wavelength of the light, E-fields parallel to these strips cause oscillations in the electrons and are absorbed, while in the perpendicular direction electrons can't move much so high transmission. 
+\begin{itemize}
+\item Useful to make polarized light, since many sources are unpolarized, moderate-quality polarisers can be cheaply manufactured and are found in many consumer devices (LCDs, polarised sunglasses, etc...)
+\item Many variations exist, polarising beamsplitters for instance, which send different beams in different directions based on polarisation
+\end{itemize}
+\item Waveplates: Birefringent material which has  a different speed of light for one linear polarisation than the other, light is usually input so that it is polarised in a way that it contains an equal superposition of the two polarisations with different speeds, in this case we get
+\begin{itemize}
+\item Half-wave plate: induces a relative phase of $-1$ between the polarisations and therefore converts to an orthogonal polarisation
+\item Quarter-wave plate: induces a relative phase of $i$ between the polarisations and converts between linear and circular polarisation
+\end{itemize}
+\item Dichroic mirror: reflects some wavelengths of light while transmitting others, useful for separating light by frequencies, built by having thin films of the order of the wavelength of the light (what frequencies are reflected/transmitted can be found by solving classical wave equations)
+\end{itemize}
+
+\section{Electrooptic modulator (EOM)}
+\begin{itemize}
+\item Useful in modulating the power of a light beam while leaving other properties unchanged
+\begin{enumerate}
+\item Light first goes through a polariser, reduced to a single linear polarisation
+\item The non-linear component is a crystal under a strong electric field which gives it controllable birefringence (the relative speeds of the two linear polarisations)
+\item Light than goes through a quarter-wave plate, which converts the relative phase to an angle of linear polarisation
+\item Finally goes through another linear polariser (orthogonal to the first)
+\end{enumerate}
+\item Lots of details on how electric field interacts with the crystal, not really important for us, but covered in great detail by Boyd (chapter 11), important idea is that materials exist where electric fields can induce birefringence and that this effect is well approximated as giving a difference in refractive index proportional to the field and therefore the applied voltage.
+\item Since relative delay, and therefore relative phase is proportional to the difference in refractive index, and the angle which the light hits the polariser is proportional to this phase, than the transmission as a function of voltage can be written as (a combination of 11.3.17 and 11.3.129 in Boyd)
+\begin{equation}
+T=\sin^2\left(\frac{\pi}{2}\left(\frac{V}{V_{\frac{\lambda}{2}}}+\frac{1}{2}\right)\right)
+\end{equation}
+\item Here $V_{\frac{\lambda}{2}}$ is the voltage which would make the crystal act as a half-wave plate, its exact formula probably doesn't matter for us, but is in Boyd, here is some intuition as to different cases:
+\begin{itemize}
+\item No voltage is applied, in this case it is just a quarter-wave plate sandwiched between two polarisers, in this case half the light gets through, this is a nice operating point because it has approximately linear response for small (compared to $\frac{1}{2}V_{\frac{\lambda}{2}}$) voltages 
+\item $\frac{1}{2}V_{\frac{\lambda}{2}}$ is applied, in this case we effectively have a half-wave plate applied, and get full transmission
+\item $\frac{3}{2}V_{\frac{\lambda}{2}}$ is applied, in this case we have effectively two half-wave plates, which combine to do nothing, since the polarisers are in orthogonal directions, no light gets through
+\end{itemize}
+\end{itemize}
+
+\section{Acustooptic modulator (AOM)}
+
+\begin{itemize}
+\item Work based on interaction between light and sound, because these interactions are more rich, AOMs give a richer range of possibilities in what can be tuned
+\item Basic idea: Sound wave travels in the same medium as light, since sound affects density, and density affects index of refraction, light and sound waves can interact
+\item Since both are waves, they are subject to phase matching conditions, assuming light has an initial wavevector (the inverse wavelength in each direction) $\vec{k}$, and the sound has a wavevector $\vec{q}$, than the wavevector of scattered light (assuming the wavelength of both is much larger than the interaction region, a regime known as \textbf{Bragg scattering} and can be very efficient with more than $50\%$ of the light scattered in some cases) is $\vec{k}'=\vec{k}-\vec{q}$\footnote{Boyd splits this up into a ``Stokes'' and ``anti-Stokes'' case where the light and sound are in the same or opposite direction, implicitly adding an extra minus sign in the ``anti-Stokes'' case}
+\item The frequencies also have to be matched $\omega'=\omega\pm \Omega$, where $\Omega$ is the frequency of the sound, $\omega$ is the frequency of the incident light and $\omega'$ is the frequency of the scattered light the $\pm$ is determined by whether the light an sound travel in the same or opposite directions
+\item Note these are exactly the same phase matching conditions we saw in the non-linear optics lecture when we were considering interactions between light
+\item Some observations:
+\begin{enumerate}
+\item The scattered light will travel in a predictable direction
+\item The frequency of the scattered light is shifted up or down by  the frequency of the sound, AOMs can be used to tune frequency, plugging in realistic numbers (see the end of section 8.3.4 in Boyd) shows that AOMs can tune by roughly gigahertz ($10^9 \mathrm{Hz}$)\footnote{the frequency of visual light is hundreds of THz (about $400$-$790$) ($100\times 10^{12}\mathrm{Hz}=10^{14}\mathrm{Hz}$), but this level of tuning is still often useful experimentally}
+\item If we want scattering to happen the angle $\theta$ between the light and sound and the sound frequency $\Omega$ cannot be chosen independently, if the sound travels at $v$ and the light at $\frac{c}{n}$, than for scattering to happen, we must have $\Omega= 2n\omega \frac{v}{c}\sin\left(\frac{\theta}{2}\right)$ (eq.~8.3.43 in Boyd)
+\item  Since typically $v\ll c$ and all other factors are typically of order around $1$, we will  have $\Omega\ll \omega$, which allows for a lot of simplifications in the analysis, and also means that devices can still have reasonable efficiency when matching conditions are not exactly met: this allows tuning to be be done without having to rotate the material the wave travels through, Boyd does a full analysis in chapter 8.4 but I don't think that is useful here
+\item Allowing for inexact matching means that an AOM can also be used as a controllable beam deflector, but with lower power the larger the mismatch is
+\end{enumerate}
+\item If we relax the conditions on the size of the interaction region, than we get to a more complicated situation known as \textbf{Raman-Nath Scatttering}, this leads to multiple refracted orders and therefore larger shifts in frequency, but is less efficient
+\end{itemize}
+
+\section{Gain media and stimulated emission}
+
+\begin{itemize}
+\item Many optical components need the ability to amplify optical fields, take a few photons and turn them into many more photons, either in the same mode or a different one
+\item A popular way to construct a laser is to place such an amplifying material (often a diode\footnote{diodes are convenient because they can be pumped by supplying electrical energy to the system, as opposed to say a dye laser where chemical energy must be provided}) in a cavity where one wall has a very small transmission
+\item Can also have devices such as parametric amplifiers which directly amplify light incident on them
+\item All operate on the underlying principle of stimulated emission\footnote{in fact laser is an acronym: ``Light Amplification by \textbf{Stimulated Emission} of Radiation''}, a simplified version is discussed below:
+\begin{itemize}
+\item Consider a two-level system with excited $\ket{e}$, and ground $\ket{g}$ energy levels which starts out with its population in the higher energy level $\ket{e}$
+\item Resonant light is then shone on the system, this will cause oscillations between the two levels with a frequency (known as a Rabi frequency) proportional to the intensity
+\item After some amount of time, there is a non-zero probability of being in $\ket{g}$, so two level system must have a lower energy
+\item Since energy is conserved, that energy had to go somewhere, the only place for it to go is the field, through photon emission
+\item Because the emission is driven by the electromagnetic wave, the emission is \textbf{coherent} in the sense that the light is emitted with the same phase as the driving field
+\item Can be seen mathematically in the following way by considering the interaction terms between a two level system and a photonic mode (4.102 in G+K)
+\begin{equation}
+\hat{H}=\frac{1}{2}\omega\left(\ketbra{e}{e}-\ketbra{g}{g}\right)+\omega \hat{a}^\dagger \hat{a}+ \lambda \left(\hat{\sigma}_-\hat{a}^\dagger+\hat{\sigma}_+\hat{a}\right)
+\end{equation}
+\begin{enumerate}
+\item Since $\hat{a}^\dagger\ket{n}=\sqrt{n+1}\ket{n+1}$\footnote{Recall from our notes on Bosons and Fermions that this factor can be derived mathematically from the exchange statistics of the photons} , than the rate of emission into a mode which already has photons scales with $\sqrt{n+1}$
+\item In fact this system can be solved exactly if we start in the excited state with $n$ photons the probability of being in the excited state over time is $P_{\ket{e}}=\cos^2(\lambda t \sqrt{n+1})$, which is the modulous squared of  Eq.~4.110 in G+K (Many details of this model which I won't discuss can be found in G+K chapter 4)
+\item The average over time will be $P_{\ket{e}}=\frac{1}{2}$ regardless of the original number of photons
+\item Furthermore, if we consider a system which can emit into a continuum of modes 
+\begin{equation}
+\hat{H}=\frac{1}{2}\omega_0\left(\ketbra{e}{e}-\ketbra{g}{g}\right)+\int d\omega \left[\omega' \hat{a}_\omega^\dagger \hat{a}_\omega+ \lambda \left(\hat{\sigma}_-\hat{a}_\omega^\dagger+\hat{\sigma}_+\hat{a}_\omega\right)\right]
+\end{equation}
+than the system will preferentially emit into modes which are already occupied by many photons\footnote{You might notice that now in general $\omega\neq \omega_0$, so a solution for emitting in to a single one of these modes will be slightly more complicated but is still possible and discussed in 4.6 of G+K}
+\end{enumerate}
+\end{itemize}
+\item If we do somehow \textbf{pump} the system to return it to $\ket{e}$ such that we always have $P_{\ket{e}}>\frac{1}{2}$ (a condition called \textbf{population inversion} since in a thermal state $P_{\ket{e}}<P_{\ket{g}}$), than the system will continually emit photons into the mode, and will do so faster the more photons are already in the mode
+\item Furthermore, what modes are produced can be controlled by what photons are already present, hence the frequency of a laser can be tuned by introducing a cavity which allows some frequencies to remain and absorbs others, and amplifiers can be made which only emit significantly if photons are already present
+\item While the two level picture is an oversimplification of what is going on in most devices (for example there will be multiple emitters in a reals system, a parametric amplifier will involve an intermediate virtual energy level, and a diode laser will have bands of energy levels rather than single energy levels), it captures the essence of the operating principles behind these devices
+\item The same principle also works in coupling between photon modes $\hat{a}^\dagger_1\hat{a}_2$ will give a matrix element proportional to $\sqrt{(n_1+1)n_2}$, lasers which are pumped with other lasers, or amplifiers where the energy is provided from an optical field are both common
+\item A device which essentially consists of a material with a $\chi^{(2)}$ (recall this will give terms of the form $\hat{a}_1\hat{a}^\dagger_2\hat{a}^\dagger_3+h.c..$) placed in a cavity is known as an \textbf{Optical Parametric Oscillator} (OPO), and can be used for amplification as well as many other things, OPOs are the basis for coherent Ising machines (see for example: \href{https://doi.org/10.1038/s41534-017-0048-9}{https://doi.org/10.1038/s41534-017-0048-9}) and would probably deserve their own set of notes to cover.
+\end{itemize}
+
+
+
+
+\end{document}

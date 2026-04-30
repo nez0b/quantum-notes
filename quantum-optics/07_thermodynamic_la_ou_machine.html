@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thermodynamic Linear Algebra and the OU Machine</title>
+    <meta name="description" content="Re-purposing the MFB-CIM substrate as a Lyapunov sampler. The optical SPU proposal: Langevin → Lyapunov, hardware envelope, and the bridge to the underdamped √κ research direction." />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+
+      /* Better paragraph wrapping in modern browsers */
+      p, li {
+        text-wrap: pretty;
+      }
+
+      h1, h2, h3, h4 {
+        text-wrap: balance;
+      }
+
+      /* Tabular numerals everywhere they should be (calculators, tables, status cards) */
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      /* Section numbering — automatic via CSS counters.
+         Only counts h2s in the main content sections, not the header. */
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      /* Anchor mark on h2 hover (distill-style) */
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 {
+        position: relative;
+      }
+
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after {
+        opacity: 0.55;
+      }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: #17456f;
+      }
+
+      img,
+      svg {
+        max-width: 100%;
+        display: block;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        background: var(--page-accent);
+        color: white;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 26ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+
+      .header-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .meta-line {
+        margin-top: 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+      }
+
+      .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        padding: 0.38rem 0.8rem;
+        color: var(--page-muted);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.92rem;
+      }
+
+      .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+      }
+
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+
+      .top-nav-shell a:hover,
+      .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main {
+        padding: 2.2rem 0 5rem;
+      }
+
+      .section-shell,
+      .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+
+      /* Subtle hairline divider between major sections.
+         Use grid-column: 1 / -1 so the ::before doesn't break grid layouts
+         on .section-shell (which is display: grid). */
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      /* Unified h2 size across section-shell, figure-band, and section-band-shell.
+         Previously figure-band h2s defaulted to browser ~1.5em while section-shell
+         used clamp(1.85rem, 3vw, 2.55rem) — visibly different sizes between
+         widget-containing and plain sections. */
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+
+      .section-shell h3,
+      .figure-band h3,
+      .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Collapsible alternate-view: when the .section-collapse details is closed,
+         hide the sidebar and let the main column span the full grid width
+         (otherwise the keypoints box leaves a tall empty rail). */
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main {
+        min-width: 0;
+      }
+
+      .section-shell > .section-side {
+        position: sticky;
+        top: 5rem;
+      }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .keypoints ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .keypoints li + li {
+        margin-top: 0.5rem;
+      }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+
+      .math-details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+
+      .math-details[open] summary::before {
+        content: "−";
+      }
+
+      .math-details .details-body {
+        padding: 1rem 1.05rem 1.1rem;
+      }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .figure-band-header {
+        padding: 1.2rem 1.3rem 0.25rem;
+      }
+
+      .figure-band-header h2,
+      .figure-band-header h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      .figure-band-header p {
+        margin: 0;
+        color: var(--page-muted);
+      }
+
+      .figure-band-content {
+        padding: 1.15rem 1.3rem 1.3rem;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .control {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 9rem;
+        flex: 1 1 10rem;
+      }
+
+      .control label {
+        color: var(--page-muted);
+        font-size: 0.9rem;
+      }
+
+      .control select,
+      .control input[type="range"],
+      .control input[type="number"] {
+        width: 100%;
+      }
+
+      .control input[type="range"] {
+        accent-color: var(--page-accent);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .button-row button,
+      .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .button-row button:hover,
+      .button-row button:focus-visible,
+      .segmented button:hover,
+      .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .status-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-value.small {
+        font-size: 1rem;
+      }
+
+      .two-up,
+      .three-up {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .two-up {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .panel h3,
+      .panel h4 {
+        margin-bottom: 0.55rem;
+      }
+
+      .figure-caption {
+        margin-top: 0.7rem;
+        font-size: 0.93rem;
+        color: var(--page-muted);
+      }
+
+      .amp-svg,
+      .plane-svg,
+      .chart-svg,
+      .posterior-svg,
+      .complexity-svg,
+      .small-svg {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note {
+        font-size: 0.96rem;
+        color: var(--page-muted);
+      }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .quiz-card h3 {
+        font-size: 1.08rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+
+      .faq-list summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+
+      .footer-note {
+        color: var(--page-muted);
+        font-size: 0.95rem;
+      }
+
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.1rem 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid,
+        .section-shell,
+        .two-up,
+        .three-up {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell > .section-side {
+          position: static;
+        }
+      }
+
+      /* Multi-marked side-by-side trio */
+      .multi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .multi-col {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem;
+      }
+
+      .multi-col h4 {
+        font-size: 1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .multi-col .micro-status {
+        font-family: var(--ui-font);
+        font-size: 0.82rem;
+        color: var(--page-muted);
+        margin-top: 0.4rem;
+        line-height: 1.45;
+      }
+
+      .multi-col .micro-status b {
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 760px) {
+        .multi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SOTA card grid */
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+
+      .sota-card p {
+        margin: 0;
+        font-size: 0.94rem;
+      }
+
+      .padding-diagram {
+        display: block;
+        margin: 1rem auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Collapsible whole-section wrapper */
+      .section-collapse {
+        margin: 0.6rem 0 1.2rem;
+      }
+
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+
+      .section-collapse > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-collapse > summary::before {
+        content: "▸ ";
+        margin-right: 0.2rem;
+      }
+
+      .section-collapse[open] > summary::before {
+        content: "▾ ";
+      }
+
+      .section-collapse[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* Pedagogical 2D-collapse worked example styling */
+      .twod-collapse {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.1rem;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .twod-collapse h3 {
+        margin-top: 0;
+      }
+
+      .twod-collapse table {
+        border-collapse: collapse;
+        margin: 0.7rem auto;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+      }
+
+      .twod-collapse th, .twod-collapse td {
+        border: 1px solid var(--page-border);
+        padding: 0.35rem 0.7rem;
+        text-align: center;
+      }
+
+      .twod-collapse th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+
+      .overshoot-block {
+        margin: 1.2rem 0;
+      }
+
+      .overshoot-svg {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+      }
+
+      /* Circuit diagram */
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      /* Composing-Grover and No-speedup card grids */
+      .compose-card, .no-speedup-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.05rem;
+      }
+
+      .compose-card h4, .no-speedup-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .no-speedup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.2rem;
+      }
+
+      .no-speedup-card {
+        border-left: 3px solid var(--page-warm);
+        position: relative;
+      }
+
+      .no-speedup-card h4 {
+        color: var(--page-ink);
+        padding-right: 1.4rem;
+      }
+
+      .no-speedup-card h4::before {
+        content: "✗";
+        position: absolute;
+        top: 0.85rem;
+        right: 0.95rem;
+        color: var(--page-warm);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .no-speedup-card .ns-cost {
+        font-family: var(--num-font);
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin: 0.32rem 0;
+        letter-spacing: -0.01em;
+      }
+
+      .no-speedup-card .ns-cost b {
+        color: var(--page-ink);
+        font-weight: 600;
+      }
+
+      .feasibility-badge {
+        display: inline-block;
+        padding: 0.14rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--ui-font);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-left: 0.45rem;
+        vertical-align: 0.12em;
+      }
+
+      .feasibility-badge.trivial { background: #dceedf; color: #1f5e1f; }
+      .feasibility-badge.feasible { background: #dde9f4; color: #15406b; }
+      .feasibility-badge.infeasible { background: #f3e1c5; color: #7a4310; }
+      .feasibility-badge.cosmic { background: #efc8c8; color: #7a1010; }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+
+      .geo-table th:first-child,
+      .geo-table td:first-child {
+        text-align: left;
+      }
+
+      .geo-table tbody tr:nth-child(even) {
+        background: var(--page-panel);
+      }
+
+      .geo-table tbody tr:last-child {
+        border-top: 1px solid var(--page-rule);
+      }
+
+      @media (max-width: 640px) {
+        .header-shell {
+          padding-top: 3.5rem;
+        }
+
+        h1 {
+          max-width: none;
+        }
+
+        .figure-band-content,
+        .figure-band-header,
+        .panel,
+        .quiz-card,
+        .source-item,
+        .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  
+    <style>
+  .page-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--page-rule);
+    padding: 2rem 0;
+  }
+  .footer-shell {
+    width: min(calc(100% - 2rem), var(--content-width));
+    margin: 0 auto;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+  .footer-meta {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .keypoints h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .keypoints ul {
+    margin: 0;
+    padding-left: 1.05rem;
+    font-size: 0.93rem;
+  }
+  .keypoints li {
+    margin-bottom: 0.35rem;
+  }
+  .lede {
+    font-size: 1.04rem;
+    margin-top: 0;
+  }
+  table.refs {
+    margin-top: 0.6rem;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.refs td {
+    padding: 0.18rem 0.7rem 0.18rem 0;
+    vertical-align: top;
+  }
+  table.refs td:first-child {
+    white-space: nowrap;
+    color: var(--page-muted);
+  }
+  .pre-req {
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+  <div class="header-shell">
+    <div class="eyebrow">Quantum Optics · Optical SPU</div>
+    <div class="header-grid">
+      <div>
+        <h1>Thermodynamic LA &amp; the OU Machine Proposal</h1>
+        <p class="header-subtitle">The synthesis. With every component from Notes 01–06 in place, we re-purpose the MFB-CIM hardware to compute matrix inverses by sampling. The math is exact; the engineering envelope is in flight.</p>
+      </div>
+      <aside class="header-card">
+        <h2>What This Note Covers</h2>
+        <ul>
+              <li>Thermodynamic linear algebra: Aifer-Coles-Duffield framing</li>
+      <li>Langevin → Lyapunov: \(d x = -A x dt + \sqrt{D} dW \Rightarrow A\Sigma + \Sigma A^T = D\)</li>
+      <li>Optical adaptation: replace cubic saturation with linear damping</li>
+      <li>Hardware imperfection envelope (η, τ, σ_meas)</li>
+      <li>QCi target table: Stretch / Practical / Loose</li>
+      <li>Roadmap: overdamped → underdamped √κ speedup</li>
+      <li>Open questions: scaling to d ≥ 64, non-symmetric A, non-CIM applications</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+  <div class="top-nav-shell">
+        <a href="#tla">TLA Framing</a>
+<a href="#langevin-lyapunov">Langevin→Lyapunov</a>
+<a href="#optical-adapt">Optical Adaptation</a>
+<a href="#envelope">Hardware Envelope</a>
+<a href="#targets">QCi Targets</a>
+<a href="#roadmap">Roadmap</a>
+<a href="#open">Open Questions</a>
+<a href="#sources">Sources</a>
+  </div>
+</nav>
+
+    <main id="main-content">
+      <section class="section-shell" id="tla">
+  <div class="section-main">
+    <h2>Thermodynamic Linear Algebra: The Framing</h2>
+
+  <p class="lede">
+    The observation behind <em>thermodynamic linear algebra</em>
+    (Aifer, Coles, Duffield, et al., arXiv:2306.14740, 2023) is
+    simple: a stochastic-differential-equation system at
+    stationarity has a covariance matrix \(\Sigma\) that solves
+    an algebraic equation determined by its drift and diffusion.
+    For the right SDE, that algebraic equation is the one we
+    wanted to solve in the first place.
+  </p>
+  <p>
+    The first realization is electronic — Normal Computing's RLC
+    Stochastic Processing Unit (Aifer et al., <em>Nat. Commun.</em>
+    2025): a network of resistors-inductors-capacitors thermally
+    driven, where the steady-state covariance of the node
+    voltages encodes \(A^{-1}\) for a user-programmable matrix
+    \(A\). They demonstrated 8×8 problems on bench hardware.
+  </p>
+  <p>
+    The hypothesis of this proposal: <em>the same primitive
+    runs on the MFB-CIM photonic substrate</em>, with two key
+    advantages: (i) per-round-trip MVM is O(1) latency in the
+    photonic loop, vs CPU's O(d²); (ii) the room-temperature
+    photonic noise floor is much lower than thermal Johnson
+    noise on RLC, so the precision per joule should be
+    substantially better.
+  </p>
+  <div class="callout">We are re-using the entire CIM hardware — pulse loop, homodyne, FPGA, EOM, calibrated noise — and changing only the FPGA firmware (linear damping instead of cubic). The engineering risk is shifted from &ldquo;build new hardware&rdquo; to &ldquo;characterize a different operating regime of an existing hardware class.&rdquo;</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>TLA: SDE stationary covariance ↔ algebraic primitive</li>
+      <li>Aifer-Coles-Duffield 2023 (arXiv:2306.14740) — RLC version</li>
+      <li>Photonic re-implementation: same primitive, faster MVM, lower noise floor</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+              <section class="section-shell" id="langevin-lyapunov">
+          <div class="section-main">
+            <h2>Langevin → Lyapunov</h2>
+
+          <p>
+            For the linear SDE
+            \[
+              dx = -A\,x\,dt + B\,dW,
+              \qquad D := B B^T,
+            \]
+            with Hurwitz \(A\) (eigenvalues with positive real part),
+            the stationary covariance \(\Sigma = \mathbb{E}[x x^T]\)
+            solves the <strong>continuous Lyapunov equation</strong>:
+            \[
+              A\,\Sigma + \Sigma\,A^T = D.
+            \]
+          </p>
+          <details class="math-details">
+  <summary>Derivation via Itô's lemma</summary>
+
+    <p>
+      Apply Itô to \(x x^T\): \(d(x x^T) = (dx) x^T + x (dx^T) + (dx)(dx^T)\).
+      Substitute \(dx = -A x\,dt + B\,dW\), use
+      \(\mathbb{E}[dW\,dW^T] = I\,dt\), and take expectation:
+      \[
+        d\,\mathbb{E}[xx^T]
+        = \bigl(-A\,\mathbb{E}[xx^T] - \mathbb{E}[xx^T]\,A^T + D\bigr) dt.
+      \]
+      At stationarity, set the LHS to zero:
+      \(A\Sigma + \Sigma A^T = D\). For a symmetric PD \(A\)
+      and \(D = I\), this gives \(2 A \Sigma = I\), so
+      \(\Sigma = \tfrac{1}{2} A^{-1}\).
+    </p>
+
+</details>
+          <p>
+            <strong>The matrix-inverse application:</strong> with symmetric
+            PD \(A\) and white-noise drive \(D = I\), the steady-state
+            covariance is exactly half the inverse:
+            \[
+              \Sigma = \tfrac{1}{2}\,A^{-1}.
+            \]
+            So the OU machine doubles as a linear-system solver: given
+            a right-hand side \(b\), compute
+            \(v = A^{-1} b = 2 \Sigma b \approx 2 \hat\Sigma b\) where
+            \(\hat\Sigma\) is the empirical sample covariance from the
+            simulator's trajectory.
+          </p>
+          <p>
+            For non-symmetric Hurwitz \(A\) the relation between
+            \(\Sigma\) and \(A^{-1}\) is more involved, but the
+            primitive still works — we just choose a different
+            estimator. See the Aifer-Coles-Duffield recipe table.
+          </p>
+
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>\(\dot x = -A x + \sqrt{D}\,\xi \Rightarrow A\Sigma + \Sigma A^T = D\)</li>
+              <li>Symmetric PD \(A\) + \(D = I\) ⇒ \(\Sigma = \tfrac{1}{2}A^{-1}\)</li>
+              <li>\(\hat\Sigma\) from sample averaging gives \(A^{-1}\)</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+              <section class="section-shell" id="optical-adapt">
+          <div class="section-main">
+            <h2>Optical Adaptation: One-Line Diff vs CIM</h2>
+
+          <p>
+            From Note 06's Rosetta stone, the MFB-CIM Euler step is:
+          </p>
+          <pre style="background: var(--page-panel); padding: 0.7rem; border-radius: 0.3rem; font-size: 0.82rem; overflow-x: auto;">
+# CIM (cubic saturation, Ising solver)
+x += time_step * (x * ((r[t] - 1) - mu * x_squared))   # gain - x³
+x += time_step * eps[t] * (MVM * error_var)            # MVM = J·x feedback
+x += eps[t] * noise * (torch.rand(N) - 0.5)            # uniform noise
+          </pre>
+          <p>
+            The OU machine in
+            <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>
+            makes three surgical changes:
+          </p>
+          <pre style="background: var(--page-panel); padding: 0.7rem; border-radius: 0.3rem; font-size: 0.82rem; overflow-x: auto;">
+# OU machine (linear damping, Lyapunov sampler)
+x += time_step * (-A_drift @ x.T).T                    # cubic → linear
+# (FPGA MVM still applied via A_drift's off-diagonal part)
+x += sqrt(time_step) * (D_chol @ randn(N).T).T         # uniform → Gaussian
+# + accumulator: M += x.T @ x
+          </pre>
+          <p>
+            The hardware substrate is unchanged: same time-multiplexed
+            pulse loop, same homodyne, same FPGA, same EOM. Only the
+            firmware changes. <em>Same bench can run CIM on Tuesday and
+            OU machine on Wednesday.</em>
+          </p>
+          <p>
+            The verification (cim/<code>experiments/exp02_ou_lyapunov.py</code>):
+            for \(d \in \{4, 8, 16\}\) and \(\kappa(A) \in \{1, 10, 100\}\),
+            empirical \(\hat\Sigma\) matches
+            <code>scipy.linalg.solve_continuous_lyapunov</code> to within
+            \(\le 5\%\) relative Frobenius error (the simulator hits
+            ≤ 2.7% at the worst-case cell). See
+            <code>~/Code/Ideas/cim/notebooks/02_overdamped_ou.ipynb</code>
+            for the headline experiment.
+          </p>
+          <div class="callout">The OU machine isn't faster than <code>scipy.linalg.solve</code> in software — the simulator is a Python loop. The claim is about the optical hardware, where per-round-trip MVM is O(d) latency vs CPU's O(d³) for Bartels-Stewart.</div>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Three-line firmware diff vs CIM</li>
+              <li>Same hardware, different operating regime</li>
+              <li>Verified: \(\hat\Sigma \to \frac{1}{2}A^{-1}\) within 3%</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+      <section class="section-shell" id="envelope">
+  <div class="section-main">
+    <h2>Hardware Imperfection Envelope (η, τ, σ_meas)</h2>
+
+  <p>
+    Three knobs determine bench performance:
+  </p>
+  <ol>
+    <li><strong>Homodyne efficiency</strong> \(\eta\): the
+      detected fraction of the signal photocurrent. Reduces the
+      FPGA-implemented coupling. The drift matrix actually
+      realized is
+      \(A_\mathrm{eff} = A_\mathrm{diag} + \eta\,A_\mathrm{off}\)
+      (where \(A_\mathrm{off}\) is the off-diagonal part) —
+      <em>exactly</em>, no envelope-approximation. The
+      steady-state \(\hat\Sigma\) solves the Lyapunov equation
+      with this <em>wrong</em> matrix.</li>
+    <li><strong>Feedback delay</strong> \(\tau\): the time
+      between the homodyne measurement and the EOM injection.
+      Turns the dynamics into a delay-differential equation.
+      Subleading in the overdamped regime; we measure the
+      slope empirically.</li>
+    <li><strong>Measurement shot noise</strong> \(\sigma_\mathrm{meas}\):
+      additive Gaussian noise on the photocurrent. Inflates
+      the effective diffusion: \(D_\mathrm{eff} = D + (\eta\zeta\sigma_\mathrm{meas})^2\,A_\mathrm{off}A_\mathrm{off}^T\).
+      Costs sample-efficiency, not encoding correctness.</li>
+  </ol>
+  <p>
+    <strong>Important correction.</strong> An earlier draft of
+    this proposal claimed the envelope was multiplicative:
+    \(f_\mathrm{eff} = \eta\,e^{-\gamma\tau}\). That formula
+    is the <em>underdamped</em> Wiseman-Milburn result and
+    does not transfer to the overdamped case. For overdamped
+    OU, the η-axis is exact (not an envelope), the τ-axis is
+    sub-linear additive. The
+    <code>cim/experiments/exp03_ou_hardware_envelope.py</code>
+    measurement caught this — see
+    <code>cim/notes/feedback_fidelity.md</code> for the
+    corrected story.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>η: exact steady-state shift, no envelope</li>
+      <li>τ: sub-linear additive correction</li>
+      <li>σ_meas: inflates diffusion, no encoding bias</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="targets">
+  <div class="section-main">
+    <h2>QCi-Actionable Target Table</h2>
+
+  <table class="refs">
+    <tr><td><strong>Target</strong></td><td><strong>Encoding error</strong></td><td><strong>η</strong></td><td><strong>γτ</strong></td><td><strong>Realization</strong></td></tr>
+    <tr><td>Stretch</td><td>≤ 5%</td><td>≥ 0.99</td><td>≤ 0.05</td><td>analog-RF hybrid; γ ≤ 50 MHz</td></tr>
+    <tr><td>Practical</td><td>≤ 10%</td><td>≥ 0.95</td><td>≤ 0.20</td><td>SNSPD + sub-ns FPGA; γ = 200 MHz</td></tr>
+    <tr><td>Loose</td><td>≤ 20%</td><td>≥ 0.85</td><td>≤ 0.50</td><td>commodity PIN diode + standard FPGA</td></tr>
+  </table>
+  <p>
+    The <strong>load-bearing assumption</strong> is FPGA-MVM
+    latency at target dimension \(d\). Optical insertion loss
+    and detector quantum efficiency can be improved with
+    engineering money. FPGA latency is structural — a CMOS
+    FPGA running a serialized MVM at \(d=64\) is typically
+    \(\sim 50\) ns, which is γτ ≈ 10 at γ = 200 MHz, far
+    outside the Practical envelope. Reaching γτ ≤ 0.1 at
+    d=64 likely requires either an analog-electronic feedback
+    (resistor-based MAC, no digitization) or a purpose-built
+    RF pipeline.
+  </p>
+  <p>
+    <strong>The single most important conversation to have
+    with a hardware partner is FPGA-MVM-latency-at-target-d.</strong>
+    See
+    <code>~/Code/Ideas/cim/notes/hardware_noise_budget.md</code>
+    for the full noise-budget breakdown.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Practical target: η ≥ 0.95, γτ ≤ 0.20, error ≤ 10%</li>
+      <li>FPGA MVM latency is the structural bottleneck</li>
+      <li>Analog-electronic feedback is the natural fallback</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="roadmap">
+  <div class="section-main">
+    <h2>Roadmap: Overdamped → Underdamped √κ</h2>
+
+  <p>
+    The current proposal (this note) is the <strong>overdamped
+    stepping-stone</strong>: linear damping, mixing time
+    \(T_\mathrm{mix} \propto 1/\lambda_\mathrm{min}(A) = \kappa\).
+    For ill-conditioned problems (κ ≫ 1) this is slow.
+  </p>
+  <p>
+    The <strong>underdamped variant</strong> (parallel theory
+    project, Direction A) replaces overdamped Langevin with a
+    symplectic Hamiltonian-plus-friction system: separated X
+    and P quadratures with momentum, friction tuned to match
+    the slowest mode. The mixing time is
+    \(T_\mathrm{mix} \propto 1/\sqrt{\lambda_\mathrm{min}} = \sqrt{\kappa}\).
+    For κ = 100, this is a 10× speedup. For κ = 10⁴, it's
+    100×.
+  </p>
+  <p>
+    The hardware substrate is unchanged: still time-multiplexed
+    pulses, still homodyne + FPGA + EOM. The change is that
+    the FPGA tracks <em>two</em> quadratures per pulse (X and
+    P) and implements the symplectic update equation. This
+    requires below-threshold OPO operation (so that quantum
+    noise on P is well-defined) and Wiseman-Milburn feedback
+    on the homodyne measurement.
+  </p>
+  <p>
+    The full derivation, simulation, and hardware spec table
+    are in <code>~/Code/Ideas/TLA/direction_A_underdamped/</code>
+    — paper draft submitted to NeurIPS 2026.
+  </p>
+  <div class="callout">The √κ advantage is the killer feature. Overdamped is the stepping-stone we de-risk on; underdamped is the asymptotic win. They share hardware. <em>The right way to think about this proposal is: the bench we build for overdamped <strong>is</strong> the bench that runs underdamped, with a firmware update.</em></div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Overdamped: \(T_\mathrm{mix} \propto \kappa\)</li>
+      <li>Underdamped (Direction A): \(T_\mathrm{mix} \propto \sqrt\kappa\)</li>
+      <li>Same hardware, firmware-distinguished operating regimes</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="open">
+  <div class="section-main">
+    <h2>Open Questions</h2>
+
+  <ol>
+    <li><strong>Scaling to d ≥ 64.</strong> The simulator
+      currently caps at d = 16 on CPU; GPU experiment (see
+      <code>~/Code/Ideas/cim/handoff.md</code>) is the next
+      deliverable, including a wallclock benchmark vs scipy
+      and torch.</li>
+    <li><strong>Joint η-τ envelope</strong>: the additive
+      decomposition is empirical at d=4. Testing across a
+      range of <em>A</em> structures (random PD,
+      graph-Laplacian, Hessian-of-MLE) would establish the
+      general envelope shape.</li>
+    <li><strong>Non-symmetric Hurwitz <em>A</em></strong>: real
+      workloads (Markov-chain rates, asymmetric Jacobians)
+      are non-symmetric. Recipe table for choosing \(D\) such
+      that \(\Sigma\) encodes the desired functional of \(A\)
+      — needs derivation.</li>
+    <li><strong>Application demo</strong>: Bayesian linear
+      regression posterior covariance is the cleanest
+      end-to-end use of the OU sampler. Notebook 04 in
+      <code>cim-spu-optical-simulation</code> (planned, see
+      handoff.md Step 4).</li>
+    <li><strong>Direct head-to-head with Normal Computing's
+      RLC SPU</strong> on their published 8×8 instances
+      (handoff.md Step 2). Direct competitive claim or
+      reframing.</li>
+    <li><strong>Quantum advantage at threshold?</strong> The
+      CIM literature (Note 06) has been arguing this for
+      two decades. For the OU machine specifically, the
+      squeezing-advantage path is closed (Direction B
+      killshot); but the MFB-controlled below-threshold
+      regime (where the dynamics is genuinely quantum) is
+      not yet ruled out as a source of advantage on
+      specific problem classes.</li>
+  </ol>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>GPU scaling to d ≥ 64 is next on the queue</li>
+      <li>Non-symmetric A is the natural generalization</li>
+      <li>Bayesian regression is the end-to-end demo</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="sources">
+  <div class="section-main">
+    <h2>Sources &amp; Further Reading</h2>
+
+  <table class="refs">
+    <tr><td>Project</td><td><a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> — live repo: simulator, notebooks, hardware-noise-budget</td></tr>
+    <tr><td>Note</td><td><code>cim/notes/langevin_to_lyapunov.md</code> — Itô derivation</td></tr>
+    <tr><td>Note</td><td><code>cim/notes/cim_to_ou_rosetta.md</code> — three-line CIM → OU diff</td></tr>
+    <tr><td>Note</td><td><code>cim/notes/feedback_fidelity.md</code> — corrected (η, τ) envelope analysis</td></tr>
+    <tr><td>Note</td><td><code>cim/notes/hardware_noise_budget.md</code> — full QCi-actionable breakdown</td></tr>
+    <tr><td>Note</td><td><code>cim/handoff.md</code> — prioritized next steps for the GPU machine</td></tr>
+    <tr><td>Paper</td><td>Aifer, Duffield, Coles, et al., "Thermodynamic Linear Algebra", arXiv:2306.14740 (2023); npj Unconventional Computing (2024)</td></tr>
+    <tr><td>Paper</td><td>Aifer et al., 8-cell RLC SPU hardware demo, <em>Nat. Commun.</em> (2025)</td></tr>
+    <tr><td>Reference</td><td>Wiseman &amp; Milburn, <em>Quantum Measurement and Control</em>, Ch. 5</td></tr>
+    <tr><td>Project</td><td><code>~/Code/Ideas/TLA/direction_A_underdamped/</code> — underdamped √κ paper</td></tr>
+  </table>
+  <p class="pre-req">
+    <strong>End of track.</strong> The seven notes above are
+    the foundational + applied path from quantum-optics
+    primitives (coherent states, beam splitters, OPOs) through
+    the Coherent Ising Machine to the in-progress optical-SPU
+    research direction. Subsequent material will live in the
+    live repo at
+    <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Live repo: cim-spu-optical-simulation</li>
+      <li>Aifer-Coles-Duffield 2023: TLA framing</li>
+      <li>End of track — research continues in the cim repo</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+    </main>
+
+    <footer class="page-footer">
+  <div class="footer-shell">
+    <p>
+      <a href="index.html">↑ All quantum-optics notes</a>
+      &nbsp;&middot;&nbsp;
+      <a href="../index.html">↑↑ All tracks</a>
+    </p>
+    <p class="footer-meta">
+      Part of <a href="https://github.com/nez0b/quantum-notes">quantum-notes</a>.
+      Source PDFs in <a href="_lectures/"><code>_lectures/</code></a>.
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

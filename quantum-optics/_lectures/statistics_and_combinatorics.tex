@@ -1,0 +1,173 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Some combinatorics and basic statistical methods}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+I don't have a good textbook reference here, but relevant papers are referenced throughout
+
+
+\section{Motivation}
+\begin{itemize}
+\item The class of (at least classical) optimisation problems we are most interested in solving are combinatorial optimisation problems, this means that what makes them hard is not that it is hard to check if a potential solution is correct, but that there are a huge number of potential solutions
+\item There are many nice statistical tricks which can help us understand data and make a compelling case in whitepapers, in published papers, and even when showing it to customers
+\item Fundamentally these tricks come down to understanding how sure we can be of a conclusion given a set of assumptions, this is also useful for internal discussions
+\item Many concepts in information theory, thermodynamics, and statistical mechanics are built from topics we discuss here
+\end{itemize}
+
+\section{A simple (but useful) example: do I have a fair coin?}
+
+\begin{itemize}
+\item Let's say you have a coin, but you don't know if it is fair, in particular, you suspect it might be weighted to land on heads more than tails\footnote{As a physicist, I feel obligated to point out that this isn't necessarily physically possible if the coin is flipped in the ``typical'' way (see: \href{https://www.stat.berkeley.edu/~nolan/Papers/dice.pdf}{https://www.stat.berkeley.edu/~nolan/Papers/dice.pdf}), but let's assume you can, or if you want, substitute rolling a die and seeing if the result is odd or even}, how do you tell?
+\begin{itemize}
+\item If you flip a coin twice and it lands on heads both times most people would probably say that this is not enough evidence to say the coin is unfair
+\item If you flipped it ten times and it landed on heads every time, most people probably would say this is enough evidence to say it is unfair
+\end{itemize}
+\item While this intuition is roughly correct, how do we understand this in a more precise way, and what about intermediate cases, what if it was heads seven of ten times? We need a systematic approach
+\item If it is truly a fair coin flip than any combination of heads and tails is equally as likely as any other using \textbf{h} as heads and \textbf{t} as tails, \textbf{hhhhh} is just as likely as \textbf{hhtth} or \textbf{ththh} or any other ``random looking'' series of results, testing if it is fair is then a matter systematically counting and this requires grouping different results together
+\item In this case, since we interested in the rate of heads, the natural way to group the results is in terms of number of times heads was obtained so for example we treat \textbf{hhttt} and \textbf{ththt} as being equivalent since they have the same number of heads
+\item Fortunately there is a convenient way to calculate the number of distinct results with a given number of heads, the binomial formula (also known as n choose k)
+\begin{equation}
+\binom{n}{k}=\frac{n!}{k!(n-k)!}
+\end{equation} 
+\item The exclamation point indicates factorial $n!=n\times (n-1) \times ... 1$\footnote{we also use the convention that $0!=1$}, it is actually fairly intuitive to understand where this formula comes from:
+\begin{itemize}
+\item If we have $n$ items which are all unique, there are $n!$ ways to order them, we can put the first one anywhere in the order, we can put the second one in the $n-1$ remaining slots, etc...
+\item However in the case of the coin, there are only two results and one heads is the same as another, so we need to account for this somehow, fortunately we can calculate how much $n!$ over-counts
+\item If we assume the $k$ heads results are somehow distinct, than we would be overcounting by a factor of $k!$ because of the different orderings within these results, likewise ordering within the tails results would give an over-count of $(n-k)!$
+\item Dividing by both of these gives us the number of solutions which come just form ordering between heads and tails results
+\end{itemize}
+\item If we have a fair coin, we can use the binomial formula to find the likelihood of an outcome, seeing a very unlikely outcome indicates the coin may not be fair, but we must be careful
+\begin{itemize}
+\item Naive (i.e.~wrong) idea: flip the coin $n$ times, getting $k$ ``heads'' results, $\binom{n}{k}$ gives the likelihood that heads occurs $k$ times, if this likelihood is below a threshold (say $0.05$), than we assume it could not have happened with a fair coin
+\item This seems like a sensible idea, but if I flip a coin $300$ times, the likelihood of getting \textbf{exactly} $150$ heads is only $0.046$, therefore this test would always lead to the conclusion that the coin is unfair, for any result
+\item We need to ask the question more carefully...
+\end{itemize}
+\item What went wrong in the last example? What we were testing is how likely the coin is to have $150$ out of $300$ heads, but this individual result is actually unlikely for a fair coin, what we really want to ask is if the coin is how likely it would be to get a result which has obtained heads \textbf{at least} $k=150$ times (or equivalently with tails), in which case the answer is that we would expect this result a little over half the time
+\item Since there are $2^n$ total possible outcomes, our formula for finding a result which is at least this biased becomes
+\begin{equation}
+p(k)=2^{-n}\sum^n_{i=k}\binom{n}{i}
+\end{equation}
+\item Plugging in $n=300$ and $k=150$, we find $p(k)=0.523$, indicating that this result is not unlikely and providing no evidence of bias toward heads, by symmetry we would get the same result if we counted number of times we got tails, again showing the coin is not biased in that direction
+\item Let's play with this formula a bit, considering $n=10$ coin flips:
+\begin{itemize}
+\item If we set $k=10$, in other words we flip the coin $10$ times and only get heads, than we have $2^{-10}\binom{10}{10}=2^{-10}=\frac{1}{1024}$ it is indeed very unlikely to get heads $10$ out of $10$ times
+\item If instead $k=9$, then we have $2^{-10}\left[\binom{10}{10}+\binom{10}{9}\right]=\frac{11}{1024}$, which is about a $1\%$ chance, still pretty unlikely
+\item What about $k=8$, then we have $2^{-10}\left[\binom{10}{10}+\binom{10}{9}+\binom{10}{8}\right]=\frac{56}{1024}$, which is little over a $5\%$ chance, roughly the chance of critically failing a role in D\& D
+\item If now $k=7$, $2^{-10}\left[\binom{10}{10}+\binom{10}{9}+\binom{10}{8}+\binom{10}{7}\right]=\frac{176}{1024}$, a result at least this biased has about a $17\%$ chance of happening and could have easily happened randomly
+\end{itemize}
+\item One point here is that $10$ coin flips is not going to be enough to pick up on a weak bias in the coin, it can land on heads a $70\%$ of the time, and we still can't distinguish this from an accident, to see weaker effects we need more samples
+\item While this coin flipping example seems silly, it can provide a powerful tool for pairwise comparison, see next section
+\end{itemize}
+
+\section{A small aside: where to draw the line}
+
+\begin{itemize}
+\item While the previous example gives a good way to do statistical tests, and tell us how likely something is to happen, what we are asked to do is actually to make a binary decision, ``is the coin fair?''
+\item By convention a probability of happening randomly which is less than $0.05$ is considered ``statistically significant'', why this number, to be honest it is somewhat arbitrary, probably because it is achievable with relatively small sample sizes available in things like clinical trials\footnote{if you play dungeons and dragons, this has the advantage of being the chance of critically failing a dice role, which can give some intuition of how often a false significant result will show up}
+\item  Randall Monroe of xkcd does a much better job of expressing the potential pitfalls of this approach than I could, see \href{https://xkcd.com/882/}{https://xkcd.com/882/}
+\item Sometimes much higher standards are used, for example to claim the Higgs Boson as a ``discovery'' the community required ``$5\sigma$'' significance about a one in $3.5$ million probability of being an accident
+\item A word of warning: these significance numbers should be treated with caution, especially in more complicated cases, as a small change to the underlying assumptions (for example assuming a distribution is Gaussian when it really decays polynomially) can sometimes make a big change in the significance
+\end{itemize}
+
+\section{Putting the ``fair coin'' example into practice: a case study from my own work}
+\begin{itemize}
+\item While this math in the coin example seems a bit simple and silly, I have used this in published work, for head-to-head comparison of D-Wave solvers and encodings see \href{https://doi.org/10.1109/TQE.2021.3094280}{https://doi.org/10.1109/TQE.2021.3094280}
+\item If solvers A and B are both used on the same optimisation problems, there are three possible outcomes
+\begin{itemize}
+\item The best solution A found is better than any B found
+\item The best solution B found is better than any found by A
+\item The best solutions A and B found are equally optimal
+\end{itemize}
+\item Case 3 isn't very informative as to which performs better on a class of problems, and will occur a lot if the problems are ``too easy'' and both solvers almost always solve to optimality, let's exclude those cases
+\item We now want to check the remaining set of cases where there was a clear winner, and determine how likely a given outcome would be if the solvers performed equally well, this is very similar to testing if a coin is fair
+\item We need to pick an ``expected winner'' (let's say solver A), in this case, $n$ would be the number of times there was a clear winner and $k$ would be the number of times A found a better solution, we then apply 
+\begin{equation}
+p(k)=2^{-n}\sum^n_{i=k}\binom{n}{i}
+\end{equation}
+\item By convention, a result of $p<0.05$ is considered a significant result showing that A performs better than B, in the sense that given a random problem from the set, A is likely to find a better solution
+\item But what if we chose incorrectly, we could apply the formula again, but with $k$ defined as the number of times $B$ performed better, but we don't need to, since the total probability of all outcomes sums to $1$ than this significance is just $1-p$ therefore $p>0.95$ is a significant result showing that B performs better
+\item The actual examples in \href{https://doi.org/10.1109/TQE.2021.3094280}{https://doi.org/10.1109/TQE.2021.3094280}
+\begin{itemize}
+\item Two processors, ``2000Q'' and ``Advantage'', as well as two encodings ``one-hot'' and ``domain-wall'', this leads to four processor/encoding combinations and six possible pairwise comparisons
+\item Sets of $100$ colouring problems at different sizes were generated at random and all sizes run on all processor/encoding combinations
+\item If the problems were too large to embed with a given processor/encoding combination, than the results were recorded as ``FAIL'' and no comparisons were made
+\end{itemize}
+\item The results:
+\begin{itemize}
+\item At the smallest sizes all solvers solved to optimality and no comparison could be made, at some larger sizes results were still not statistically significant
+\item At large problem sizes the domain-wall encoding always performed better in a statistically significant way (this is what the paper set out to test)
+\item The older 2000Q processor using the domain-wall encoding could out perform the newer (and more highly connected) Advantage processor using the older one-hot method
+\item This is a cool result because a small ``software'' change could make a bigger difference then millions of dollars of engineering (at least in this case)
+\end{itemize}
+\end{itemize}
+
+\section{What if the probability isn't 50\%?}
+
+\begin{itemize}
+\item Despite its mathematical simplicity even the math behind hypothesis testing against a fair coin is highly useful, however what if we want to consider cases where an event occurs with a different probability?
+\item First we want to generalize our formula, let us assume that the probability of a result of interest (let's get away from talking about heads and tails in coins and instead just abstractly call this $1$ for occurs or $0$ for didn't occur) is $ 0 \le r\le1$ (we already used $p$ for the significance so we don't want to use it again)
+\item Each string of events is not \emph{not} equally likely, we need to take this into account, in particular, each time an event happens contributes a probability of $r$ and each time it doesn't contributes $(1-r)$, we now see that the probability of observing and event happening $k$ times out of $n$is
+\begin{equation}
+p_{\mathrm{k\,events}}=r^k(1-r)^{n-k}\binom{n}{k}
+\end{equation}
+\end{itemize}
+
+\end{document}

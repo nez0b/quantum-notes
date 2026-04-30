@@ -1,0 +1,212 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{A brief digression on exchange statistics}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+Unfortunately I don't know of a good (or bad for that matter) text book which covers this in the way I do here, but a condensed matter physics textbook would probably be the best place to find background reading
+
+\section{Motivation}
+\begin{itemize}
+\item Given our recent interest in quantum chemistry, it is worth discussing how to represent electronic systems, and in particular how to do it on a quantum computer
+\item  Useful to get a feeling for what terms like Slater determinant actually mean in terms of the physical electrons, as well as where the Pauli exclusion principle actually comes from
+\item We can get a sense of what makes the quantum chemistry problems we aim to solve ``hard''
+\item Many important behaviours of photons come from the fact that they are Bosons (the Hong-Ou-Mandel effect is a key example); Boson sampling is hard to simulate classically exactly because of exchange statistics, the outcome of the same experiments with classical billiard balls could be solved by hand
+\end{itemize}
+
+\section{Symmetric and anti-symmetric wavefunctions}
+\begin{itemize}
+\item Unlike classical particles, quantum particles can be truely indistinguishable, this leads to a concept which fundamentally doesn't exist classically, \textbf{exchange statistics}
+\item Key concept: if particles are really completely identical, than a multi-particle state built out of single particle states should be represented as a superposition of every possible ordering of the particles ($n_{\mathrm{particle}}!$ in total),
+\begin{align}
+\ket{\Psi}=\frac{1}{\sqrt{n_{\mathrm{particle}}!}}\sum_{\sigma \in \mathrm{permutations}}\exp(i\phi(\sigma))\ket{\psi_{\sigma_1}}\otimes\ket{\psi_{\sigma_2}}\otimes... \otimes\ket{\psi_{\sigma_{n_{\mathrm{particle}}}}}) \\=\frac{1}{\sqrt{n_{\mathrm{particle}}!}}\sum_{\sigma \in \mathrm{permutations}}\exp(i\phi(\sigma))\bigotimes^{n_{\mathrm{particle}}}_{j=1}  \ket{\psi_{\sigma_j}}\label{eq:permute_sum}
+\end{align}
+\item The phase $\phi(\sigma)$ means that we can define different kinds of particles based on what phases we give in this superposition, but there are some limitations:
+\begin{enumerate}
+\item Needs to be symmetric in the sense that re-labelling the particles (which cannot change anything physically) must be equivalent to adding a global phase (which cannot change anything physically). This means that we really only get one phase to play with, the phase we get when we swap adjacent particles, $\Phi$ (more about how this works later), two-particle example $\Psi=\ket{\psi_1}\otimes\ket{\psi_2}+\exp(i\Phi) \ket{\psi_2}\otimes\ket{\psi_1}$
+\item In $3$ or more dimensions, whether a particle moving in a loop goes ``around'' another particle is ambiguous, therefore exchanging a pair of particles twice must give a total phase of $0$. Outside of $2$-dimensional or quasi-$1$-dimensional  condensed matter systems, we can only have $\Phi=0$ (Bosons) or $\Phi=\pi$ (Fermions)\footnote{There are many exotic behaviours you can get from 2D ``anyon'' systems, including cases where matrix operations can be encoded in exchanges in a way which supports universal quantum computation, but that isn't relevant to what we are discussing here}
+\end{enumerate}
+\item Fortunately, relative phases only matter when we return to the same configuration (determine what kind of interference occurs), therefore we can define phases based on how many exchanges between the $j$th and the $j+1$th particle must happen in order to get from $\otimes_j \ket{\psi_j}$ to a given configuration. 
+\begin{itemize}
+\item If we consider an operation which swaps particle $k$ and $l$, but leaves all other in the same configuration than this will always require an odd number of adjacent swaps, why? We first can do $m$ operations to get the $\ket{\psi_k}$ and $\ket{\psi_l}$ next to each other, one operation to swap them, and $m$ more operations to return everything to the original positions, leading to $2m+1$ total swaps
+\item A systematic way to calculate the phase of each permutation is to write a matrix of the different wavefunctions and take a determinant, for this reason multi-body wavefunctions defined as sum over orderings as in equation \ref{eq:permute_sum} are known as \textbf{Slater determinants}
+\end{itemize}
+\item It follows that swapping $\ket{\psi_k}$ and $\ket{\psi_l}$ for any $k\neq l$ only will lead to a global $-$ sign ($\exp(i\pi(2m+1))$ where $m$ is an integer) in the total wavefunction if the particles are Fermions 
+\item If we then define $\ket{\psi_k}=\ket{\psi_l}$ (again for any $k \neq l$), than the two orderings must cancel, this is the \textbf{Pauli exclusion principle}, two Fermions cannot occupy the same state
+\item For Bosons it is fine to define $\ket{\psi_k}=\ket{\psi_l}$, as everything has a positive sign, an unlimited number of Bosons can occupy the same state (note that the equivalent of the determanent for Bosons is called a ``\textbf{permanent}'')
+\item Equation \ref{eq:permute_sum} represents a state with a fixed number of particles, but as we know from quantum optics, many interesting physical systems consist of superpositions of states with a different number of photons, therefore $\ket{\Psi}$ does not define an arbitrary state (similarly not all Fermionic systems can be represented by a single Slater determinant, this is the Hartree-Fock approximation)
+\item Sums of wavefunctions taking the form in equation \ref{eq:permute_sum} can represent arbitrary systems
+\item What we have done here is all very pedogogical and nice mathematically, but it is not very practical for calculations\footnote{recall that we haven't been doing quantum optics this way even though photons are Bosons}, why? 
+\begin{itemize}
+\item We need to keep track of $n!$ terms for any system involving $n$ particles, even if they are in a relatively ``simple'' state
+\item This is \emph{on top of} keeping track of superpositions of such states, which can also be exponential in number
+\end{itemize}
+\item As long as we know the statistics, we should be able to track exchange statistics automatically, and only keep track of how many particles are in each ``mode''
+\item Fortunately the expectation value of any physically relevant operator will be the same for any permutation, so we don't need the whole expression to calculate values
+\section{Bosonic and Fermionic operators}
+\item Let's first think of Bosons, because they are what we already used to from quantum optics
+\begin{enumerate}
+\item Although we haven't made it very explicit $\hat{a}$ and $\hat{a}^\dagger$ are Bosonic operators
+\item Since the phase of all permutations are the same for Bosons, there are no ``extra'' phases based on what other particles may or may not be present
+\item The factor of $\sqrt{n}$ in $\hat{a}\ket{n}=\sqrt{n}\ket{n-1}$ comes from the fact that any of $n$ photons\footnote{By the notation used elsewhere in the notes this should be $n_{photon}$ but the subscript has been omitted for brevity} can be annihilated, it can be directly seen in the following way:
+\begin{itemize}
+\item Remove $\ket{\psi_n}$\footnote{by symmetry you could delete any, but the $n$th is easier to deal with notationally} from each term in the sum  from equation \ref{eq:permute_sum}
+\item Since this wavefunction could appear in any of $n$ places, then the new wavefunction can be written 
+\begin{align}
+\frac{n}{\sqrt{n!}}\sum_{\sigma \in \mathrm{permutations}}\exp(i\phi(\sigma))\bigotimes^{n-1}_{j=1}  \ket{\psi_{\sigma_j}}=\\
+\frac{n}{\sqrt{n}\sqrt{(n-1)!}}\sum_{\sigma \in \mathrm{permutations}}\exp(i\phi(\sigma))\bigotimes^{n-1}_{j=1}  \ket{\psi_{\sigma_j}}=\sqrt{n}\ket{n-1}
+\end{align}
+\item A similar trick could be applied by \textbf{adding} an additional wavefunction any of $n+1$ places (since it could be added on either end), to get $\hat{a}^\dagger\ket{n}=\sqrt{n+1}\ket{n+1}$
+\end{itemize}
+\end{enumerate}
+\item Fermions are tricker because we need to keep track of the extra minus sign, but they have the advantage that only one  Fermion can be in a mode (Fermionic modes tend to be called ``orbitals'' for historical reasons)
+\item We need to choose an order for our orbitals, as before we know it doesn't matter how we order them as long as we use the same one consistently
+\item Since Fermionic modes can only have $1$ or $0$ Fermions, it is convenient to use Pauli matrices to represent fermionic operators, the following will be useful for us\footnote{I am assuming standard qubit matrix notation where the first row/column corresponds to $\ket{0}$ and the second to $\ket{1}$.} 
+\begin{align}
+\hat{\sigma}_j^z=(1_2)^{\otimes j}\otimes\left(\begin{array}{cc} 1 & 0 \\ 0 & -1 \end{array} \right)\otimes (1_2)^{\otimes n-j}\\
+\hat{\sigma}_j^+=(1_2)^{\otimes j}\otimes\left(\begin{array}{cc} 0 & 0 \\ 1 & 0 \end{array} \right)\otimes (1_2)^{\otimes n-j}\\
+\hat{\sigma}_j^-=(\hat{\sigma}_j^+)^\dagger=(1_2)^{\otimes j}\otimes\left(\begin{array}{cc} 0 & 1 \\ 0 & 0 \end{array} \right)\otimes (1_2)^{\otimes n-j}
+\end{align}
+\item Analogous to the way we treat Bosons, I define Fermionic creation and annihilation operators
+\begin{align}
+\hat{c}^\dagger_j=\Pi_{l=1}^{j-1}\hat{\sigma}^z_l\hat{\sigma}^+_j \label{eq:ferm_create}\\
+\hat{c}_j=\Pi_{l=1}^{j-1}\hat{\sigma}^z_l\hat{\sigma}^-_j \label{eq:ferm_annihilate}
+\end{align}
+\item Since $(\sigma^z)^2=1_2$, then $\hat{c}^\dagger_k\hat{c}_l$ ``counts'' whether the Fermion has gone past an odd or even number of other Fermions (in our ordering, which can be arbitrarily chosen) and applies an appropriate phase
+\item Playing with this a bit, we can see that this will give us exactly the same phases as if we explicitly represented the whole Slater determinant\footnote{assuming the arbitrary ordering used here is the same as the one used in the determinant}!, but it only requires one state vector element to represent a state with $n$ Fermions, rather than $n!$
+\item The definition given in equations \ref{eq:ferm_create} and \ref{eq:ferm_annihilate} is known as the \textbf{Jordan-Wigner transformation} since the transform Fermions into spin variables
+\item For (classical) numerical matrix calculations, the Jordan-Wigner transformation works great, but the long string of $\sigma_z$ terms could be annoying if you wanted to program a simulation onto a near term quantum computer, fancier tricks (the Bravi-Kitaev transform) can be used to make this somewhat more efficient (see \href{https://arxiv.org/pdf/quant-ph/0003137.pdf}{https://arxiv.org/pdf/quant-ph/0003137.pdf})
+
+\section{Non-interacting Bosons and Fermions}
+\item The Hamiltonian for a non-interacting (and number conserving, which is the interesting case for chemistry) system of Fermions can be written as
+\begin{equation}
+\hat{H}=\sum_{j}U_j\hat{c}^\dagger_j\hat{c}_j+\sum_{j,k}J_{j,k}\left(\hat{c}^\dagger_j\hat{c}_k+\hat{c}^\dagger_k\hat{c}_j\right)
+\end{equation}
+\item The $J$ terms correspond to electrons ``hopping'' between locations (or `'modes''), and $U$ terms correspond to the potential energy of putting an electron at a given mode. Note that this Hamiltonian conserves electron number.
+\item Let us look concretely how these terms come about if we assume we are solving a three dimensional Shcr{\"o}dinger equation with a potential (using a set of orbitals $\psi_j(\vec{x})$), the real space Hamiltonian then becomes 
+\begin{equation}
+H=-\frac{\hbar^2}{2m}\nabla^2+U(\vec{x})
+\end{equation}
+where $\nabla^2=\frac{\partial^2}{\partial x_1^2}+\frac{\partial^2}{\partial x_2^2}+\frac{\partial^2}{\partial x_3^2}$ where I have used $1$ ,$2$, and $3$ to indicate spatial directions
+\item In this case we have 
+\begin{equation}
+U_j=\int d^3\vec{x}\psi^*_j(\vec{x})\left(-\frac{\hbar^2}{2m}\nabla^2\psi_j(\vec{x})+U(\vec{x})\psi_j(\vec{x}) \right)
+\end{equation}
+and similarly
+\begin{equation}
+J_{j,k}=\int d^3\vec{x}\psi^*_j(\vec{x})\left(-\frac{\hbar^2}{2m}\nabla^2\psi_k(\vec{x})+U(\vec{x})\psi_k(\vec{x}) \right)
+\end{equation}
+Both integrals can be calculated easily numerically if not analytically
+\item Since the electrons do not interact, we can diagonalize the Hamiltonian with a single electron (this will be a $n_\mathrm{mode}\times n_\mathrm{mode}$ matrix), since the energy of one electron does not depend on the others, such a transformation will also diagonalise the whole Hamiltonian
+\begin{equation}
+\hat{H}_{\mathrm{diag}}=\sum_{j}E_j\hat{c}^\dagger_j\hat{c}_j
+\end{equation}
+\item Energy and other expectations can be found by summing each mode individually, non-interacting electronic systems can easily be solved classically (and often by hand)
+\item Most traditional (i.e.~pre-computer) condensed matter physics\footnote{Superconductivity is a notable exception in that it does require interactions between electrons} and chemistry relies on treating electrons as non-interacting, for example solving the Schr{\"o}dinger equation with spherical symmetry gives the electron orbitals we learn about in high-school, and semiconductor physics (which is needed to build computers so had to come first) is based on analysing at what modes are available in a crystal and how many electrons have filled these modes
+\item Even in cases too complicated to solve by hand, there is no combinatorial explosion so classical computers can solve these systems easily
+\item Based on the results for non-interacting Fermions, one might expect that non-interacting Boson systems are also classically easy to solve, however this intuition is wrong!
+\item Even performing a beamsplitting operation on a single number state leads to a complicated (and entangled) superposition of modes, more operations lead to a combinatorial explosion, and there is no ``nice'' trick to clean this up
+\item Finding the number of photons in a given mode means keeping track of all superposition, which amounts to taking a quantity called the permanent\footnote{The permanent is simply the determinant of a matrix but without the minus signs based on parity, the determinant is efficient to calculate because it is basis invariant and is just the product of the eigenvalues in the diagonal basis of the matrix, the permanent is not invariant under basis changes and therefore requires evaluating factorially many terms in general} of the relevant submatrix of a unitary which gives the desired output (and appropriately normalising) 
+\item Based on being hard classically, some companies (Xanadu for example) have made versions of Boson sampling part of their product offerings
+\item Since viabrational modes of molecules are Bosons, there may be some applications of Boson sampling to chemistry, see for example \\ \href{https://arxiv.org/abs/1412.8427}{https://arxiv.org/abs/1412.8427}
+\section{Interacting Fermions}
+\item Electrons are charged particles, so they naturally have a strong coulomb interaction between them, while it is amazing (IMO) that we can get any reasonable results ignoring this interaction (and all other interactions), there are some cases where electron interactions cannot be ignored
+\item The Coulomb potential (electromagnetic interaction) for example looks like (ignoring constant prefactors)
+\begin{align}
+\hat{H}^{(\mathrm{Coulomb})}=\int d^3\vec{x}_1\int d^3\vec{x}_2\frac{\hat{n}(\vec{x}_1)\hat{n}(\vec{x}_2)}{|\vec{x}_1-\vec{x}_2|}=\\
+\int d^3\vec{x}_1\int d^3\vec{x}_2\frac{\hat{c}^\dagger(\vec{x}_1)\hat{c}(\vec{x}_1)\hat{c}^\dagger(\vec{x}_2)\hat{c}(\vec{x}_2)}{|\vec{x}_1-\vec{x}_2|}
+\end{align}
+\item Often it is convenient to solve in a basis other than the one in which the interaction is diagonal in which case we get off-diagonal terms in the interaction (note that creation operations at a single position aren't actually particularly well defined, I show what the integrals look like in reality a little later, there is also a subtlety about electrons not being able to interact with themselves)
+\begin{equation}
+\hat{H}^{(\mathrm{int})}=\sum_{j\neq p,k \neq l}V_{j,k,l,p}\hat{c}^\dagger_j\hat{c}_k\hat{c}^\dagger_l\hat{c}_p
+\end{equation}
+\item Why the $\neq$? because an electron cannot interact with itself, a cleaner way to deal with this is to instead define \footnote{note that for $k \neq l$ $\hat{c}^\dagger_l\hat{c}_k=-\hat{c}_k\hat{c}^\dagger_l$, that is feriomionic operators on different modes \textbf{anti-}commute, leading to an extra minus sign}
+\begin{equation}
+\hat{H}^{(\mathrm{int})}=-\sum_{j,k,l,p}V_{j,k,l,p}\hat{c}^\dagger_j\hat{c}^\dagger_l\hat{c}_k\hat{c}_p
+\end{equation}
+\item Because $\hat{c}^\dagger_j\hat{c}^\dagger_j=\hat{c}_j\hat{c}_j=0$, than this expression will automatically evaluate to zero if $j=l$ or $k=p$, automatically eliminating self-interactions
+\item $V_{j,k,l,p}$ is a tensor whose elements must be calculated in the appropriate basis (lots of inner products, either sums or integrals depended on discrete or continuous), but not computationally hard
+\item As a concrete example, lets say we have a set of orbitals which are continuous mutually orthogonal and normalised functions $\psi_j(\vec{x})$, where $\vec{x}$ is the spatial coordinate in three dimensions, the $V_{j,k,l,p}$ entries corresponding to these orbitals will be\footnote{the $\frac{1}{2}$ factor is because otherwise each interaction would be double counted} 
+\begin{equation}
+V_{j,k,l,p}=\frac{1}{2}\int d^3\vec{x}\int d^3\vec{r}\frac{\psi^*_j(\vec{x}-\vec{r})\psi_k(\vec{x}-\vec{r})\psi^*_l(\vec{x})\psi_p(\vec{x})}{|\vec{r}|}
+\end{equation}
+\item While this may not yield an integral which is solvable by hand, it will be tractable numerically (and can be re-used any time the same basis set is used)
+\item Note that this doesn't tell us \textbf{how} to choose the orbitals, and in practice this will have a large effect on how well our calculation performs (mathematically speaking if we take enough orbitals, than any basis set will work, but may render the calculation infeasible given it has to run on real hardware), one natural choice is whatever basis set diagonalises the interaction free version of the Hamiltonian (i.e. solutions to the non-interacting Shcr{\"o}dinger equation), but there may be better choices
+\item The Hamiltonians we are interested in solving therefore take the form
+\begin{equation}
+\hat{H}=\sum_{j}U_j\hat{c}^\dagger_j\hat{c}_j+\sum_{j,k}J_{j,k}\left(\hat{c}^\dagger_j\hat{c}_k+\hat{c}^\dagger_k\hat{c}_j\right)-\sum_{j,k,l,p}V_{j,k,l,p}\hat{c}^\dagger_j\hat{c}^\dagger_l\hat{c}_k\hat{c}_p
+\end{equation}
+\item We have a problem though, the interaction term means that the Hamiltonian for one particle is no longer independent from the others, in fact the diagonal basis (and therefore which modes we need to include for an accurate description) even depends on which other modes are occupied 
+\item There are (roughly speaking) three options to solve problems involving strongly interacting electrons:
+\begin{enumerate}
+\item Perform full diagonalisation of an $\binom{n_{\mathrm{mode}}}{n_{\mathrm{electron}}}\times \binom{n_{\mathrm{mode}}}{n_{\mathrm{electron}}}$ Hamiltonian using standard matrix methods\footnote{I have a published paper where my contribution was doing this, see \href{https://arxiv.org/abs/1401.5680}{https://arxiv.org/abs/1401.5680}note that the standard name for this technique ``exact diagonalisation'' is misleading, it is actually approximate numerical diagonalisation using standard algorithms in Matlab (which in turn uses the same ARPACK and LAPACK packages as Python)}, this works in principle but at least if the number of electrons grows with the number of modes, it scales exponentially so is only practical at small sizes (something like $20$ orbitals with $10$ electrons for a laptop and probably not more than $50$ or $60$ half-filled orbitals on a supercomputer).
+\item Make some approximations, such as Hartree-Fock which approximates as a single Slater determinant (orbitals either completely occupied or completely empty in some basis), or many, many other approximations. Density Functional Theory (DFT) is a popular choice here, where the effect of interactions from other electrons are treated as additional potentials. Lots of work on this, it can work ok sometimes but not others. Often it is relatively easy to check how good an approximation is (by checking self consistency or comparing energies if finding a ground state) even if finding an approximation is hard.
+\item Use a quantum computer: even a relatively small perfect quantum computer (say $100$ perfectly noise-free qubits) could solve problems that supercomputers can't, it gets messier for noisy quantum computers (often bootstrapping off of approximate classical methods), and may need more coherence to see and advantage than optimisation
+\end{enumerate}
+\item For option $3$, simulating dynamics is just exponentiation of Pauli strings, and ground states could (in principle) be found by simulating adiabatic evolution, the step that really limits us here is building a good enough quantum computer
+\end{itemize}
+
+
+
+
+
+
+
+\end{document}

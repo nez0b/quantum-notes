@@ -1,0 +1,132 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Coherent states and phase space}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+
+\section{Phase space/phase portraits}
+
+\begin{itemize}
+\item A useful concept for understanding both (1D) classical and quantum systems, ``position like'' variable on one axis and ``momentum like'' variable on the other
+\item Unlike in 1D (where two particles can be in the same place but have very different momentum), the future path in phase space is completely determined by phase space coordinates\footnote{this is important for example for determining if a classical system is chaotic, one (necessary but not sufficient) requirement to be chaotic is that points that start close in phase space move far apart}, with momentum (time derivative of position proportional to momentum, time derivative of momentum proportional to gradient of potential energy at position)
+\item Coordinates in optical version (I will use $q$ and $p$) are \textbf{not} position and momentum but quantities related to different phases of electric and magnetic fields, but underlying math is identical
+\item Classically we get this concept for free, quantum mechanically it is a bit trickier to derive the right way to visualize phase space and not necessarily unique, there are several ways to represent quantum phase space
+\begin{itemize}
+\item ``Handwaving'': people do this a lot, in fact G+K does this a lot, just draw some amplitude somewhere in phase space as a conceptual representation without rigorous math behind it, often useful but obviously not for calculations
+\item Q function: $Q=\sandwich{\alpha}{\hat{\rho}}{\alpha}/\pi$ (eq: 3.112 in G+K) where $\ket{\alpha}$ is a coherent state (basically a blob of probability in phase space, I will discuss them later) and  $\hat{\rho}$ is a density matrix describing the state. The Q function has the nice property of behaving in the way we normally imagine the handwaving version should, and is always positive, can be used directly to calculate operator expectations
+\item Wigner function: defined in terms of the original distribution $\ket{\psi}$; $W(q,p)=\frac{1}{2 \pi \hbar}\int \sandwich{q+\frac{1}{2}x}{\hat{\rho}}{q-\frac{1}{2}x}\exp(ipx)dx$ (eq:3.116 in G+K) $\ket{q\pm\frac{1}{2}x}$ are position eigenstates which extract the amplitude at a given position, and $x$ is the original coordinate of the wavefunction (related to electric field strength), Wigner function is real everywhere but does not have to be positive\footnote{a region of negative Wigner function is a sign that at state is ``quantum''}, can contain ``wiggles'' in areas of phase space far from any amplitude so not as intuitive as the Q-function, but often very useful mathematically\footnote{the cover image of G+K is the Wigner function of a superposition of coherent states known as cat states (see figure  7.15)}
+\end{itemize}
+\end{itemize}
+
+
+\section{Coherent states and classical EM waves}
+
+\begin{itemize}
+\item No limit on $n$ the number of photons we can represent in quantum optics, also no clear boundary between quantum and classical (unlike say condensed matter where you can say things ``look'' classical at large length scales)
+\item Therefore to be a good (and complete) theory, quantum optics had better have something which acts like a classical electromagnetic wave
+\item How does a classical electromagnetic wave act? Strong oscillating electric and magnetic field, with very little (strictly zero) uncertainty
+\item Can imagine a point in phase space which travels in a circle
+\item Quantum version: ``fuzzy'' point (has to be fuzzy or would violate the uncertainty principle) which does the same thing (with $\average{\hat{q}}$ and $\average{\hat{p}}$ standing in for fields)
+\item Need to construct a ``special'' state that does this: naive idea, ``displace'' the vacuum state in q or p (or both)
+\begin{itemize}
+\item Displacement can be defined as \footnote{this definition can be derived by combining 3.30 with 2.13 and 2.14 in G+K} 
+\begin{equation}
+\hat{D}(\alpha)=\exp\left[2i(2 \hbar \omega)^{-1/2}\left(-\hat{p}\,\mathrm{Re}(\alpha)+\omega \hat{q}\,\mathrm{Im}(\alpha)\right) \right]
+\end{equation}
+\item Exponentiating $\hat{p}$ displaces us in $\hat{q}$ and vice-versa; for a real $\alpha$ this is literally just shifting the position of the Gaussian which forms the vacuum state
+\item This naive approach works! displaced vacuum state will wander around phase space just like a classical particle
+\item How can we see that this works? take Hamiltonian $\hat{H}=\omega^2\hat{q}^2+\hat{p}^2$, we know that our coherent state would be an eigenstate of a shifted version of this $\hat{q}_s=\hat{q}+q_d$, $\hat{p}_s=\hat{p}+p_d$; we can now complete the square to get 
+\begin{equation}
+\hat{H}=\omega^2\hat{q}_s^2-2\hat{q}\omega^2 q_d -(q_d)^2+\hat{p}_s^2-2\hat{p}p_d -(p_d)^2
+\end{equation}
+\item For displaced state (which we secretly know are coherent states) $\ket{\psi_D}$; $(\omega^2\hat{q}_s^2+\hat{p}_s^2)\ket{\psi_D}=\frac{\hbar \omega}{2}\ket{\psi_D}$ therefore $\hat{H}\ket{\psi_D}=(2\hat{p} p_d+2 \hat{q} \omega^2 q_d+\mathrm{const.})\ket{\psi_D}$ where the constant part is irrelevant because it only contributes a global phase, applying $\exp(-i\hat{H}\delta t)$ where $\delta t$ is a short amount of time will lead to a shift in $q$ proportional to $\Delta p$ and a shift in $p$ proportional to $\Delta q$, which are the equations of motion on a classical harmonic oscillator (and in turn the equations of motion for a classical EM field) 
+\end{itemize}
+\item Vacuum minimizes uncertainty
+\begin{itemize}
+\item General Heisenberg uncertainty principle $\average{\Delta \hat{A}} \average{\Delta \hat{B}}\ge \frac{1}{2}|\average{[\hat{A},\hat{B}]} |$
+\item Calculate uncertainty between dimensionless versions of $\hat{p}$ and $\hat{q}$, $\hat{X}_1=\frac{1}{2}(\hat{a}+\hat{a}^\dagger)$, $\hat{X}_2=\frac{1}{2i}(\hat{a}-\hat{a}^\dagger)$ (2.52 and 2.53 in G+K)
+\item By definition $(\Delta \hat{A})^2=\average{\hat{A}^2}-\average{\hat{A}}^2$, for vacuum state $\average{\hat{X}_1}=0$, $\average{\hat{X}^2_1}=\frac{1}{4}(\average{\hat{a}\hat{a}}+\average{\hat{a}^\dagger\hat{a}}+\average{\hat{a}\hat{a}^\dagger}+\average{\hat{a}^\dagger\hat{a}^\dagger})$, 
+\item Using the fact that $\hat{a}\ket{0}=\bra{0}\hat{a}^\dagger=0$, we see all but one of these terms evaluate to zero $\average{\hat{X}^2_1}=\frac{1}{4}\average{\hat{a}\hat{a}^\dagger}$, we can than further use 2.17 in G+K, $[\hat{a},\hat{a}^\dagger]=1$ to rewrite $\average{\hat{X}^2_1}=\frac{1}{4}\average{\hat{a}^\dagger\hat{a}+1}=\frac{1}{4}$
+\item Using similar tricks $\average{\hat{X}^2_2}=\frac{1}{4}$ and $\average{[\hat{X}_1,\hat{X}_2]}=\average{\hat{X_1}\hat{X_2}}-\average{\hat{X_2}\hat{X_1}}=\frac{i}{2}$
+\item Therefore $\average{\Delta \hat{X}_1}=\average{\Delta \hat{X}_2}=\frac{1}{2}$ and $|\average{[\hat{X}_1,\hat{X}_2]}|=\frac{1}{2}$ and the uncertainty takes its minimum possible value
+\end{itemize}
+\item Having shown that $\average{\Delta \hat{q}}\average{\Delta \hat{p}}=|\frac{1}{2}\average{[\hat{q},\hat{p}]}|$, since shifting has no effect on the uncertainty, all coherent states are also minimum uncertainty states
+\end{itemize}
+
+\section{Important things to remember about coherent states}
+
+\begin{itemize}
+\item Coherent state is a good approximation for a coherent ``semi-classical'' light source, like a laser, incoherent sources such as incandescent bulbs need density matrices to describe; these states are semi-classical in that it is not possible to see truly quantum effects with just these states and linear elements like beamsplitters
+\item Many properties of coherent states which I did not list here, we probably don't need to know all (or even most) of them for what we are doing, coherent states are \textbf{by definition} the kind of states we are not interested in for our work
+\item Mathematical warning: coherent states are not orthogonal to each other, many of our ``usual tricks'' in quantum mechanics rely on having an orthonormal basis and will not work for coherent states, they do form a complete basis, this implies
+\begin{itemize}
+\item Any state can be represented as a sum of coherent states (hooray!)
+\item but... this representation will not be unique (boo), there will be multiple ways to represent the same state, and easy way to see this is to note that a coherent state can be decomposed into other coherent sates
+\end{itemize}
+\item Everything I have done here is in a single mode, a real laser (even a very expensive one) will produce multiple modes, so while it is worth thinking of a coherent state as a good approximation of a laser, it is still an approximation
+\item A coherent state does not have a definite number of photons, the mathematical details are not so important (but are in G+K), the average number of photons $\bar{n}$ is a useful quantity though
+\item Coherent states are (right) eigenstates of the annihilation operator $\hat{a}\ket{\alpha}=\alpha \ket{\alpha}$ but not the creation operator $\hat{a}^\dagger\ket{\alpha}=\mathrm{nasty\,mess}$, in fact they can be derived this way (as G+K does)
+\item Coherent states are just vacuum sates which are either shifted or given momentum (or both)
+\end{itemize}
+
+
+
+\end{document}

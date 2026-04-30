@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Quantum Notes</title>
+<title>Quantum Information Science — Spring 2026</title>
 <style>
   :root {
     --bg: #fafaf7;
@@ -47,14 +47,22 @@
     color: var(--muted);
     font-size: 1rem;
   }
-  ul.tracks {
+  .uplink {
+    display: inline-block;
+    margin-bottom: 1.6rem;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .uplink:hover { color: var(--accent); }
+  ul.notes {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
     gap: 0.75rem;
   }
-  ul.tracks a {
+  ul.notes a {
     display: block;
     text-decoration: none;
     color: inherit;
@@ -64,7 +72,7 @@
     padding: 1.1rem 1.3rem;
     transition: transform 0.08s ease, border-color 0.15s ease;
   }
-  ul.tracks a:hover {
+  ul.notes a:hover {
     border-color: var(--accent);
     transform: translateY(-1px);
   }
@@ -88,19 +96,28 @@
 </head>
 <body>
 <main>
+  <a class="uplink" href="../index.html">↑ All tracks</a>
   <header>
-    <h1>Quantum Notes</h1>
-    <p class="sub">A two-track collection: course tutorials and a research-flavored quantum-optics curriculum.</p>
+    <h1>Quantum Information Science</h1>
+    <p class="sub">Interactive notes from QIS · Spring 2026 — quantum algorithms and simulation.</p>
   </header>
 
-  <ul class="tracks">
-    <li><a href="quantum-information-science-Sp26/index.html">
-      <p class="title">Quantum Information Science · Spring 2026</p>
-      <p class="desc">Course tutorials: Grover's algorithm, Shor's algorithm, quantum simulation, study guide.</p>
+  <ul class="notes">
+    <li><a href="grovers.html">
+      <p class="title">Grover's Algorithm</p>
+      <p class="desc">Amplitude amplification and quantum search.</p>
     </a></li>
-    <li><a href="quantum-optics/index.html">
-      <p class="title">Quantum Optics</p>
-      <p class="desc">From coherent states and cavity QED to the Coherent Ising Machine and the optical SPU proposal.</p>
+    <li><a href="shors.html">
+      <p class="title">Shor's Algorithm</p>
+      <p class="desc">Period finding and integer factoring.</p>
+    </a></li>
+    <li><a href="simulation.html">
+      <p class="title">Quantum Simulation</p>
+      <p class="desc">Hamiltonian simulation and Trotterization.</p>
+    </a></li>
+    <li><a href="study-guide.html">
+      <p class="title">Final Review — Topic Guide</p>
+      <p class="desc">Prioritized review topics with variants and extensions.</p>
     </a></li>
   </ul>
 

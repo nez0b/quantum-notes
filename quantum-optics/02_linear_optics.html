@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linear Optics: Beam Splitters and Networks</title>
+    <meta name="description" content="Two-mode mixing, Mach-Zehnder, Reck/Clements decomposition. The substrate for boson sampling, photonic neural networks, and the FPGA-MVM in the OU machine." />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --page-bg: #fbfbfa;
+        --page-panel: #f4f4f1;
+        --page-panel-2: #ecece8;
+        --page-ink: #1c1c1c;
+        --page-muted: #5a5a5a;
+        --page-accent: #1f4f8b;
+        --page-accent-soft: rgba(31, 79, 139, 0.09);
+        --page-warm: #8a3a1c;
+        --page-warm-soft: rgba(138, 58, 28, 0.10);
+        --page-rule: #d8d6d0;
+        --page-border: #d8d6d0;
+        --page-shadow: none;
+        --content-width: 58rem;
+        --figure-width: 64rem;
+        --radius-lg: 0.35rem;
+        --radius-md: 0.25rem;
+        --radius-sm: 0.18rem;
+        --ui-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --prose-font: ui-sans-serif, system-ui, "Helvetica Neue", "Helvetica", sans-serif;
+        --num-font: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-ink);
+        font-family: var(--prose-font);
+        font-size: 16.5px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern", "liga", "ss01", "cv11";
+        text-rendering: optimizeLegibility;
+        counter-reset: section;
+      }
+
+      /* Better paragraph wrapping in modern browsers */
+      p, li {
+        text-wrap: pretty;
+      }
+
+      h1, h2, h3, h4 {
+        text-wrap: balance;
+      }
+
+      /* Tabular numerals everywhere they should be (calculators, tables, status cards) */
+      .status-value, .geo-table, .twod-collapse table,
+      .micro-status, .ns-cost {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum", "kern";
+      }
+
+      /* Section numbering — automatic via CSS counters.
+         Only counts h2s in the main content sections, not the header. */
+      main section.section-shell > .section-main > h2::before,
+      main section.figure-band > .figure-band-header > h2::before,
+      main section.section-band-shell > h2::before {
+        counter-increment: section;
+        content: "§ " counter(section) ".  ";
+        color: var(--page-muted);
+        font-weight: 400;
+        font-feature-settings: "tnum";
+        letter-spacing: 0;
+      }
+
+      /* Anchor mark on h2 hover (distill-style) */
+      main section[id] > .section-main > h2,
+      main section[id] > .figure-band-header > h2 {
+        position: relative;
+      }
+
+      main section[id] > .section-main > h2::after,
+      main section[id] > .figure-band-header > h2::after {
+        content: " ¶";
+        color: var(--page-accent);
+        font-weight: 400;
+        margin-left: 0.3em;
+        opacity: 0;
+        transition: opacity 120ms ease;
+        font-size: 0.78em;
+        vertical-align: 0.05em;
+      }
+
+      main section[id] > .section-main > h2:hover::after,
+      main section[id] > .figure-band-header > h2:hover::after {
+        opacity: 0.55;
+      }
+
+      a {
+        color: var(--page-accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: #17456f;
+      }
+
+      img,
+      svg {
+        max-width: 100%;
+        display: block;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        background: var(--page-accent);
+        color: white;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .page-header {
+        position: relative;
+        border-bottom: 1px solid rgba(32, 48, 60, 0.08);
+      }
+
+      .header-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 2.2rem 0 1.4rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--page-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--page-rule);
+        font-feature-settings: "tnum", "ss01";
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.14;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 26ch;
+        margin-top: 0.6rem;
+        font-size: clamp(1.8rem, 3vw, 2.3rem);
+        letter-spacing: -0.01em;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        max-width: 46rem;
+        font-size: clamp(1.12rem, 2vw, 1.38rem);
+        color: var(--page-muted);
+        margin: 0 0 1.5rem;
+      }
+
+      .header-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .header-card {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+      }
+
+      .header-card h2 {
+        font-size: 1rem;
+        margin-bottom: 0.55rem;
+        font-weight: 600;
+      }
+
+      .header-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .meta-line {
+        margin-top: 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+      }
+
+      .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        background: rgba(255, 255, 255, 0.7);
+        padding: 0.38rem 0.8rem;
+        color: var(--page-muted);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.92rem;
+      }
+
+      .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        background: rgba(251, 251, 250, 0.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--page-rule);
+      }
+
+      .top-nav-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+      }
+
+      .top-nav-shell a {
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: var(--ui-font);
+        font-size: 0.88rem;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm);
+        padding: 0.38rem 0.7rem;
+        letter-spacing: 0.005em;
+      }
+
+      .top-nav-shell a:hover,
+      .top-nav-shell a:focus-visible {
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        outline: none;
+      }
+
+      main {
+        padding: 2.2rem 0 5rem;
+      }
+
+      .section-shell,
+      .section-band-shell {
+        width: min(calc(100% - 2rem), var(--content-width));
+        margin: 0 auto 3rem;
+      }
+
+      /* Subtle hairline divider between major sections.
+         Use grid-column: 1 / -1 so the ::before doesn't break grid layouts
+         on .section-shell (which is display: grid). */
+      main > section + section::before {
+        content: "";
+        display: block;
+        width: 4rem;
+        height: 1px;
+        background: var(--page-rule);
+        margin: 0 auto 2.4rem;
+        grid-column: 1 / -1;
+      }
+
+      .section-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      /* Unified h2 size across section-shell, figure-band, and section-band-shell.
+         Previously figure-band h2s defaulted to browser ~1.5em while section-shell
+         used clamp(1.85rem, 3vw, 2.55rem) — visibly different sizes between
+         widget-containing and plain sections. */
+      main section h2 {
+        font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.18;
+        margin: 0 0 0.85rem;
+      }
+
+      .section-shell h3,
+      .figure-band h3,
+      .section-band-shell h3 {
+        font-size: 1.12rem;
+        font-weight: 600;
+        margin-top: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Collapsible alternate-view: when the .section-collapse details is closed,
+         hide the sidebar and let the main column span the full grid width
+         (otherwise the keypoints box leaves a tall empty rail). */
+      .section-shell:has(> .section-main > .section-collapse:not([open])) {
+        grid-template-columns: 1fr;
+      }
+      .section-shell:has(> .section-main > .section-collapse:not([open])) > .section-side {
+        display: none;
+      }
+
+      .section-shell > .section-main {
+        min-width: 0;
+      }
+
+      .section-shell > .section-side {
+        position: sticky;
+        top: 5rem;
+      }
+
+      .lede {
+        color: var(--page-muted);
+        font-size: 1.08rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .keypoints {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+      }
+
+      .keypoints h3 {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .keypoints ul {
+        margin: 0;
+        padding-left: 1.1rem;
+      }
+
+      .keypoints li + li {
+        margin-top: 0.5rem;
+      }
+
+      .callout {
+        border-left: 4px solid var(--page-warm);
+        background: rgba(181, 83, 39, 0.08);
+        padding: 0.95rem 1.05rem;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        margin: 1.3rem 0;
+      }
+
+      .math-details {
+        margin: 1.2rem 0 0;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        background: var(--page-panel);
+        overflow: hidden;
+      }
+
+      .math-details summary {
+        padding: 0.95rem 1.05rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        background: rgba(31, 93, 148, 0.05);
+      }
+
+      .math-details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .math-details summary::before {
+        content: "+";
+        margin-right: 0.55rem;
+        color: var(--page-accent);
+        font-weight: 700;
+      }
+
+      .math-details[open] summary::before {
+        content: "−";
+      }
+
+      .math-details .details-body {
+        padding: 1rem 1.05rem 1.1rem;
+      }
+
+      .figure-band {
+        width: min(calc(100% - 2rem), var(--figure-width));
+        margin: 0 auto 3rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .figure-band-header {
+        padding: 1.2rem 1.3rem 0.25rem;
+      }
+
+      .figure-band-header h2,
+      .figure-band-header h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      .figure-band-header p {
+        margin: 0;
+        color: var(--page-muted);
+      }
+
+      .figure-band-content {
+        padding: 1.15rem 1.3rem 1.3rem;
+      }
+
+      .lab-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .control {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 9rem;
+        flex: 1 1 10rem;
+      }
+
+      .control label {
+        color: var(--page-muted);
+        font-size: 0.9rem;
+      }
+
+      .control select,
+      .control input[type="range"],
+      .control input[type="number"] {
+        width: 100%;
+      }
+
+      .control input[type="range"] {
+        accent-color: var(--page-accent);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .button-row button,
+      .segmented button {
+        border: 1px solid var(--page-border);
+        background: white;
+        color: var(--page-ink);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.85rem;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        letter-spacing: 0.005em;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .button-row button:hover,
+      .button-row button:focus-visible,
+      .segmented button:hover,
+      .segmented button:focus-visible {
+        outline: none;
+        border-color: rgba(31, 93, 148, 0.35);
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+
+      .segmented button.active {
+        background: var(--page-accent);
+        border-color: var(--page-accent);
+        color: white;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .status-card {
+        background: var(--page-panel-2);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.9rem;
+      }
+
+      .status-label {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .status-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-value.small {
+        font-size: 1rem;
+      }
+
+      .two-up,
+      .three-up {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .two-up {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .panel h3,
+      .panel h4 {
+        margin-bottom: 0.55rem;
+      }
+
+      .figure-caption {
+        margin-top: 0.7rem;
+        font-size: 0.93rem;
+        color: var(--page-muted);
+      }
+
+      .amp-svg,
+      .plane-svg,
+      .chart-svg,
+      .posterior-svg,
+      .complexity-svg,
+      .small-svg {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(to bottom, rgba(31, 93, 148, 0.02), rgba(31, 93, 148, 0)),
+          #fcfbf7;
+      }
+
+      .formula-note {
+        font-size: 0.96rem;
+        color: var(--page-muted);
+      }
+
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: 1rem;
+      }
+
+      .quiz-card {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.1);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+      }
+
+      .quiz-card h3 {
+        font-size: 1.08rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: var(--page-accent-soft);
+        color: var(--page-accent);
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .faq-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .faq-list details {
+        background: white;
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        border-radius: var(--radius-md);
+        padding: 0.9rem 1rem;
+      }
+
+      .faq-list summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .source-item {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(32, 48, 60, 0.08);
+        padding: 0.9rem 1rem;
+      }
+
+      .footer-note {
+        color: var(--page-muted);
+        font-size: 0.95rem;
+      }
+
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.1rem 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        .header-grid,
+        .section-shell,
+        .two-up,
+        .three-up {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell > .section-side {
+          position: static;
+        }
+      }
+
+      /* Multi-marked side-by-side trio */
+      .multi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .multi-col {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem;
+      }
+
+      .multi-col h4 {
+        font-size: 1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .multi-col .micro-status {
+        font-family: var(--ui-font);
+        font-size: 0.82rem;
+        color: var(--page-muted);
+        margin-top: 0.4rem;
+        line-height: 1.45;
+      }
+
+      .multi-col .micro-status b {
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 760px) {
+        .multi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SOTA card grid */
+      .sota-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+      }
+
+      .sota-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.8rem 0.95rem;
+      }
+
+      .sota-card .sota-year {
+        font-family: var(--ui-font);
+        font-size: 0.78rem;
+        color: var(--page-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .sota-card h4 {
+        font-size: 1rem;
+        margin: 0.15rem 0 0.4rem;
+        font-weight: 600;
+      }
+
+      .sota-card p {
+        margin: 0;
+        font-size: 0.94rem;
+      }
+
+      .padding-diagram {
+        display: block;
+        margin: 1rem auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Collapsible whole-section wrapper */
+      .section-collapse {
+        margin: 0.6rem 0 1.2rem;
+      }
+
+      .section-collapse > summary {
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+        color: var(--page-accent);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.5rem 0.85rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-left: 3px solid var(--page-accent);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        user-select: none;
+      }
+
+      .section-collapse > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-collapse > summary::before {
+        content: "▸ ";
+        margin-right: 0.2rem;
+      }
+
+      .section-collapse[open] > summary::before {
+        content: "▾ ";
+      }
+
+      .section-collapse[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* Pedagogical 2D-collapse worked example styling */
+      .twod-collapse {
+        background: var(--page-panel);
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.1rem;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .twod-collapse h3 {
+        margin-top: 0;
+      }
+
+      .twod-collapse table {
+        border-collapse: collapse;
+        margin: 0.7rem auto;
+        font-family: var(--ui-font);
+        font-size: 0.92rem;
+      }
+
+      .twod-collapse th, .twod-collapse td {
+        border: 1px solid var(--page-border);
+        padding: 0.35rem 0.7rem;
+        text-align: center;
+      }
+
+      .twod-collapse th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+
+      .overshoot-block {
+        margin: 1.2rem 0;
+      }
+
+      .overshoot-svg {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+      }
+
+      /* Circuit diagram */
+      .circuit-wrap {
+        margin: 1.2rem 0;
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem;
+        overflow-x: auto;
+      }
+
+      .circuit-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-width: 560px;
+      }
+
+      /* Composing-Grover and No-speedup card grids */
+      .compose-card, .no-speedup-card {
+        background: white;
+        border: 1px solid var(--page-border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem 1.05rem;
+      }
+
+      .compose-card h4, .no-speedup-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--page-accent);
+      }
+
+      .no-speedup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.2rem;
+      }
+
+      .no-speedup-card {
+        border-left: 3px solid var(--page-warm);
+        position: relative;
+      }
+
+      .no-speedup-card h4 {
+        color: var(--page-ink);
+        padding-right: 1.4rem;
+      }
+
+      .no-speedup-card h4::before {
+        content: "✗";
+        position: absolute;
+        top: 0.85rem;
+        right: 0.95rem;
+        color: var(--page-warm);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .no-speedup-card .ns-cost {
+        font-family: var(--num-font);
+        font-size: 0.84rem;
+        color: var(--page-muted);
+        margin: 0.32rem 0;
+        letter-spacing: -0.01em;
+      }
+
+      .no-speedup-card .ns-cost b {
+        color: var(--page-ink);
+        font-weight: 600;
+      }
+
+      .feasibility-badge {
+        display: inline-block;
+        padding: 0.14rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--ui-font);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-left: 0.45rem;
+        vertical-align: 0.12em;
+      }
+
+      .feasibility-badge.trivial { background: #dceedf; color: #1f5e1f; }
+      .feasibility-badge.feasible { background: #dde9f4; color: #15406b; }
+      .feasibility-badge.infeasible { background: #f3e1c5; color: #7a4310; }
+      .feasibility-badge.cosmic { background: #efc8c8; color: #7a1010; }
+
+      .geo-table {
+        border-collapse: collapse;
+        margin: 0.85rem 0 1rem;
+        font-family: var(--ui-font);
+        font-size: 0.9rem;
+        width: 100%;
+        border-top: 1.5px solid var(--page-ink);
+        border-bottom: 1.5px solid var(--page-ink);
+      }
+
+      .geo-table th, .geo-table td {
+        padding: 0.42rem 0.7rem;
+        text-align: right;
+        border: 0;
+      }
+
+      .geo-table th {
+        background: transparent;
+        font-weight: 600;
+        text-align: right;
+        border-bottom: 1px solid var(--page-rule);
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        color: var(--page-muted);
+      }
+
+      .geo-table th:first-child,
+      .geo-table td:first-child {
+        text-align: left;
+      }
+
+      .geo-table tbody tr:nth-child(even) {
+        background: var(--page-panel);
+      }
+
+      .geo-table tbody tr:last-child {
+        border-top: 1px solid var(--page-rule);
+      }
+
+      @media (max-width: 640px) {
+        .header-shell {
+          padding-top: 3.5rem;
+        }
+
+        h1 {
+          max-width: none;
+        }
+
+        .figure-band-content,
+        .figure-band-header,
+        .panel,
+        .quiz-card,
+        .source-item,
+        .keypoints {
+          padding-left: 0.9rem;
+          padding-right: 0.9rem;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      crossorigin="anonymous"
+    ></script>
+  
+    <style>
+  .page-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--page-rule);
+    padding: 2rem 0;
+  }
+  .footer-shell {
+    width: min(calc(100% - 2rem), var(--content-width));
+    margin: 0 auto;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+  .footer-meta {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .keypoints h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .keypoints ul {
+    margin: 0;
+    padding-left: 1.05rem;
+    font-size: 0.93rem;
+  }
+  .keypoints li {
+    margin-bottom: 0.35rem;
+  }
+  .lede {
+    font-size: 1.04rem;
+    margin-top: 0;
+  }
+  table.refs {
+    margin-top: 0.6rem;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.refs td {
+    padding: 0.18rem 0.7rem 0.18rem 0;
+    vertical-align: top;
+  }
+  table.refs td:first-child {
+    white-space: nowrap;
+    color: var(--page-muted);
+  }
+  .pre-req {
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: var(--page-muted);
+  }
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="page-header">
+  <div class="header-shell">
+    <div class="eyebrow">Quantum Optics · Linear Networks</div>
+    <div class="header-grid">
+      <div>
+        <h1>Linear Optics: Beam Splitters and Networks</h1>
+        <p class="header-subtitle">Passive multi-mode mixing. How a 2-port beam splitter generalizes to an arbitrary N-port unitary, and why programmable photonic meshes are the substrate for everything from boson sampling to the Coherent Ising Machine.</p>
+      </div>
+      <aside class="header-card">
+        <h2>What This Note Covers</h2>
+        <ul>
+              <li>Two-mode beam splitter as a unitary on field operators</li>
+      <li>Hong-Ou-Mandel: the simplest non-classical two-photon interference</li>
+      <li>Mach-Zehnder interferometer as a programmable two-mode unitary</li>
+      <li>Reck and Clements decompositions of arbitrary N×N unitaries</li>
+      <li>Photonic mesh implementations: integrated waveguide MZI grids</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</header>
+
+    <nav class="top-nav" aria-label="Section navigation">
+  <div class="top-nav-shell">
+        <a href="#two-mode-bs">2-Mode BS</a>
+<a href="#hom">Hong-Ou-Mandel</a>
+<a href="#mzi">Mach-Zehnder</a>
+<a href="#decompositions">Decompositions</a>
+<a href="#photonic-meshes">Meshes</a>
+<a href="#sources">Sources</a>
+  </div>
+</nav>
+
+    <main id="main-content">
+      <section class="section-shell" id="two-mode-bs">
+  <div class="section-main">
+    <h2>The Two-Mode Beam Splitter</h2>
+
+  <p class="lede">
+    A 50/50 beam splitter takes two input modes
+    \(a_1, a_2\) and outputs two modes \(b_1, b_2\). The
+    input-output relation, for a symmetric lossless beam
+    splitter, is the unitary
+    \[
+      \begin{pmatrix} b_1 \\ b_2 \end{pmatrix} =
+      \frac{1}{\sqrt{2}}
+      \begin{pmatrix} 1 & i \\ i & 1 \end{pmatrix}
+      \begin{pmatrix} a_1 \\ a_2 \end{pmatrix}.
+    \]
+    More generally a beam splitter with reflectance \(r\) and
+    transmittance \(t = \sqrt{1-r^2}\) realizes
+    \(U_{\mathrm{BS}}(\theta)\) with
+    \(\theta = \arccos r\).
+  </p>
+  <p>
+    The crucial fact: this is a <em>unitary on the operator
+    algebra</em>, not on the wavefunction. It is the Heisenberg
+    picture of how vacuum and fields mix. A coherent state
+    \(\lvert\alpha\rangle\) on input 1 plus vacuum on input 2 emerges
+    as a product
+    \(\lvert\alpha/\sqrt{2}\rangle \otimes \lvert i\alpha/\sqrt{2}\rangle\)
+    — split classically. A single photon
+    \(\lvert 1\rangle \otimes \lvert 0\rangle\) emerges as the
+    <em>superposition</em>
+    \((\lvert 1\rangle\lvert 0\rangle + i\lvert 0\rangle\lvert 1\rangle)/\sqrt{2}\)
+    — split quantum-mechanically. The bench is the same; the
+    input state decides whether it looks classical.
+  </p>
+  <div class="callout">Photon loss is mathematically a beam splitter with one input tied to vacuum. This is why the same unitary algebra describes lossless mode-mixing and lossy attenuation — the difference is just whether you can access the second input.</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Beam splitter = 2×2 unitary on field operators</li>
+      <li>Coherent state splits classically; single photon splits quantumly</li>
+      <li>Loss = BS with vacuum on the unused input</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="hom">
+  <div class="section-main">
+    <h2>Hong-Ou-Mandel Interference</h2>
+
+  <p>
+    Send two indistinguishable single photons into the two
+    inputs of a 50/50 BS:
+    \(\lvert 1, 1\rangle_{a_1 a_2} \to \tfrac{1}{2}
+    (\lvert 2, 0\rangle - \lvert 0, 2\rangle)
+    i^2 = -\tfrac{1}{2}(\lvert 2,0\rangle - \lvert 0,2\rangle)\).
+    The amplitude for the \(\lvert 1,1\rangle\) outcome —
+    "one photon in each output" — is exactly zero by
+    destructive interference. Both photons bunch together.
+  </p>
+  <p>
+    HOM is the simplest experiment that demonstrates non-classical
+    interference. Its visibility is set by photon
+    indistinguishability (spectral, temporal, polarization
+    overlap), and a HOM dip is now the standard benchmark for
+    single-photon-source quality.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>HOM dip = bosonic two-photon interference</li>
+      <li>Visibility ↔ photon indistinguishability</li>
+      <li>Standard benchmark for SPS quality</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="mzi">
+  <div class="section-main">
+    <h2>Mach-Zehnder Interferometer</h2>
+
+  <p>
+    Sandwich a controllable phase \(\phi\) between two BSs and
+    you get a Mach-Zehnder interferometer:
+    \[
+      U_\mathrm{MZI}(\phi, \theta)
+      = \mathrm{BS}(\theta_2)\,
+        \mathrm{Phase}(\phi)\,
+        \mathrm{BS}(\theta_1).
+    \]
+    With two phase-shifter knobs, the MZI realizes any 2×2
+    unitary up to a global phase — i.e. it is a
+    <em>programmable</em> two-mode unitary. On integrated
+    silicon photonics, MZIs are the building block of
+    reconfigurable optical processors.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>MZI = 2 BS + 2 phase shifters</li>
+      <li>Realizes any 2×2 unitary up to global phase</li>
+      <li>Building block for reconfigurable photonic chips</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+              <section class="section-shell" id="decompositions">
+          <div class="section-main">
+            <h2>Reck and Clements Decompositions</h2>
+
+          <p>
+            <strong>Theorem (Reck et al., 1994; Clements et al., 2016):</strong>
+            any N×N unitary \(U \in U(N)\) can be implemented by a
+            cascade of \(\binom{N}{2}\) two-mode MZIs plus phase
+            shifters arranged in a triangular (Reck) or rectangular
+            (Clements) layout. Every entry of \(U\) shows up as an
+            interference of paths through the mesh.
+          </p>
+          <p>
+            For \(N=8\) this is 28 MZIs, plus 8 input-phase shifters.
+            For \(N=64\) it is 2,016 MZIs — the limit of current
+            silicon photonics in a single chip. The Clements layout is
+            depth-balanced (depth \(N\)) and is what most modern
+            photonic-processor chips use.
+          </p>
+          <details class="math-details">
+  <summary>Why the count is \(\binom{N}{2}\)</summary>
+
+    <p>
+      The unitary group \(U(N)\) has real dimension \(N^2\). The
+      maximal torus of phase shifters absorbs \(N\) of those.
+      The remaining \(N^2 - N = N(N-1)\) parameters are
+      accounted for by \(\binom{N}{2} = N(N-1)/2\) MZIs, each
+      carrying two angles (\(\theta\) and \(\phi\)). Hence the
+      count.
+    </p>
+
+</details>
+          </div>
+          <div class="section-side">
+            <aside class="keypoints">
+              <h3>Key takeaways</h3>
+              <ul>
+                      <li>Any N×N unitary realized as an MZI mesh</li>
+              <li>Mesh has \(\binom{N}{2}\) MZIs</li>
+              <li>Clements layout is depth-N, used by modern photonic chips</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+      <section class="section-shell" id="photonic-meshes">
+  <div class="section-main">
+    <h2>Photonic Meshes in the Wild</h2>
+
+  <p>
+    Programmable MZI meshes are the substrate behind several
+    otherwise-distinct photonic computing efforts:
+  </p>
+  <ul>
+    <li><strong>Boson sampling</strong> (Aaronson &amp; Arkhipov 2011;
+      Xanadu Borealis 2022): N-port unitary acting on
+      indistinguishable single photons; output statistics
+      hard-to-classically-simulate when \(N \gtrsim 50\).</li>
+    <li><strong>Photonic neural networks</strong> (Shen et al.
+      <em>Nat. Photonics</em> 2017; Hamerly et al. <em>Sci. Adv.</em>
+      2019): the mesh implements a linear layer; nonlinearity
+      comes from electro-optic modulators or detector responses.</li>
+    <li><strong>Photonic quantum simulators</strong>: continuous-time
+      quantum walks, vibronic spectra, etc.</li>
+    <li><strong>Coherent Ising Machine FPGA-MVM (Note 06)</strong>:
+      the matrix-vector multiply
+      \(\textstyle\sum_j J_{ij} x_j\) in the homodyne-feedback
+      loop is structurally identical to a classical photonic
+      MAC, even though it runs on the digitized photocurrent
+      rather than the optical field. The architecture would
+      naturally generalize to optical-domain MVM via a Reck/
+      Clements mesh — an active research direction.</li>
+  </ul>
+  <div class="callout">Any unitary is realizable on a passive linear optical mesh. <em>Any nonunitary linear map</em> requires either loss (post-selection) or an extra ancilla mode. This is the structural reason photonic processors that run a non-unitary operation (e.g. solving Ax=b) need either feedback (CIM/OU) or auxiliary modes (HHL-style).</div>
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>MZI meshes underlie boson sampling, PNN, photonic QC</li>
+      <li>Pure unitaries are easy; nonunitary linear maps need feedback</li>
+      <li>CIM-MVM is digital today, optical-MVM is the natural extension</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+      <section class="section-shell" id="sources">
+  <div class="section-main">
+    <h2>Sources &amp; Further Reading</h2>
+
+  <table class="refs">
+    <tr><td>Lecture</td><td><a href="_lectures/L3_beamsplitters_and_interference.pdf">L3_beamsplitters_and_interference.pdf</a></td></tr>
+    <tr><td>Lecture</td><td><a href="_lectures/optical_components.pdf">optical_components.pdf</a></td></tr>
+    <tr><td>Figure</td><td><a href="_lectures/Interferometer.png">Interferometer.png</a>, <a href="_lectures/beamsplitter.png">beamsplitter.png</a></td></tr>
+    <tr><td>Paper</td><td>Reck, Zeilinger, Bernstein, Bertani, "Experimental realization of any discrete unitary operator", <em>PRL</em> <strong>73</strong>, 58 (1994)</td></tr>
+    <tr><td>Paper</td><td>Clements, Humphreys, Metcalf, Kolthammer, Walmsley, "Optimal design for universal multiport interferometers", <em>Optica</em> <strong>3</strong>, 1460 (2016)</td></tr>
+  </table>
+  <p class="pre-req">
+    <strong>Next note:</strong> §03 — Nonlinear optics. Linear
+    networks alone don't generate non-classical light; for that
+    we need a χ⁽²⁾ or χ⁽³⁾ medium.
+  </p>
+
+  </div>
+  <div class="section-side">
+    <aside class="keypoints">
+      <h3>Key takeaways</h3>
+      <ul>
+              <li>Reck 1994: original triangular decomposition</li>
+      <li>Clements 2016: depth-balanced rectangular form</li>
+      <li>Continue: Note 03 (nonlinear optics)</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+    </main>
+
+    <footer class="page-footer">
+  <div class="footer-shell">
+    <p>
+      <a href="index.html">↑ All quantum-optics notes</a>
+      &nbsp;&middot;&nbsp;
+      <a href="../index.html">↑↑ All tracks</a>
+    </p>
+    <p class="footer-meta">
+      Part of <a href="https://github.com/nez0b/quantum-notes">quantum-notes</a>.
+      Source PDFs in <a href="_lectures/"><code>_lectures/</code></a>.
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

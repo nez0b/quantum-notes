@@ -1,0 +1,200 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{Non-signalling, Fourier transforms, and particle statistics}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+\today % added for drafting, remove in final version
+
+{\small These solutions show one way to solve the problem, there are likely other, equivalently good ways}
+
+\begin{enumerate}
+\item This problem is all about density matrices, commutation relationships when tensor products are taken and understanding what the underlying meaning is for showing compatibility with relativity
+\begin{itemize}
+\item The expectation after applying the unitary becomes $\average{\hat{O}_A}=\mathrm{Tr}\left[\hat{O}_A \hat{U}_B\hat{\rho} \hat{U}^\dagger_B\right]$, since the unitary and the measurement are on different systems, than they commute and we can write \begin{equation}
+\average{\hat{O}_A}=\mathrm{Tr}\left[\hat{O}_A \hat{U}_B\hat{\rho} \hat{U}^\dagger_B\right]=\mathrm{Tr}\left[\hat{U}_B \hat{O}_A \rho \hat{U}^\dagger_B\right]=\mathrm{Tr}\left[ \hat{O}_A \hat{\rho} \hat{U}^\dagger_B \hat{U}_B\right]=\mathrm{Tr}\left[ \hat{O}_A \hat{\rho}\right],
+\end{equation}
+ where we have used the cyclicity of the trace operation in the second step
+\item This proceeds the same as previously (note $\hat{\Pi}=\hat{\Pi}^\dagger$) 
+\begin{equation}
+\average{\hat{O}_A}=\mathrm{Tr}[\hat{O}_A \hat{\Pi}_B\hat{\rho} \hat{\Pi}_B]=\mathrm{Tr}[ \hat{\Pi}_B \hat{O}_A\hat{\rho} \hat{\Pi}_B]=\mathrm{Tr}[  \hat{O}_A\hat{\rho} \hat{\Pi}^2_B]=\mathrm{Tr}[  \hat{O}_A\hat{\rho} \hat{\Pi}_B]
+\end{equation}
+ where the last step we have used the fact that projectors are idempotent (square to themselves), in this case the projector does not disappear, this is ok with relativity because this assumes that whoever is taking the measurement at $A$ (``Alice'') knows the outcome of the measurement on system $B$ which had to be communicated using a classical method which obeys relativity
+\item Taking the answer from before, and applying linearity of the operations 
+\begin{align}
+\average{\hat{O}_A}=\sum_j\mathrm{Tr}[  \hat{O}_A\hat{\rho} \hat{\Pi}_{B,j}]=\mathrm{Tr}[ \sum_j \hat{O}_A\hat{\rho} \hat{\Pi}_{B,j}]=\nonumber \\ \mathrm{Tr}[  \hat{O}_A\hat{\rho} (\sum_j \hat{\Pi}_{B,j})]=\mathrm{Tr}[  \hat{O}_A\hat{\rho} 1]=\mathrm{Tr}[  \hat{O}_A\hat{\rho}]
+\end{align}
+ this implies that the result again cannot be affected, taking a measurement without communicating the outcome cannot make an observable difference, and therefore relativity is safe
+\item We can write the time derivative of the operator expectation (assuming the operator $\hat{O}_A$ is time independent) as
+\begin{align}
+\frac{\partial}{\partial t}\average{\hat{O}_A}=\mathrm{Tr}\left[\hat{O}_A\frac{\partial \hat{\rho}}{\partial t}\right]=\nonumber \\
+-\frac{i}{\hbar}(\mathrm{Tr}\left[\hat{O}_A \hat{H}\hat{\rho}\right]-\mathrm{Tr}\left[\hat{O}_A \hat{\rho} \hat{H}\right])+\nonumber \\ 
+\sum_j\gamma_j\left(\mathrm{Tr}\left[\hat{O}_A\hat{L}_j\hat{\rho} \hat{L}^\dagger_j\right]-\frac{1}{2}\mathrm{Tr}\left[\hat{O}_A\hat{L}^\dagger_j \hat{L}_j\rho\right]-\frac{1}{2}\mathrm{Tr}\left[\hat{O}_A\hat{\rho} \hat{L}^\dagger_j\hat{L}_j\right]\right)
+\end{align}
+Since we want $\average{O_A}$ to be independent of the time evolution we want to set $\frac{\partial}{\partial t}\average{O_A}=0$, we can further see that if $O_A$ and $H$ commute, than by the cyclicity of the trace  $\mathrm{Tr}\left[O_A H\rho\right]=\mathrm{Tr}\left[O_A \rho H\right]$, and therefore the terms involving $H$ cancel. Furthermore if $L_j$ and $O_A$ commute\footnote{since $O_A$ is Hermitian this implies it also commutes with $L^\dagger_i$} for all $j$ than applying the cyclicity of the trace implies that 
+\begin{equation}
+\mathrm{Tr}\left[\hat{O}_A\hat{L}_j\hat{\rho} \hat{L}^\dagger_j\right]=\mathrm{Tr}\left[\hat{O}_A\hat{L}^\dagger_j \hat{L}_j\rho\right]=\mathrm{Tr}\left[\hat{O}_A\hat{\rho} \hat{L}^\dagger_j\hat{L}_j\right]
+\end{equation}
+which means the last three terms will cancel. For a general $O_A$, the only way to guarantee that these commute is to construct them as $\hat{H}=1_A \otimes \hat{H}'$ and $\hat{L}_j=1_A \otimes \hat{L}'_j$, note that any positive $\gamma_j$ are allowed which physically means that these systems only interact with the subsystem defined by $B$, therefore consistent with the rules of relativity that anything applied only to $B$ cannot affect observables on $A$, since any trace preserving, completely positive (i.e.~mathematically legal) operation performed on a density matrix can be described by evolution using a Lindblad equation (possibly with time dependent $\hat{H}$, $\hat{L}_j$ and $\gamma_j$), than it is clear that faster than light signalling is not possible for any operation we can do
+\end{itemize}
+\item individual parts answered below
+\begin{itemize}
+\item We start with 
+\begin{equation}
+\int_{-\infty}^\infty dt\, g(a t)\exp(-i\omega t),
+\end{equation}
+ and can make a change of variables $t'= a t$, this gives 
+ \begin{equation}
+ \int_{-\infty}^\infty dt' g(t')\exp(-i\frac{\omega}{a} t')
+ \end{equation}
+ Applying this to the product of moments gives
+ \begin{align}
+(\int_{-\infty}^{\infty}dt\, t^2 g(a t))\times (\int_{-\infty}^{\infty}d\omega\,\omega^2 \mathcal{F}[g(t)](\frac{\omega}{a}) )
+\end{align}
+Using two similar changes of variables $t'=a t$ and $\omega'=\frac{\omega}{a}$ we have
+ \begin{align}
+(\int_{-\infty}^{\infty}dt'\, \frac{t'^2}{a^2} g(t'))\times (\int_{-\infty}^{\infty}d\omega'\,\omega'^2a^2 \mathcal{F}[g(t)](\omega') )=\\
+(\int_{-\infty}^{\infty}dt'\, t'^2 g(t'))\times (\int_{-\infty}^{\infty}d\omega'\,\omega'^2\mathcal{F}[g(t)](\omega') )=\\
+(\int_{-\infty}^{\infty}dt\, t^2 g(t))\times (\int_{-\infty}^{\infty}d\omega\,\omega^2\mathcal{F}[g(t)](\omega) )
+\end{align}
+\item Expanding the definition out we find
+\begin{align}
+ \mathcal{F}[g(t')](\omega')=\int_{-\infty}^\infty dt g(t')\exp(-i\omega' t') \\
+ \mathcal{F}[h(t)](\omega')=\int_{-\infty}^\infty dt h(t)\exp(-i(\omega -\omega') t)  \\
+ \mathcal{F}[g(t)](\omega')\mathcal{F}[h(t')](\omega-\omega')=\nonumber \\
+ \int_{-\infty}^\infty dt g(t)\exp(-i\omega' t) \int_{-\infty}^\infty dt' h(t')\exp(-i(\omega -\omega') t')
+ \end{align}
+ Plugging into the integral and combining the terms in the exponential we find
+ \begin{align}
+ \int_{-\infty}^\infty d\omega' \int_{-\infty}^\infty dt \int_{-\infty}^\infty dt'  g(t) h(t')\exp(-i\omega t) \exp(i\omega'(t-t'))=\\
+ \int_{-\infty}^\infty dt \int_{-\infty}^\infty dt'  g(t) h(t')\exp(-i\omega t) \int_{-\infty}^\infty d\omega'  \exp(i\omega'(t-t'))=\\
+ \int_{-\infty}^\infty dt \int_{-\infty}^\infty dt'  g(t) h(t')\exp(-i\omega t)  \delta(t-t')=\\
+  \int_{-\infty}^\infty dt\, g(t) h(t)\exp(-i\omega t)= \mathcal{F}[g(t)h(t)](\omega)
+ \end{align}
+ Since $\omega'$ only appears in one place in the integral and oscillatory integrals vanish when integrated over the full real line, this will only be non-zero for $t=t'$ (as the hint says, it becomes a Dirac delta). The proof for the inverse Fourier transform would proceed along the same lines but with $-$ signs in different places
+ \item To show this we fist need to take the Fourier transform of the function which the shutter produces, which is $1$ (light gets through) between $-t_0$ and $t_0$ and $0$ otherwise, this integral becomes
+ \begin{equation}
+ \int_{-t_0}^{t_0} dt \, \exp(-i \omega t)=\frac{\exp(-i \omega t_0)-\exp(i \omega t_0)}{i\omega}=2\frac{\sin(\omega t_0)}{\omega}
+ \end{equation}
+ We now apply the convolution theorem as written to attain 
+ \begin{equation}
+ \int_{-\infty}^\infty d\omega'\mathcal{F}[g(t')](\omega') \frac{2\sin((\omega-\omega') t_0)}{\omega-\omega'}
+ \end{equation}
+ \item The Fourier transform of a pure mode will simply be a Dirac delta $\delta(\omega-\omega_p)$, applying the previous result gives 
+  \begin{align}
+ \int_{-\infty}^\infty d\omega'\delta(\omega'-\omega_p) \frac{2\sin((\omega-\omega') t_0)}{\omega-\omega'}=\\
+ \frac{2\sin((\omega-\omega_p) t_0)}{\omega-\omega_p}
+ \end{align}
+ \item This can be solved by evaluating the integral 
+ \begin{align}
+ \tilde{g}(\omega)=\int_0^\infty dt \exp(i \omega_p t -\gamma t -i \omega t)=\\
+ \int_0^\infty dt \exp((i \omega_p -\gamma  -i \omega) t)=\\
+ -\frac{1}{i(\omega_p-\omega)- \gamma}
+ \end{align}
+ Real and imaginary parts can now be obtained by multiplying the numerator and denominator by the complex conjugate of the numerator $-i(\omega_p-\omega)- \gamma$, this gives
+  \begin{align}
+ \tilde{g}(\omega)=\frac{\gamma}{(\omega_p-\omega)^2+ \gamma^2}+
+ \frac{i(\omega_p-\omega)}{(\omega_p-\omega)^2-\gamma^2}
+ \end{align}
+ and therefore $\mathrm{Re}[ \tilde{g}(\omega)]=\frac{\gamma}{(\omega_p-\omega)^2+\gamma^2}$ and $\mathrm{Im}[ \tilde{g}(\omega)]=\frac{(\omega_p-\omega)}{(\omega_p-\omega)^2+ \gamma^2}$. In the limit of small $\gamma$, we can argue that the real part will be proportional to $\gamma$ everywhere except for where $\omega-\omega_p\approx \gamma$, where it will be proportional to $\frac{1}{\gamma}$, therefore we can argue that the width shrinks around $\omega=\omega_p$ as a Dirac delta should, using the hint, we know that integrating over the function will give $\pi$ independent of the width $\gamma$. A Dirac delta can be defined as a function with a finite area under the curve but zero width. On the other hand, the imaginary part simply becomes $\frac{1}{\omega_p-\omega}$ in the limit where $\gamma \rightarrow 0$, which clearly has a finite width. Physically this means that even a pure mode which is ``turned on'' at a finite time is not really a single frequency, it contains other frequency components which come from the process of turning it on.
+ 
+ \textcolor{blue}{As a bonus, here is how to do the contour integral (safe to ignore): The denominator can be factored back into the product of two quantities which are linear in $\omega$ and complex conjugates of each other
+ \begin{align}
+ \mathrm{Re}[ \tilde{g}(\omega)]=\frac{\gamma}{(\omega_p-\omega)^2+\gamma^2}=\\
+ \frac{\gamma}{(\omega_p+i\gamma-\omega)(\omega_p-i\gamma-\omega)}
+ \end{align}
+ From this formula, it is clear that there will be two simple poles, one in the upper half plane and one in the lower half plane at $\omega_p\pm i\gamma$. Since this function behaves as $\omega^-2$ in the limit of large $\omega$ we can safely close our contour around either the upper or lower half plane. If we close in the upper half plane, than the pole will take the form $\frac{1}{\omega_p-i\gamma-\omega}$ with a prefactor of $\frac{\gamma}{\omega_p+i\gamma-\omega}\rightarrow \frac{1}{2i}$, the residue from the pole will (as usual) be $2 \pi i$, multiplying this prefactor by the residue will give $\pi$.}
+ \end{itemize}
+ \item Recall from the notes
+ \begin{align}
+\hat{a}^{\dagger}_0\rightarrow \frac{1}{\sqrt{2}}(\hat{a}^{\dagger}_2+i\hat{a}^{\dagger}_3)\\
+\hat{a}^{\dagger}_1\rightarrow \frac{1}{\sqrt{2}}(\hat{a}^{\dagger}_3+i\hat{a}^{\dagger}_2)
+\end{align}
+the same will apply for $b$
+\begin{itemize}
+\item Applying the beamsplitter will give
+\begin{align}
+\frac{1}{2}(\hat{a}^{\dagger}_2+i\hat{a}^{\dagger}_3)(\hat{b}^{\dagger}_3+i\hat{b}^{\dagger}_2)\ket{0}=\\
+\frac{1}{2}(i\hat{a}^{\dagger}_2\hat{b}^{\dagger}_2-\hat{a}^{\dagger}_3\hat{b}^{\dagger}_2+\hat{a}^{\dagger}_2\hat{b}^{\dagger}_3+i\hat{a}^{\dagger}_3\hat{b}^{\dagger}_3)\ket{0}
+\end{align}
+Which gives a $50\%$ probability of one going each direction and a $25\%$ probability of both going in $2$ (and same for $3$), this is identical to classical statistics, the phases will cancel when calculating probabilities
+\item We already have the result for $\hat{a}^{\dagger}_0\hat{b}^{\dagger}_1$, swapping the $0$ and $1$ gives
+\begin{align}
+\frac{1}{2}(i\hat{a}^{\dagger}_2+\hat{a}^{\dagger}_3)(i\hat{b}^{\dagger}_3+\hat{b}^{\dagger}_2)\ket{0}=\\
+\frac{1}{2}(i\hat{a}^{\dagger}_2\hat{b}^{\dagger}_2+\hat{a}^{\dagger}_3\hat{b}^{\dagger}_2-\hat{a}^{\dagger}_2\hat{b}^{\dagger}_3+i\hat{a}^{\dagger}_3\hat{b}^{\dagger}_3)\ket{0}
+\end{align}
+If we sum this with the result from before we notice the cross terms have opposite signs, leaving 
+\begin{align}
+\frac{i}{\sqrt{2}}(\hat{a}^{\dagger}_2\hat{b}^{\dagger}_2+\hat{a}^{\dagger}_3\hat{b}^{\dagger}_3)\ket{0}
+\end{align}
+which is consistant with Hong-Ou-Mandel. Physically this makes sense because photons are Bosons, and therefore should exist in symmetric superpositions, even if we label them as long as we respect the symmetry we should recover the result.
+\item Now the terms with the same sign will cancel and we will be left with 
+\begin{align}
+\frac{1}{\sqrt{2}}(\hat{a}^{\dagger}_2\hat{b}^{\dagger}_3-\hat{a}^{\dagger}_3\hat{b}^{\dagger}_2)\ket{0}
+\end{align}
+Particles which obey anti-symmetric superpositions are Fermions, and therefore should obey the Pauli exclusion principle, it should not be possible for two to end up in the same mode, and we indeed find that they do not.
+\end{itemize}
+
+
+
+\end{enumerate}
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,211 @@
+
+\documentclass[english]{article}
+%\documentclass[aps,pra,twocolumn,english]{revtex4}
+%\documentclass[english]{iopart}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{graphicx,amsmath,amssymb,color}
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage[toc,page]{appendix}
+%\usepackage[ocgcolorlinks,colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage{color,verbatim}
+\usepackage{psfrag}
+\bibliographystyle{unsrt}
+%\bibliographystyle{acm}
+%\bibliographystyle{unsrtnat}
+%\usepackage[style=numeric]{biblatex}
+
+\usepackage{subcaption} % allows for subfigures
+
+
+\usepackage[svgnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage{algorithm}
+
+
+%\input{tikzit/tikz_preamble.tex}  % load separately defined tikz preamble
+
+
+\newcommand{\bra}[1]{\langle#1 |}
+\newcommand{\ket}[1]{|#1 \rangle}
+\newcommand{\braket}[2]{\left \langle #1 \mid #2 \right \rangle}
+\newcommand{\bigbraket}[2]{\left \langle #1 \middle\vert #2 \right \rangle}
+\newcommand{\ketbra}[2]{\vert #1 \rangle \! \langle #2 \vert}
+\newcommand{\overlap}[2]{\left \langle #1 | #2 \right\rangle}
+\newcommand{\average}[1]{\langle #1 \rangle}
+\newcommand{\sandwich}[3]{\left \langle #1 \mid #2 \mid #3 \right\rangle}
+\newcommand{\innerprod}[2]{\left \langle #1 | #2 \right\rangle}
+
+\begin{document}
+
+
+\title{How a bunch of quantum physics is actually the zeno effect in disguise}
+\author{Nicholas Chancellor}
+
+
+\maketitle
+
+
+
+\today % added for drafting, remove in final version
+
+
+{\small Disclaimer: lecture notes may contain ``typo'' type errors (factors of $2$, minus signs, etc...) if something like this looks wrong there is a good chance it is, please let me know}
+
+\section{The basic Zeno effect}
+
+\begin{itemize}
+\item Classical (both in historical and physics sense) origin and name 
+\begin{itemize}
+\item Zeno of Elia 409-430 bc, ``arrow paradox''
+\item Object seems still if observed in any one moment,  time is a compilation of moments, therefore motion is impossible if we think about ``observe'' all the individual moments
+\item Arrow is fired but can't move because of this (spoiler/safety alert: doesn't actually work arrows fired at you can definitely kill you)
+\item Does have a point that continuum is weird (actually weirder than anything quantum), but not the topic of this lecture
+\end{itemize}
+\item (Simplest) quantum version:
+\begin{itemize}
+\item Two level system, start in state $\ket{0}$ and undergo time evolution which would bring us to state $\ket{1}$ in time $\tau$ ($X$ is Pauli $X$ operation)
+\begin{equation}
+\ket{\psi(t)}=\exp\left(\frac{i t \pi }{2 \tau} X\right)\ket{0}=\cos(\frac{ t \pi }{2 \tau})\ket{0}+i \sin(\frac{ t \pi }{2 \tau})\ket{1}
+\end{equation}
+\item If we do nothing we end up in state $\ket{\psi(\tau)}=\ket{1}$
+\item If we perform projective measurements we change the probabilities, in general, if we perform the evolution but measure $n$ times, (dividing equally into intervals of length $\frac{\tau}{n}$) the probability of still measuring $\ket{0}$ at every time is
+\begin{equation}
+P_{\ket{0}}=\cos^{2n}(\frac{  \pi }{2 n})=(1-\sin^2(\frac{ \pi }{2n}))^n
+\end{equation}
+\item If we assume $n$ is large, we can Taylor expand, and then use a well known infinite series expansion for the exponential $\lim_{n\rightarrow \infty}(1-\frac{x}{n})^n=\exp(-x)$
+\begin{equation}
+P_{\ket{0}}\approx(1-(\frac{ \pi }{n})^2)^n\approx \exp(-\frac{ \pi ^2}{n})
+\end{equation}
+\item Clearly as $n\rightarrow \infty$, $P_{\ket{0}} \rightarrow 1$
+\end{itemize}
+\item What does the simplest quantum version need?
+\begin{itemize}
+\item Projective measurement, otherwise $P_{\ket{0}}$ would be unaffected by measurement
+\item Dependence on amplitude squared, in a fictional version of QM where probability scales as amplitude rather than amplitude squared, we would get $P_{\ket{0}}\approx \exp(- \pi)$, tend toward fixed value less than $1$
+\end{itemize}
+\end{itemize}
+
+\section{Extensions, similar effects}
+
+
+\begin{itemize}
+\item Don't measure, but make levels distinguishable with a phase, in other words, apply Pauli $Z$ at $n$ evenly spaced instances
+\begin{itemize}
+\item Even $n=1$, the dynamics will reverse perfectly since $X$ and $Z$ anti-commute ($XZ=-ZX$), therefore  
+\begin{equation}
+\exp\left(\frac{i \pi }{4} X\right)Z\exp\left(\frac{i \pi }{4} X\right)\ket{0}=Z\exp\left(\frac{-i \pi }{4} X\right)\exp\left(\frac{i \pi }{4} X\right)\ket{0}=\ket{0}
+\end{equation}
+\item Won't work so neatly in more complicated systems, but cancellation will still happen at large $n$
+\end{itemize}
+\item Continuously apply a phase between energy levels to stop evolution $X \rightarrow X-\frac{\Delta}{2} Z$ (note $\Delta$ plays an equivalent role to $n$ but doesn't need to be an integer)
+\begin{itemize}
+\item How do we represent $\exp\left(\frac{i t \pi }{2 \tau} (X-\frac{\Delta}{2} Z)\right)$?
+\item $X+Z$ is a 2x2 matrix, we can diagonalize it by hand (exponentiation is trivial in diagonal basis)
+\begin{equation}
+\det\left(\begin{array}{cc} -\frac{\Delta}{2}-\lambda & 1 \\ 1 & \frac{\Delta}{2}-\lambda \end{array}\right)=0
+\end{equation}
+\item $(\frac{\Delta}{2}-\lambda)(-\frac{\Delta}{2}-\lambda)-1=0$ expanding and rearranging $\lambda^2=1+\frac{\Delta^2}{4}$
+\item $\lambda_{\pm}=\pm\sqrt{1+\frac{\Delta^2}{4}}$
+\item Eigenvector equation $-\frac{\Delta}{2}v_0+v_1=\lambda_{\pm}v_0$
+\begin{equation}
+\frac{v_1}{v_0}=\frac{\Delta}{2}\pm\sqrt{1+\frac{\Delta^2}{4}}
+\end{equation}
+\item Taking $\lambda_{-}$, we see that $\frac{v_1}{v_0}\rightarrow 0$ as $\Delta \rightarrow \infty$
+\item This implies that for large $\Delta$, $\ket{0}$ is an eigenstate of $X-\frac{\Delta}{2} Z$, since exponential of matrix is diagonal in same basis, it is also an eigenstate of $\exp\left(\frac{i t \pi }{2 \tau} (X-\frac{\Delta}{2} Z)\right)$ for any $t$, therefore never leaves $\ket{0}$
+\end{itemize}
+\item The previous example was just the adiabatic theorem in disguise
+\begin{itemize}
+\item Consider energy eigenbasis of Hamiltonian, and only first two energy levels, time dependent energy difference $\frac{\Delta}{2}Z$
+\item Basis is rotating over time, transition strength will (up to an irrelevant phase) be equal to $\left|\braket{\dot{\phi}_0}{\phi_1}\right|$, where $\phi_0$ and $\phi_1$ are the ground and first excited state and the dot indicates time derivative
+\item Since the $X$ and $Z$ terms are time dependent and non-commuting, need path integral to represent evolution
+\begin{equation}
+\ket{\psi(\tau)}=\int_0^\tau Dt \exp\left(\frac{\Delta(\frac{t}{\tau})}{2}Z+\left|\braket{\dot{\phi}_0(\frac{t}{\tau})}{\phi_1(\frac{t}{\tau})}\right|X\right)\ket{0}
+\end{equation}
+\item By previous argument as long as $\frac{\Delta(\frac{t}{\tau})}{2}\gg\left|\braket{\dot{\phi}_0(\frac{t}{\tau})}{\phi_1(\frac{t}{\tau})}\right|$, than time evolution than $\ket{0}$ will be an eigenstate of the time evolution at all times and the system will remain in it's ground state
+\item $\left|\braket{\dot{\phi}_0(\frac{t}{\tau})}{\phi_1(\frac{t}{\tau})}\right| \propto \frac{1}{\tau}$ for fixed $\frac{t}{\tau}$, therefore as long as $\Delta(\frac{t}{\tau})>0$ it will always be possible to pick a large enough $\tau$ so that the ground state is maintained with arbitrarily high probability
+\end{itemize}
+\item What if instead of phases we have particle loss from the $\ket{1}$ state?  
+\begin{itemize}
+\item Simplest version, add complex term to time evolution evolution with $\exp\left(\frac{i t \pi }{2 \tau} (X+i\Gamma\ketbra{1}{1})\right)$
+\item Same trick, diagonalize matrix by hand 
+\begin{equation}
+\det\left(\begin{array}{cc} -\lambda & 1 \\ 1 & i\Gamma-\lambda \end{array}\right)=0
+\end{equation}
+\item $\lambda^2-i\Gamma\lambda-1=0$ from an application of the quadratic formula $\lambda_{\pm}=\frac{i\Gamma \pm\sqrt{-\Gamma^2+4}}{2}$
+\item Simple eigenvector equation $v_1=\lambda_{\pm}v_0$
+\item  Since $\lambda_{-}\rightarrow 0$, than $\frac{v_1}{v_0}\rightarrow 0$ for this eigenvalue and therefore $\ket{0}$ tends toward an eigenstate, just as it did with phases
+\end{itemize}
+\item Beyond $2$ level Hermitian matrix
+\begin{itemize}
+\item Except for special cases we cannot easily diagonalize matrices by hand, but...
+\item Let's say I have a matrix with a submatrix $M'$ with very large eigenvalues such that $\lambda_{\mathrm{min}}\le|\lambda_{M',i}| \quad \forall i$
+\item Let us say that the sum of the magnitudes all matrix elements outside of $M'$ obeys
+\begin{equation}
+\sum_{i,j\notin M'}|A_{i,j}|\ll\lambda_{\mathrm{min}}
+\end{equation}
+\item Since this sum of the magnitudes cannot contribute more than $\sum_{i,j\notin M'}|A_{i,j}|$ to the eigenvalues, it follows that in the limit $\frac{\sum_{i,j\notin M'}|A_{i,j}|}{\lambda_{\mathrm{min}}}\rightarrow 0$ $\lambda_{M',i}$  will be unchanged
+\item Since adding support to the eigenvectors outside of $M'$ would reduce the eigenvalues, it implies that the associated eigenvectors will be unchanged
+\item Since eigenvectors of a Hermitian matrix are orthogonal, this implies that all other eigenvectors will only have support outside of $M'$
+\item Therefore, many kinds of strong interactions can lead to a Zeno-effect-like separation of parts of the system with fast dynamics and those with slow dynamics
+\end{itemize}
+\section{Non-trivial subsystems}
+\item Zeno effect doesn't stop \textbf{all} dynamics, it only prevents dynamics from entering certain states
+\begin{itemize}
+\item Consider $2$ qubits, use Zeno effect (by strong decay) to stop system from entering $\ket{11}$ state
+\item Start in separable state $\ket{+0}=\frac{1}{\sqrt{2}}(\ket{00}+\ket{10})$
+\item Apply $X$ to second qubit (n.b.~cannot enter $\ket{11}$): $\frac{1}{\sqrt{2}}(\ket{01}+\ket{10})$ \textbf{entangled} state
+\item Zeno effect can turn separable states + separable operations into entangled states
+\end{itemize}
+\item We can make quantum gates with this... but need three qubits because both need to start in arbitrary states
+\begin{itemize}
+\item Simple example: use Zeno effect to prevent system from entering $\ket{111}$ state 
+\item Start in $\ket{\psi_{01}}\ket{0}=(a_{00}\ket{00}+a_{01}\ket{01}+a_{10}\ket{10}+a_{11}\ket{11})\ket{0}$, last qubit guarantees system not in $\ket{111}$
+\item Apply $X$ to last qubit $\ket{\psi}\ket{0} \rightarrow (a_{00}\ket{00}+a_{01}\ket{01}+a_{10}\ket{10})\ket{1}+a_{11}\ket{11}\ket{0}$
+\item Apply $Z$ to last qubit again yielding $-(a_{00}\ket{00}+a_{01}\ket{01}+a_{10}\ket{10})\ket{1}+a_{11}\ket{11}\ket{0}$
+\item Apply another $X$ to last qubit $(a_{00}\ket{00}-a_{01}\ket{01}-a_{10}\ket{10}+a_{11}\ket{11})\ket{0}$
+\item Total operation $\ket{\psi}\ket{0} \rightarrow -(\mathrm{CZ}\ket{\psi})\ket{0}$, we have applied a controlled $Z$ on first two qubits up to a global phase
+\end{itemize}
+\item What does an adiabatic analog of this look like? Geometric gates
+\begin{itemize}
+\item Same idea, cannot leave the ground state manifold
+\item Geometric picture, moving in closed loops can cause rotations within ground state manifold (Holonomic quantum computing)
+\item Generally complicated, a relatively simple example:
+\item Three level system $\ket{0},\ket{1},\ket{e}$, initially $\ket{0}$ and $\ket{1}$ are degenerate, $\ket{e}$ has a higher energy to start with $H_0=\ketbra{e}{e}$
+\begin{enumerate}
+\item Adiabatically evolve for time $\tau$ with
+\begin{equation}
+H_1(t)=\left(\sqrt{1-\frac{t}{\tau}}\ket{e}+\sqrt{\frac{t}{\tau}}\ket{1}\right)\left(\sqrt{1-\frac{t}{\tau}}\bra{e}+\sqrt{\frac{t}{\tau}}\bra{1}\right)
+\end{equation}
+ ground state manifold is now $\{\ket{0},\ket{e}\}$, where $\ket{0}\rightarrow \ket{0}$ and $\ket{1}\rightarrow \ket{e}$
+ \item Adiabatically evolve for time $\tau$ with
+\begin{equation}
+H_2(t)=\left(\sqrt{1-\frac{t}{\tau}}\ket{1}+\sqrt{\frac{t}{\tau}}\ket{0}\right)\left(\sqrt{1-\frac{t}{\tau}}\bra{1}+\sqrt{\frac{t}{\tau}}\bra{0}\right)
+\end{equation}
+ ground state manifold is now $\{\ket{1},\ket{e}\}$, where $\ket{0}\rightarrow \ket{0}\rightarrow \ket{1}$ and $\ket{1}\rightarrow \ket{e} \rightarrow \ket{e}$
+ \item Adiabatically evolve for time $\tau$ with
+\begin{equation}
+H_3(t)=\left(\sqrt{1-\frac{t}{\tau}}\ket{0}+\sqrt{\frac{t}{\tau}}\ket{e}\right)\left(\sqrt{1-\frac{t}{\tau}}\bra{0}+\sqrt{\frac{t}{\tau}}\bra{e}\right)
+\end{equation}
+ ground state manifold is now $\{\ket{1},\ket{0}\}$, where $\ket{0}\rightarrow \ket{0}\rightarrow \ket{1}\rightarrow \ket{1}$ and $\ket{1}\rightarrow \ket{e} \rightarrow \ket{e}\rightarrow \ket{0}$, moreover $H_3(\tau)=H_0$
+\end{enumerate}
+\item We have flipped a spin purely by geometry, we adiabatically traversed a loop in phase space and the enclosed curvature flipped a bit!
+\item Note that as long as $\tau$ is big enough, the action of this gate does not depend on the value of $\tau$
+\end{itemize}
+\end{itemize}
+
+
+
+
+
+\end{document}
