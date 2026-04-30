@@ -203,7 +203,157 @@ FOOTER_CSS = dedent("""\
         font-size: 0.92rem;
         color: var(--page-muted);
       }
+      .back {
+        display: inline-block;
+        font-size: 0.9rem;
+        color: var(--page-muted);
+        text-decoration: none;
+        margin: 0 0 1.6rem;
+      }
+      .back:hover { color: var(--page-accent); }
+      .sources-list {
+        display: grid;
+        gap: 0.7rem;
+        margin-top: 0.8rem;
+      }
+      .source-item {
+        padding: 0.6rem 0.8rem;
+        border-left: 2px solid var(--page-rule);
+        background: var(--page-panel);
+        border-radius: 0 4px 4px 0;
+      }
+      .source-tag {
+        display: inline-block;
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--page-muted);
+        margin-right: 0.5rem;
+        font-weight: 600;
+      }
+      .source-note {
+        margin: 0.2rem 0 0;
+        font-size: 0.88rem;
+        color: var(--page-muted);
+      }
+      .widget-shell {
+        margin: 1.2rem 0;
+        padding: 1rem 1.1rem;
+        background: var(--page-panel);
+        border: 1px solid var(--page-rule);
+        border-radius: 8px;
+      }
+      .widget-shell h4 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+        color: var(--page-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .widget-controls {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0.6rem 0;
+      }
+      .widget-controls label {
+        display: grid;
+        grid-template-columns: 7rem 1fr 4rem;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.88rem;
+      }
+      .widget-controls input[type="range"] {
+        width: 100%;
+      }
+      .widget-controls .val {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85rem;
+        color: var(--page-accent);
+        text-align: right;
+      }
+      .widget-readout {
+        margin-top: 0.6rem;
+        padding: 0.5rem 0.7rem;
+        background: var(--page-bg);
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.84rem;
+        line-height: 1.5;
+      }
+      .widget-canvas, .widget-svg {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        background: var(--page-bg);
+        border-radius: 4px;
+      }
+      .widget-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+      }
+      @media (min-width: 720px) {
+        .widget-row.two-col { grid-template-columns: 1fr 1fr; }
+      }
+      .widget-buttons {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-top: 0.4rem;
+      }
+      .widget-buttons button {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.85rem;
+        border: 1px solid var(--page-rule);
+        background: var(--page-bg);
+        color: var(--page-fg);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .widget-buttons button:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
+      }
     </style>""")
+
+
+KATEX_INIT_SCRIPT = dedent("""\
+    <script>
+      (function () {
+        function updateMath(root) {
+          if (!window.renderMathInElement) return false;
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "\\\\[", right: "\\\\]", display: true },
+              { left: "\\\\(", right: "\\\\)", display: false }
+            ],
+            throwOnError: false
+          });
+          return true;
+        }
+        function ensureMathRendered(attempts) {
+          attempts = attempts == null ? 24 : attempts;
+          if (updateMath(document.body)) return;
+          if (attempts <= 0) return;
+          setTimeout(function () { ensureMathRendered(attempts - 1); }, 150);
+        }
+        // Re-render math inside <details> when first opened (some browsers
+        // skip rendering hidden subtrees). Idempotent.
+        document.addEventListener("toggle", function (e) {
+          if (e.target && e.target.tagName === "DETAILS" && e.target.open) {
+            updateMath(e.target);
+          }
+        }, true);
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () { ensureMathRendered(); });
+        } else {
+          ensureMathRendered();
+        }
+      })();
+    </script>""")
 
 
 def assemble(*, head: str, header: str, nav: str, main_html: str, footer_html: str) -> str:
@@ -211,11 +361,18 @@ def assemble(*, head: str, header: str, nav: str, main_html: str, footer_html: s
 
 
 def assemble_proper(*, head: str, header: str, nav: str, main_html: str,
-                    footer_html: str) -> str:
+                    footer_html: str, extra_scripts: str = "") -> str:
     """The head already ends with </head>; we need to inject FOOTER_CSS *before*
     that close tag so styles are inside <head>. The simpler approach: drop </head>
-    from head, append FOOTER_CSS, append fresh </head>, then body."""
+    from head, append FOOTER_CSS, append fresh </head>, then body.
+
+    A nav-back link sits at the top of <main>, the KaTeX init script sits
+    just before </body>, and any per-note widget scripts are appended after
+    KATEX_INIT_SCRIPT (so widgets can call window.renderMathInElement).
+    """
     head_open = head.rsplit("</head>", 1)[0]
+    back_link = ('      <a class="back" href="index.html">'
+                 '&larr; back to quantum-optics notes</a>\n')
     return (
         head_open
         + "\n    " + FOOTER_CSS + "\n"
@@ -225,9 +382,12 @@ def assemble_proper(*, head: str, header: str, nav: str, main_html: str,
         + "    " + header + "\n\n"
         + "    " + nav + "\n\n"
         + '    <main id="main-content">\n'
+        + back_link
         + main_html + "\n"
         + "    </main>\n\n"
-        + "    " + footer_html + "\n"
+        + "    " + footer_html + "\n\n"
+        + "    " + KATEX_INIT_SCRIPT + "\n"
+        + (extra_scripts + "\n" if extra_scripts else "")
         + "  </body>\n"
         + "</html>\n"
     )
@@ -2117,8 +2277,10 @@ def render_note(note: dict, head_template: str) -> str:
             anchor=anchor, title=title, body_html=body_html, keypoints=keypoints
         ) + "\n"
     footer_html = footer_block()
+    extra_scripts = note.get("scripts", "")
     return assemble_proper(
-        head=head, header=header, nav=nav, main_html=main_html, footer_html=footer_html
+        head=head, header=header, nav=nav, main_html=main_html,
+        footer_html=footer_html, extra_scripts=extra_scripts,
     )
 
 
