@@ -211,6 +211,23 @@ FOOTER_CSS = dedent("""\
         margin: 0 0 1.6rem;
       }
       .back:hover { color: var(--page-accent); }
+      /* Wider main column. Overrides the grovers.html default (which used
+         roughly equal columns); gives prose, figures, and widgets more room. */
+      .section-shell {
+        grid-template-columns: minmax(0, 2.4fr) minmax(220px, 1fr) !important;
+        gap: 1.6rem !important;
+      }
+      .widget-shell, .figure-band, figure, pre {
+        grid-column: 1 / -1;
+      }
+      @media (max-width: 760px) {
+        .section-shell {
+          grid-template-columns: 1fr !important;
+        }
+        .section-side {
+          order: 2;
+        }
+      }
       .sources-list {
         display: grid;
         gap: 0.7rem;
@@ -3850,16 +3867,16 @@ NOTE_07 = {
               <g>
                 <rect x="430" y="45" width="270" height="34" fill="rgba(121,199,159,0.18)" stroke="#79c79f" rx="3"/>
                 <text x="445" y="62" font-size="11" fill="#79c79f" font-weight="600">In-loop intensity modulator (per pulse)</text>
-                <text x="445" y="74" font-size="10" fill="#888">cavity loss \(\kappa_i = A_{ii}\); diagonal damping</text>
+                <text x="445" y="74" font-size="10" fill="#888">cavity loss κᵢ = A_(ii); diagonal damping</text>
                 <rect x="430" y="125" width="270" height="34" fill="rgba(232,185,106,0.18)" stroke="#e8b96a" rx="3"/>
                 <text x="445" y="142" font-size="11" fill="#e8b96a" font-weight="600">FPGA RAM: M[i,j] = −A_{ij} (off-diag)</text>
-                <text x="445" y="154" font-size="10" fill="#888">computes \(\sum_j M_{ij} x_j\) per pulse i</text>
+                <text x="445" y="154" font-size="10" fill="#888">computes Σⱼ M_(ij) · x_j per pulse i</text>
                 <rect x="430" y="205" width="270" height="34" fill="rgba(122,159,209,0.18)" stroke="#7a9fd1" rx="3"/>
                 <text x="445" y="222" font-size="11" fill="#7a9fd1" font-weight="600">EOM constant DC bias per pulse</text>
-                <text x="445" y="234" font-size="10" fill="#888">imposes drive \(b_i\) on pulse i each round-trip</text>
+                <text x="445" y="234" font-size="10" fill="#888">imposes drive b_i on pulse i each round-trip</text>
                 <rect x="430" y="285" width="270" height="34" fill="rgba(200,121,209,0.18)" stroke="#c879d1" rx="3"/>
                 <text x="445" y="302" font-size="11" fill="#c879d1" font-weight="600">Calibrated white-noise generator</text>
-                <text x="445" y="314" font-size="10" fill="#888">\(\sqrt{2dt}\,D^{½} \xi_i\) injected via EOM</text>
+                <text x="445" y="314" font-size="10" fill="#888">√(2 dt) · D^½ · ξᵢ injected via EOM</text>
               </g>
             </svg>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">

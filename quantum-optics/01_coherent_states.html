@@ -1073,6 +1073,23 @@
     margin: 0 0 1.6rem;
   }
   .back:hover { color: var(--page-accent); }
+  /* Wider main column. Overrides the grovers.html default (which used
+     roughly equal columns); gives prose, figures, and widgets more room. */
+  .section-shell {
+    grid-template-columns: minmax(0, 2.4fr) minmax(220px, 1fr) !important;
+    gap: 1.6rem !important;
+  }
+  .widget-shell, .figure-band, figure, pre {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 760px) {
+    .section-shell {
+      grid-template-columns: 1fr !important;
+    }
+    .section-side {
+      order: 2;
+    }
+  }
   .sources-list {
     display: grid;
     gap: 0.7rem;
