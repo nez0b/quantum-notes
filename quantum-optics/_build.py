@@ -3448,6 +3448,7 @@ NOTE_07 = {
     "covers": [
         "Thermodynamic linear algebra: Aifer-Coles-Duffield framing",
         "Langevin → Lyapunov: \\(d x = -A x dt + \\sqrt{D} dW \\Rightarrow A\\Sigma + \\Sigma A^T = D\\)",
+        "Three machines on one substrate: MFB-CIM, overdamped OU, underdamped OU",
         "Optical adaptation: replace cubic saturation with linear damping",
         "Hardware imperfection envelope (η, τ, σ_meas)",
         "QCi target table: Stretch / Practical / Loose",
@@ -3458,6 +3459,7 @@ NOTE_07 = {
         ("tla", "TLA Framing"),
         ("tla-primitives", "Three Primitives"),
         ("langevin-lyapunov", "Langevin→Lyapunov"),
+        ("three-machines", "Three Machines"),
         ("optical-adapt", "Optical Adaptation"),
         ("matrix-encoding", "Encoding A"),
         ("readout-protocols", "Readout Modes"),
@@ -3639,8 +3641,291 @@ NOTE_07 = {
           "Symmetric PD \\(A\\) + \\(D = I\\) ⇒ \\(\\Sigma = \\tfrac{1}{2}A^{-1}\\)",
           "\\(\\hat\\Sigma\\) from sample averaging gives \\(A^{-1}\\)",
           "Mixing time \\(\\propto \\kappa\\) (overdamped)"]),
+        ("three-machines", "Three Machines, One Substrate", r"""
+          <p class="lede">
+            The MFB-CIM hardware (Note 06) hosts <em>three</em> distinct
+            algorithms, each with its own physics, its own measurement
+            protocol, and its own scaling law. The fiber loop, the
+            homodyne detector, the FPGA, and the EOM are identical
+            across all three. What differs is the operating point of
+            the parametric crystal, the firmware running on the FPGA,
+            and which quadrature(s) we feed back. This section names
+            the three machines explicitly so that the rest of the note
+            (and the proposal it summarises) cannot be misread.
+          </p>
+          <figure style="margin: 1rem 0;">
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 640px;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--page-rule);">
+                    <th style="text-align: left; padding: 0.5rem 0.6rem; color: var(--page-muted); font-weight: 600;">Aspect</th>
+                    <th style="text-align: left; padding: 0.5rem 0.6rem; color: #7a9fd1; font-weight: 600;">MFB-CIM</th>
+                    <th style="text-align: left; padding: 0.5rem 0.6rem; color: #79c79f; font-weight: 600;">Overdamped OU<br><span style="font-weight: 400; font-size: 0.78rem; color: var(--page-muted);">(this note)</span></th>
+                    <th style="text-align: left; padding: 0.5rem 0.6rem; color: #e8b96a; font-weight: 600;">Underdamped OU<br><span style="font-weight: 400; font-size: 0.78rem; color: var(--page-muted);">(Direction A)</span></th>
+                  </tr>
+                </thead>
+                <tbody style="vertical-align: top;">
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">DOPO operating point</td>
+                    <td style="padding: 0.45rem 0.6rem;">above threshold</td>
+                    <td style="padding: 0.45rem 0.6rem;">at / below threshold</td>
+                    <td style="padding: 0.45rem 0.6rem;">below threshold</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">FPGA update</td>
+                    <td style="padding: 0.45rem 0.6rem;">cubic saturation \((r-1)x - \mu x^{3}\) plus \(\varepsilon J x\)</td>
+                    <td style="padding: 0.45rem 0.6rem;">linear damping \(-A x + b\)</td>
+                    <td style="padding: 0.45rem 0.6rem;">symplectic \((X,P)\) plus friction \(-\gamma P\)</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Quadratures tracked</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(\hat X\) only (phase-locked ±1)</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(\hat X\) only (Gaussian, no momentum)</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(\hat X\) and \(\hat P\) jointly</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Homodyne measures</td>
+                    <td style="padding: 0.45rem 0.6rem;">sign of \(\hat X\) (digital)</td>
+                    <td style="padding: 0.45rem 0.6rem;">continuous \(\hat X\)</td>
+                    <td style="padding: 0.45rem 0.6rem;">continuous \(\hat X\); \(\hat P\) inferred via WMF</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Solves</td>
+                    <td style="padding: 0.45rem 0.6rem;">Ising minimisation, QUBO (heuristic)</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(A v = b\), \(\Sigma = \tfrac{1}{2}A^{-1}\), \(\log\det A\)</td>
+                    <td style="padding: 0.45rem 0.6rem;">same primitives as overdamped</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Mixing-time scaling</td>
+                    <td style="padding: 0.45rem 0.6rem;">heuristic; problem-dependent</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(T_\mathrm{mix} \propto \kappa\) <span style="font-style: italic; color: var(--page-muted);">(α≈0.93 emp.)</span></td>
+                    <td style="padding: 0.45rem 0.6rem;">\(T_\mathrm{mix} \propto \sqrt{\kappa}\) <span style="font-style: italic; color: var(--page-muted);">(theory; bench TBD)</span></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">η-imperfection enters as</td>
+                    <td style="padding: 0.45rem 0.6rem;">noise-on-J (heuristic)</td>
+                    <td style="padding: 0.45rem 0.6rem;">\(A_\mathrm{eff} = A_\mathrm{diag} + \eta A_\mathrm{off}\) <strong>exact</strong></td>
+                    <td style="padding: 0.45rem 0.6rem;">\(f_\mathrm{eff} = \eta\, e^{-\gamma\tau}\) (Doherty-Jacobs)</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Symmetric-loss problem</td>
+                    <td style="padding: 0.45rem 0.6rem;">irrelevant (cubic dominates)</td>
+                    <td style="padding: 0.45rem 0.6rem;">absent (no \(\hat P\) tracked)</td>
+                    <td style="padding: 0.45rem 0.6rem;"><strong>69 % error</strong> for naïve OPO → Multi-Q</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--page-rule);">
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">Reference</td>
+                    <td style="padding: 0.45rem 0.6rem;">Yamamoto/Inagaki/Marandi (Note 06)</td>
+                    <td style="padding: 0.45rem 0.6rem;">this note; <code>cim-spu-optical-simulation</code></td>
+                    <td style="padding: 0.45rem 0.6rem;">Direction A proposal (paper-in-prep)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.5rem; text-align: center;">
+              <strong>Tab.&nbsp;1.</strong> The three regimes the
+              MFB-CIM substrate can host. The fiber loop, homodyne,
+              FPGA and EOM are identical; the operating point and the
+              firmware differ. <em>This note describes the middle
+              column.</em> Fig.&nbsp;1 below contrasts the leftmost
+              and middle columns; the underdamped column lives in the
+              parallel Direction-A research effort and is summarised
+              in §<a href="#roadmap">Roadmap</a>.
+            </figcaption>
+          </figure>
+          <p>
+            <strong>1. The MFB-CIM</strong> is the original machine the
+            substrate was built for: above-threshold pulses bifurcate
+            into ±1 phase-locked spin states, and the FPGA-loaded
+            Ising coupling \(J\) drives the network towards an Ising
+            ground state. The dynamics is profoundly nonlinear —
+            cubic saturation is the whole point. Quantum noise plays
+            the role of a heuristic search at the bifurcation. We do
+            not modify this machine in this note; we re-use its bench.
+          </p>
+          <p>
+            <strong>2. The overdamped OU machine</strong> (the subject
+            of this note) replaces the cubic with linear damping and
+            stays in a Gaussian-state regime. Pulses never commit to
+            ±1; they drift and diffuse. The FPGA loads
+            \(-A_\mathrm{off}\) instead of \(J\) (note the sign
+            convention). We measure only the X̂-quadrature — the same
+            quadrature MFB-CIM measures — and we average it. Steady-
+            state covariance solves the Lyapunov equation, so reading
+            out \(\langle x_i x_j\rangle\) gives \(\tfrac{1}{2}A^{-1}\)
+            for symmetric PD \(A\). Mixing time scales as \(\kappa\):
+            cheap per round-trip but unforgiving for ill-conditioned
+            matrices.
+          </p>
+          <p>
+            <strong>3. The underdamped OU machine</strong> is the
+            asymptotic target of the parallel Direction-A theory
+            project. It tracks <em>both</em> X̂ and P̂, with friction
+            \(\gamma\) tuned so the slowest mode mixes in time
+            \(\sqrt\kappa\) — quadratically faster than overdamped on
+            ill-conditioned problems. The price is significant: the
+            machine must run below threshold (so quantum P̂ is
+            well-defined), the homodyne becomes part of a
+            Wiseman-Milburn measurement-feedback loop, and the bare
+            symmetric-loss OPO is provably the wrong drift matrix
+            (see math-details below). Multi-Q architectures
+            (proposal, Thm. 3) restore the right drift; that is what
+            the paper-in-prep proves.
+          </p>
+          """ + math_details(
+            "Why X-only is sufficient for overdamped OU",
+            r"""
+              <p>
+                The overdamped Langevin equation
+                \[
+                  dx = -A x\,dt + \sqrt{2D}\,dW
+                \]
+                is a first-order SDE in \(x\) alone. There is no
+                conjugate momentum: \(\dot p\) does not appear because
+                the inertial term is taken to the high-friction limit
+                \(M \dot p \to 0\). Consequently, the steady-state
+                distribution \(\mathcal{N}(0, \tfrac{1}{2}A^{-1})\) is
+                a function of position only. Reading off X̂ on every
+                pulse and accumulating \(\langle x_i x_j \rangle\)
+                gives the full posterior covariance.
+              </p>
+              <p>
+                On the bench: a balanced homodyne with locked LO phase
+                (the same configuration MFB-CIM uses to read spin
+                signs) measures the X̂-quadrature continuously. P̂ is
+                <em>not</em> measured, not fed back, and not present
+                in the dynamics we integrate. The cavity field's P̂
+                quadrature exists physically (you cannot turn it off
+                in a real OPO), but the OU SDE we are simulating
+                ignores it; on the simulator side, the
+                <code>OUMachine.step</code> loop touches only one real
+                variable per mode (cim/ou_machine.py:99–109).
+              </p>
+              <p>
+                <strong>What about the physical P̂ of the cavity?</strong>
+                In the overdamped framing, the cavity field's P̂ is
+                irrelevant in two complementary senses. (i) The
+                <em>mathematical</em> sense: \(\Sigma = \tfrac{1}{2}A^{-1}\)
+                is a relation between the X̂-marginals of the joint
+                state and the user's drift \(A\). Whatever P̂ does in
+                the cavity does not enter the Lyapunov equation. (ii)
+                The <em>operational</em> sense: the bench mapping
+                treats \(A_\mathrm{diag}\) as per-pulse cavity loss
+                via passive intensity modulation, and \(A_\mathrm{off}\)
+                as homodyne-FPGA-EOM injection on X̂. Neither path
+                tracks P̂; both paths are blind to whatever the cavity
+                P̂ does. The η-axis exactness
+                \(A_\mathrm{eff} = A_\mathrm{diag} + \eta A_\mathrm{off}\)
+                is a direct consequence (<a href="https://github.com/nez0b/cim-spu-optical-simulation/blob/main/notes/feedback_fidelity.md">notes/feedback_fidelity.md</a>
+                catches this; an earlier draft inherited the
+                \(f_\mathrm{eff} = \eta e^{-\gamma\tau}\) envelope from
+                the underdamped Wiseman-Milburn analysis and it was
+                wrong).
+              </p>
+              <p>
+                The overdamped OU machine therefore <em>does not</em>
+                solve the symmetric-loss-69% problem that confronts
+                the underdamped variant. It bypasses it: there is no
+                P̂ damping to encode wrong, because there is no P̂.
+              </p>
+            """
+          ) + math_details(
+            "The underdamped symmetric-loss-69 % no-go and Multi-Q workaround",
+            r"""
+              <p>
+                The underdamped OU machine solves the augmented
+                Hamiltonian system
+                \[
+                  d\!\begin{pmatrix} X\\ P\end{pmatrix}
+                  = \begin{pmatrix} 0 & I\\ -A & -\gamma I\end{pmatrix}
+                    \begin{pmatrix} X\\ P\end{pmatrix} dt
+                  + \begin{pmatrix} 0\\ \sqrt{2\gamma}\,dW\end{pmatrix}.
+                \]
+                The block in the lower-left of the drift is
+                <em>exactly</em> the user's matrix \(A\); the lower-
+                right is uniform friction \(\gamma I\). Both blocks
+                must be realised on hardware.
+              </p>
+              <p>
+                <strong>The natural temptation</strong> is to encode
+                \(A\) as the symmetric loss of the cavity (a passive
+                χ⁽²⁾ medium below threshold has Lindblad operator
+                \(L_i = \sqrt{\kappa_i}\,\hat a_i\) damping
+                <em>both</em> X̂ and P̂ at the same rate). Set
+                \(\kappa_i\) to the eigenvalues of \(A\) and you
+                appear to be done.
+              </p>
+              <p>
+                <strong>You are not done.</strong> Symmetric Lindblad
+                loss damps X̂ and P̂ identically; the underdamped drift
+                requires \(A\) on X̂ and \(\gamma\) on P̂, with \(A\)
+                generically <em>different</em> from \(\gamma I\).
+                Encoding \(A\) as cavity loss therefore mis-encodes
+                the P̂ block as \(A\) instead of \(\gamma I\). The
+                proposal (Thm. 2 of <code>idea_A_full.tex</code>)
+                quantifies the resulting steady-state error: for a
+                naïve symmetric-loss OPO, the encoded covariance is
+                wrong by ≈ 69 % in Frobenius norm. This is the
+                Direction-A no-go result.
+              </p>
+              <p>
+                <strong>The Multi-Q workaround</strong> (Thm. 3,
+                achievability) splits the P̂ block from the cavity
+                loss by introducing a second cavity stage with its
+                own loss rate, plus Wiseman-Milburn measurement-
+                feedback at gain \(G\) implementing a synthetic
+                \(-A\) drift on X̂ that is independent of the cavity
+                κ. The cavity provides only the uniform \(\gamma I\)
+                damping on P̂; the FPGA provides the user-chosen
+                \(A\) on X̂. With this architecture the encoded drift
+                matches \(\begin{pmatrix} 0 & I\\ -A & -\gamma I\end{pmatrix}\)
+                exactly, and the √κ mixing time of the underdamped
+                Langevin is restored. <em>This is the engineering
+                content of the Direction-A paper</em>.
+              </p>
+              <p>
+                In Wiseman-Milburn the homodyne measurement record
+                feeds back through a delay \(\tau\) and detection
+                efficiency \(\eta\); the leading-order steady-state
+                error multiplies the FPGA gain by
+                \(f_\mathrm{eff} = \eta \, e^{-\gamma \tau}\). This is
+                the envelope governing the underdamped target table.
+                The full SME is conservative by 1.4–8× depending on
+                operating point; we use the simpler envelope as a
+                target and verify with SME elsewhere.
+              </p>
+              <p>
+                <strong>None of this enters the overdamped story.</strong>
+                The overdamped machine has no P̂ dynamics to encode; the
+                symmetric-loss problem and the Wiseman-Milburn envelope
+                both belong to Direction A. The overdamped η-axis is
+                exact and additive, not multiplicative.
+              </p>
+            """
+          ) + callout(
+            "Two slogans worth remembering. (1) <em>The same fiber "
+            "loop runs three different machines</em>: above-threshold "
+            "you get an Ising solver; at-threshold-with-linear-firmware "
+            "you get an overdamped OU sampler; below-threshold-with-WMF "
+            "you get an underdamped OU sampler. (2) <em>The "
+            "&ldquo;symmetric-loss-69 %&rdquo; problem is real, but it "
+            "lives in the underdamped story</em>. The overdamped "
+            "machine never sees it because it never tracks P̂."
+          ),
+         ["MFB-CIM: above threshold, cubic, ±1 spins, Ising minimisation",
+          "Overdamped OU: at/below threshold, linear damping, X̂-only, T<sub>mix</sub> ∝ κ — this note",
+          "Underdamped OU: below threshold, full (X̂,P̂), Wiseman-Milburn, T<sub>mix</sub> ∝ √κ — Direction A",
+          "η is exact in overdamped; multiplicative \\(\\eta e^{-\\gamma\\tau}\\) in underdamped",
+          "Symmetric-loss-69 % no-go is an underdamped-only problem"]),
         ("optical-adapt", "Optical Adaptation: From MFB-CIM to OU Sampler", r"""
           <p class="lede">
+            <em>This note describes the middle column of Tab. 1: the
+            <strong>overdamped</strong> optical OU machine — the
+            stepping-stone we are de-risking on. The asymptotic
+            \(\sqrt{\kappa}\) speedup lives in the parallel
+            Direction-A research project; see §<a href="#roadmap">Roadmap</a>.</em>
+          </p>
+          <p>
             We do not build new hardware for the OU machine. We
             <em>re-purpose</em> the MFB-CIM substrate (Note 06,
             Yamamoto/Inagaki/Marandi) by changing the FPGA firmware so
@@ -3722,7 +4007,7 @@ NOTE_07 = {
               </foreignObject>
             </svg>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
-              <strong>Fig.&nbsp;1.</strong> Architectural comparison. Same fiber-loop substrate; different FPGA firmware. The MFB-CIM lives above the DOPO threshold and uses cubic saturation to commit to ±1 spin states; the OU machine operates at or below threshold with linear damping, never committing to a discrete state. The Yamamoto-NTT measurement-feedback CIM schematic (<a href="_lectures/classical_CIM_from_Yamamoto.png">classical_CIM_from_Yamamoto.png</a>) is the reference for the left side.
+              <strong>Fig.&nbsp;1.</strong> Architectural comparison: MFB-CIM (left) vs the <em>overdamped</em> optical OU machine (right). Same fiber-loop substrate; different FPGA firmware. The MFB-CIM lives above the DOPO threshold and uses cubic saturation to commit to ±1 spin states; the overdamped OU machine operates at or below threshold with linear damping, never committing to a discrete state. <strong>Both measure only the X̂ quadrature via balanced homodyne.</strong> The <em>underdamped</em> OU machine (Direction A; §<a href="#three-machines">three-machines</a>) tracks both X̂ and P̂ via Wiseman-Milburn feedback to buy a √κ speedup; it is not pictured here. The Yamamoto-NTT measurement-feedback CIM schematic (<a href="_lectures/classical_CIM_from_Yamamoto.png">classical_CIM_from_Yamamoto.png</a>) is the reference for the left side.
             </figcaption>
           </figure>
           <p>
@@ -3934,10 +4219,18 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
             "The diagonal-vs-off-diagonal split is the single most "
             "important simplification of the hardware analysis. By "
             "putting <em>A_diag</em> on per-pulse local optics and only "
-            "<em>A_off</em> through the FPGA loop, we make η and τ "
-            "imperfections affect only off-diagonal coupling — never "
-            "the dominant self-damping. This is why the η-axis "
-            "correction is exact and not multiplicative."
+            "<em>A_off</em> through the FPGA loop, η and τ imperfections "
+            "affect only off-diagonal coupling — never the dominant "
+            "self-damping. The η-axis is therefore exact and additive: "
+            "<em>A_eff = A_diag + η&middot;A_off</em>, full stop. <strong>"
+            "This exactness is a consequence of the overdamped framing "
+            "(no momentum, X̂-only readout)</strong>; the underdamped "
+            "Direction-A machine has both quadratures and inherits the "
+            "Wiseman-Milburn multiplicative envelope "
+            "<em>f<sub>eff</sub> = η&middot;e<sup>−γτ</sup></em> instead. "
+            "An earlier draft of this note borrowed the underdamped "
+            "envelope by mistake and was corrected in cim/notes/"
+            "feedback_fidelity.md."
           ),
          ["A_diag → per-pulse loss (η, τ-immune)",
           "A_off → FPGA RAM (η, τ-affected)",
@@ -4350,33 +4643,76 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
         ("roadmap", "Roadmap: Overdamped → Underdamped √κ", r"""
           <p>
             The current proposal (this note) is the <strong>overdamped
-            stepping-stone</strong>: linear damping, mixing time
+            stepping-stone</strong>: linear damping, X̂-only homodyne,
+            mixing time
             \(T_\mathrm{mix} \propto 1/\lambda_\mathrm{min}(A) = \kappa\).
-            For ill-conditioned problems (κ ≫ 1) this is slow.
+            For ill-conditioned problems (κ ≫ 1) this is slow. The
+            empirical \(T_\mathrm{mix}(\kappa)\) scaling measured on
+            the simulator at d=4..16 is \(\kappa^{0.93}\) (notebook 02
+            of <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>),
+            consistent with the theoretical α=1 to within
+            discretisation bias.
           </p>
           <p>
             The <strong>underdamped variant</strong> (parallel theory
             project, Direction A) replaces overdamped Langevin with a
-            symplectic Hamiltonian-plus-friction system: separated X
-            and P quadratures with momentum, friction tuned to match
-            the slowest mode. The mixing time is
+            symplectic Hamiltonian-plus-friction system: paired
+            \((\hat X, \hat P)\) quadratures with momentum, friction
+            \(\gamma\) tuned to the slowest mode. The mixing time
+            drops to
             \(T_\mathrm{mix} \propto 1/\sqrt{\lambda_\mathrm{min}} = \sqrt{\kappa}\).
             For κ = 100, this is a 10× speedup. For κ = 10⁴, it's
-            100×.
+            100×. <em>This is the headline result of Direction A.</em>
           </p>
           <p>
             The hardware substrate is unchanged: still time-multiplexed
-            pulses, still homodyne + FPGA + EOM. The change is that
-            the FPGA tracks <em>two</em> quadratures per pulse (X and
-            P) and implements the symplectic update equation. This
-            requires below-threshold OPO operation (so that quantum
-            noise on P is well-defined) and Wiseman-Milburn feedback
-            on the homodyne measurement.
+            pulses, still homodyne + FPGA + EOM. Three changes are
+            required relative to the overdamped firmware in this note:
           </p>
+          <ol>
+            <li><strong>Dual-quadrature dynamics.</strong> The FPGA
+              tracks <em>two</em> degrees of freedom per pulse — \(X_i\)
+              and \(P_i\) — and integrates the symplectic update
+              \(\dot X = P,\; \dot P = -A X - \gamma P + \sqrt{2\gamma}\,\xi\).
+              Below-threshold OPO operation is required so that \(P\)
+              is a well-defined quadrature and not an arbitrary
+              fluctuation around a saturated amplitude.</li>
+            <li><strong>Wiseman-Milburn measurement feedback.</strong>
+              \(\hat P\) is not directly measurable on a balanced
+              homodyne. The Wiseman-Milburn protocol uses the X̂
+              homodyne current as a noisy proxy and feeds it back
+              through a delay \(\tau\) at gain \(G\) to synthesise
+              the \(-A X\) drift on X̂. The leading-order envelope on
+              steady-state error is
+              \(f_\mathrm{eff} = \eta \, e^{-\gamma\tau}\) — the Doherty-
+              Jacobs simplification of the full SME. The bench needs
+              an FPGA loop latency \(\tau\) that is small compared to
+              the mode lifetime \(1/\gamma\); QCi&rsquo;s ~10 ns FPGA
+              path against ~µs cavity decay is what makes this
+              load-bearing assumption credible.</li>
+            <li><strong>Multi-Q architecture.</strong> A naïve
+              symmetric-loss OPO encodes the user&rsquo;s \(A\) as
+              the cavity loss matrix, which forces the lower-right
+              of the augmented drift to be \(A\) (not \(\gamma I\))
+              and gives <strong>≈ 69 % Frobenius error</strong> on the
+              encoded covariance (Thm. 2 of the proposal — the
+              Direction-A no-go). The proposal&rsquo;s achievability
+              theorem (Thm. 3) introduces a multi-stage cavity that
+              decouples the cavity loss \(\gamma\) from the
+              user&rsquo;s \(A\); \(A\) is then realised entirely
+              through the WMF gain. This is the engineering content
+              the paper-in-prep is built around.</li>
+          </ol>
           <p>
             The full derivation, simulation, and hardware spec table
             are part of the underdamped <em>Direction&nbsp;A</em>
-            research effort — paper in preparation.
+            research effort — paper in preparation. The relationship
+            between the two machines is asymmetric: <em>everything
+            built for the overdamped machine carries over to the
+            underdamped machine</em> (substrate, calibration,
+            stochastic noise generators, η measurement, the
+            simulator&rsquo;s linear-system primitives), but the
+            converse is not true.
           </p>
           """ + callout(
             "The √κ advantage is the killer feature. Overdamped is the "
