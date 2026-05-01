@@ -1741,8 +1741,8 @@
     and Chaotic-Amplitude-Control (CAC, Leleu et al.\ 2021)
     are post-hoc corrections that improve performance on
     hard instances. The McMahon Lab
-    <code>cim-optimizer</code> implements all three variants
-    (see <code>~/Code/Ideas/cim/vendor/cim-optimizer/</code>).
+    <a href="https://github.com/mcmahon-lab/cim-optimizer">cim-optimizer</a>
+    implements all three variants.
   </p>
   <div class="callout">MAX-CUT on a graph with adjacency \(A\) maps to Ising with \(J = -A\). This is the encoding used in the <code>cim-optimizer</code> regression test (<code>experiments/exp01_cim_baseline.py</code>) which hits the ground state on a 16-spin Erdős-Rényi instance 100% of the time.</div>
   </div>
@@ -2069,7 +2069,7 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
     <tr><td>Paper</td><td>Inagaki et al., "A coherent Ising machine for 2000-node optimization problems", <em>Science</em> <strong>354</strong>, 603 (2016)</td></tr>
     <tr><td>Paper</td><td>Honjo et al., "100,000-spin coherent Ising machine", <em>Sci. Adv.</em> <strong>7</strong>, eabh0952 (2021)</td></tr>
     <tr><td>Code</td><td><a href="https://github.com/mcmahon-lab/cim-optimizer">mcmahon-lab/cim-optimizer</a> — McMahon Lab simulator</td></tr>
-    <tr><td>Project</td><td><code>~/Code/Ideas/cim/notes/cim_to_ou_rosetta.md</code> — the rosetta stone in markdown form</td></tr>
+    <tr><td>Project</td><td><a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> — live simulator and the CIM → OU rosetta in code</td></tr>
   </table>
   <p class="pre-req">
     <strong>Next note:</strong> §07 — Thermodynamic LA and the

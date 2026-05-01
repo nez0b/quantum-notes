@@ -1522,7 +1522,7 @@ NOTE_03 = {
             running below threshold for sampling): squeezing is a
             constant-factor advantage on a homodyne measurement. It
             does not solve the κ-conditioning problem of the linear-algebra
-            sampler. (See <code>~/Code/Ideas/cim/notes/feedback_fidelity.md</code>.)
+            sampler.
           </p>
           """,
          ["State-of-the-art: ~15 dB squeezing in lab",
@@ -1788,8 +1788,7 @@ NOTE_04 = {
               approximations or trajectories above that.</li>
             <li><strong>OU machine cross-check</strong>: in the bright-field
               limit, the Heisenberg-Langevin equations reduce to
-              classical SDEs, and the Lyapunov sampler in
-              <code>~/Code/Ideas/cim/notes/langevin_to_lyapunov.md</code>
+              classical SDEs, and the Lyapunov sampler of Note 07
               applies.</li>
           </ul>
           """ + math_details("Why the Lindblad form is the unique GKSL structure", r"""
@@ -2153,8 +2152,7 @@ NOTE_05 = {
             "linear-algebra problems where the variance has additional "
             "κ-dependence, the squeezing factor doesn't address the "
             "κ scaling. This was Direction B's killshot result for "
-            "the OU machine — see "
-            "<code>~/Code/Ideas/cim/experiments/exp00_lyapunov_killshot.py</code>."
+            "the OU machine."
           ),
          ["Squeezed input → e^(−2r) on photocurrent variance",
           "Detection loss caps usable r",
@@ -2261,7 +2259,7 @@ NOTE_05 = {
             <tr><td>Lecture</td><td><a href="_lectures/homodyne.pdf">homodyne.pdf</a> — figures of the standard balanced setup</td></tr>
             <tr><td>Reference</td><td>Wiseman &amp; Milburn, <em>Quantum Measurement and Control</em> (Cambridge, 2010), Chs. 4–7</td></tr>
             <tr><td>Paper</td><td>Wiseman &amp; Milburn, "Quantum theory of optical feedback via homodyne detection", <em>PRL</em> <strong>70</strong>, 548 (1993)</td></tr>
-            <tr><td>Reference</td><td><code>~/Code/Ideas/cim/notes/feedback_fidelity.md</code> — overdamped specialization (the corrected envelope)</td></tr>
+            <tr><td>Reference</td><td>Note 07, §<em>Hardware Envelope</em> — overdamped specialization (the corrected envelope)</td></tr>
           </table>
           <p class="pre-req">
             <strong>Next note:</strong> §06 — OPO, DOPO, and the
@@ -2859,8 +2857,8 @@ NOTE_06 = {
             and Chaotic-Amplitude-Control (CAC, Leleu et al.\ 2021)
             are post-hoc corrections that improve performance on
             hard instances. The McMahon Lab
-            <code>cim-optimizer</code> implements all three variants
-            (see <code>~/Code/Ideas/cim/vendor/cim-optimizer/</code>).
+            <a href="https://github.com/mcmahon-lab/cim-optimizer">cim-optimizer</a>
+            implements all three variants.
           </p>
           """ + callout(
             "MAX-CUT on a graph with adjacency \\(A\\) maps to Ising "
@@ -3124,7 +3122,7 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
             <tr><td>Paper</td><td>Inagaki et al., "A coherent Ising machine for 2000-node optimization problems", <em>Science</em> <strong>354</strong>, 603 (2016)</td></tr>
             <tr><td>Paper</td><td>Honjo et al., "100,000-spin coherent Ising machine", <em>Sci. Adv.</em> <strong>7</strong>, eabh0952 (2021)</td></tr>
             <tr><td>Code</td><td><a href="https://github.com/mcmahon-lab/cim-optimizer">mcmahon-lab/cim-optimizer</a> — McMahon Lab simulator</td></tr>
-            <tr><td>Project</td><td><code>~/Code/Ideas/cim/notes/cim_to_ou_rosetta.md</code> — the rosetta stone in markdown form</td></tr>
+            <tr><td>Project</td><td><a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> — live simulator and the CIM → OU rosetta in code</td></tr>
           </table>
           <p class="pre-req">
             <strong>Next note:</strong> §07 — Thermodynamic LA and the
@@ -3945,51 +3943,47 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
             post-processing.
           </p>
           <figure style="margin: 1rem 0;">
-            <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;background:var(--page-bg);border:1px solid var(--page-rule);border-radius:6px;">
-              <!-- shared loop diagram on the left -->
-              <text x="125" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="#888">OU loop running</text>
-              <ellipse cx="125" cy="150" rx="100" ry="50" fill="none" stroke="#888" stroke-width="1.4"/>
-              <text x="125" y="153" text-anchor="middle" font-size="10" fill="#888">x_i(t) circulating</text>
-              <circle cx="50" cy="158" r="3" fill="#79c79f"/><circle cx="85" cy="108" r="3" fill="#79c79f"/>
-              <circle cx="170" cy="108" r="3" fill="#79c79f"/><circle cx="205" cy="158" r="3" fill="#79c79f"/>
-              <line x1="223" y1="170" x2="265" y2="160" stroke="#79c79f" stroke-width="1.6"/>
-              <text x="244" y="155" font-size="9" fill="#888">tap</text>
-              <line x1="125" y1="200" x2="125" y2="240" stroke="#888" stroke-width="0.8" stroke-dasharray="3,3"/>
-              <text x="125" y="255" text-anchor="middle" font-size="11" fill="#888">→ recorded photocurrent x_i(t)</text>
-              <text x="125" y="270" text-anchor="middle" font-size="9" fill="#888" font-style="italic">(same dynamics, three post-processings)</text>
-              <line x1="270" y1="32" x2="270" y2="365" stroke="#444" stroke-width="0.5" stroke-dasharray="3,3"/>
-              <!-- right column: three readout modes stacked -->
-              <!-- Mode 1: linear solve -->
-              <g>
-                <rect x="290" y="40" width="410" height="86" fill="rgba(122,159,209,0.10)" stroke="#7a9fd1" rx="4"/>
-                <text x="305" y="58" font-size="12" fill="#7a9fd1" font-weight="600">Mode 1 — Linear solve  Av = b</text>
-                <text x="305" y="74" font-size="10" fill="#888">Drive each pulse with constant DC bias b_i. Record time-averaged photocurrent.</text>
-                <text x="305" y="92" font-size="11" fill="#888" font-style="italic">v_i = ⟨x_i⟩ averaged over T_record &gt;&gt; T_mix    ⇒    v = A⁻¹ b</text>
-                <text x="305" y="112" font-size="10" fill="#888">Sample efficiency: O(1/ε²) round-trips for ε relative error.</text>
-              </g>
-              <!-- Mode 2: variance / trace -->
-              <g>
-                <rect x="290" y="138" width="410" height="86" fill="rgba(232,185,106,0.10)" stroke="#e8b96a" rx="4"/>
-                <text x="305" y="156" font-size="12" fill="#e8b96a" font-weight="600">Mode 2 — Diagonal ½A⁻¹, trace Tr(A⁻¹)</text>
-                <text x="305" y="172" font-size="10" fill="#888">No drive (b=0). Record per-pulse variance ⟨x_i²⟩.</text>
-                <text x="305" y="190" font-size="11" fill="#888" font-style="italic">Σ_ii = ⟨x_i²⟩ = ½(A⁻¹)_ii    ⇒    Tr(A⁻¹) = 2 Σ_i ⟨x_i²⟩</text>
-                <text x="305" y="210" font-size="10" fill="#888">Use case: log-evidence in Bayesian model comparison.</text>
-              </g>
-              <!-- Mode 3: full covariance -->
-              <g>
-                <rect x="290" y="236" width="410" height="86" fill="rgba(121,199,159,0.10)" stroke="#79c79f" rx="4"/>
-                <text x="305" y="254" font-size="12" fill="#79c79f" font-weight="600">Mode 3 — Full ½A⁻¹ / Gaussian sampling</text>
-                <text x="305" y="270" font-size="10" fill="#888">No drive. Record cross-correlations ⟨x_i x_j⟩ across all pulse pairs.</text>
-                <text x="305" y="288" font-size="11" fill="#888" font-style="italic">Σ̂ = M / N_samples, M += x xᵀ each round-trip, A⁻¹ ≈ 2Σ̂</text>
-                <text x="305" y="308" font-size="10" fill="#888">Use case: posterior sampling, full GP inference.</text>
-              </g>
-              <!-- Mode 4: log det -->
-              <g>
-                <rect x="290" y="334" width="410" height="36" fill="rgba(200,121,209,0.10)" stroke="#c879d1" rx="4"/>
-                <text x="305" y="352" font-size="11" fill="#c879d1" font-weight="600">Mode 4 (bonus) — log det A from cumulative EOM work</text>
-                <text x="305" y="365" font-size="9" fill="#888">Aifer-Coles-Duffield 2023; same loop, integrate the work done by the feedback drive over a quasi-static schedule.</text>
-              </g>
-            </svg>
+            <div style="display: grid; grid-template-columns: minmax(180px, 240px) 1fr; gap: 1rem; align-items: stretch; background: var(--page-bg); border: 1px solid var(--page-rule); border-radius: 6px; padding: 1rem;">
+              <!-- LEFT: small SVG showing the OU loop (no math inside SVG) -->
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 240 280" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
+                  <text x="120" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="#888">OU loop running</text>
+                  <ellipse cx="120" cy="140" rx="95" ry="48" fill="none" stroke="#888" stroke-width="1.4"/>
+                  <text x="120" y="143" text-anchor="middle" font-size="10" fill="#888">x_i(t) circulating</text>
+                  <circle cx="48" cy="148" r="3" fill="#79c79f"/><circle cx="82" cy="100" r="3" fill="#79c79f"/>
+                  <circle cx="160" cy="100" r="3" fill="#79c79f"/><circle cx="195" cy="148" r="3" fill="#79c79f"/>
+                  <line x1="120" y1="190" x2="120" y2="225" stroke="#888" stroke-width="0.8" stroke-dasharray="3,3"/>
+                  <text x="120" y="245" text-anchor="middle" font-size="11" fill="#888">→ photocurrent x_i(t)</text>
+                  <text x="120" y="265" text-anchor="middle" font-size="9" fill="#888" font-style="italic">same SDE; differing</text>
+                  <text x="120" y="276" text-anchor="middle" font-size="9" fill="#888" font-style="italic">post-processing</text>
+                </svg>
+              </div>
+              <!-- RIGHT: HTML stack of four mode boxes; KaTeX renders math here -->
+              <div style="display: grid; gap: 0.5rem; font-size: 0.92rem;">
+                <div style="background: rgba(122,159,209,0.10); border: 1px solid #7a9fd1; border-radius: 4px; padding: 0.6rem 0.8rem;">
+                  <div style="color: #7a9fd1; font-weight: 600; margin-bottom: 0.25rem;">Mode 1 — Linear solve \(A v = b\)</div>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">Drive each pulse with constant DC bias \(b_i\). Record time-averaged photocurrent.</p>
+                  <p style="margin: 0.15rem 0; font-style: italic;">\(v_i = \langle x_i \rangle\) averaged over \(T_\mathrm{record} \gg T_\mathrm{mix}\)&nbsp;&nbsp;\(\Rightarrow\)&nbsp;&nbsp;\(v = A^{-1} b\)</p>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">Sample efficiency: \(\mathcal{O}(1/\varepsilon^2)\) round-trips for \(\varepsilon\) relative error.</p>
+                </div>
+                <div style="background: rgba(232,185,106,0.10); border: 1px solid #e8b96a; border-radius: 4px; padding: 0.6rem 0.8rem;">
+                  <div style="color: #e8b96a; font-weight: 600; margin-bottom: 0.25rem;">Mode 2 — Diagonal \(\tfrac{1}{2}A^{-1}\), trace \(\mathrm{Tr}(A^{-1})\)</div>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">No drive (\(b = 0\)). Record per-pulse variance \(\langle x_i^2 \rangle\).</p>
+                  <p style="margin: 0.15rem 0; font-style: italic;">\(\Sigma_{ii} = \langle x_i^2 \rangle = \tfrac{1}{2}(A^{-1})_{ii}\)&nbsp;&nbsp;\(\Rightarrow\)&nbsp;&nbsp;\(\mathrm{Tr}(A^{-1}) = 2\sum_i \langle x_i^2 \rangle\)</p>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">Use case: log-evidence in Bayesian model comparison.</p>
+                </div>
+                <div style="background: rgba(121,199,159,0.10); border: 1px solid #79c79f; border-radius: 4px; padding: 0.6rem 0.8rem;">
+                  <div style="color: #79c79f; font-weight: 600; margin-bottom: 0.25rem;">Mode 3 — Full \(\tfrac{1}{2}A^{-1}\) / Gaussian sampling</div>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">No drive. Record cross-correlations \(\langle x_i x_j \rangle\) across all pulse pairs.</p>
+                  <p style="margin: 0.15rem 0; font-style: italic;">\(\hat\Sigma = M / N_\mathrm{samples}\), with \(M \mathrel{+}= x x^\mathrm{T}\) each round-trip; \(A^{-1} \approx 2\hat\Sigma\).</p>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">Use case: posterior sampling, full GP inference.</p>
+                </div>
+                <div style="background: rgba(200,121,209,0.10); border: 1px solid #c879d1; border-radius: 4px; padding: 0.6rem 0.8rem;">
+                  <div style="color: #c879d1; font-weight: 600; margin-bottom: 0.25rem;">Mode 4 (bonus) — \(\log \det A\) from cumulative EOM work</div>
+                  <p style="margin: 0.15rem 0; font-size: 0.88rem; color: var(--page-muted);">Aifer-Coles-Duffield 2023; same loop, integrate the work done by the feedback drive over a quasi-static schedule. Output: \(\tfrac{1}{2}\log\det A\) up to a constant.</p>
+                </div>
+              </div>
+            </div>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
               <strong>Fig.&nbsp;3.</strong> Three readout protocols on one substrate. The dynamics is identical in all four cases — only the post-processing of the photocurrent stream differs.
             </figcaption>
@@ -4151,8 +4145,10 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             \(\hat\Sigma\) against
             <code>scipy.linalg.solve_continuous_lyapunov</code>. Worst-case
             cell hits 2.7% relative Frobenius error; all cells pass
-            the 5% acceptance threshold. Output figure:
-            <code>cim/figures/exp02_ou_lyapunov_grid.png</code>.
+            the 5% acceptance threshold. The error grid is the
+            headline figure of the
+            <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>
+            repo's notebook 02.
           </p>
           <p>
             <strong>What you would actually run on bench</strong>
@@ -4258,11 +4254,11 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             is the <em>underdamped</em> Wiseman-Milburn result and
             does not transfer to the overdamped case. For overdamped
             OU, the η-axis is exact (not an envelope), the τ-axis is
-            sub-linear additive. The
-            <code>cim/experiments/exp03_ou_hardware_envelope.py</code>
-            measurement caught this — see
-            <code>cim/notes/feedback_fidelity.md</code> for the
-            corrected story.
+            sub-linear additive. The hardware-envelope experiment in
+            the
+            <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>
+            repo caught this; the corrected story replaces the earlier
+            multiplicative envelope.
           </p>
           """ + widget_shell(
             anchor="eta-tau-envelope",
@@ -4335,9 +4331,9 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           <p>
             <strong>The single most important conversation to have
             with a hardware partner is FPGA-MVM-latency-at-target-d.</strong>
-            See
-            <code>~/Code/Ideas/cim/notes/hardware_noise_budget.md</code>
-            for the full noise-budget breakdown.
+            The full noise-budget breakdown lives in the
+            <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>
+            repository.
           </p>
           """,
          ["Practical target: η ≥ 0.95, γτ ≤ 0.20, error ≤ 10%",
@@ -4371,8 +4367,8 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           </p>
           <p>
             The full derivation, simulation, and hardware spec table
-            are in <code>~/Code/Ideas/TLA/direction_A_underdamped/</code>
-            — paper draft submitted to NeurIPS 2026.
+            are part of the underdamped <em>Direction&nbsp;A</em>
+            research effort — paper in preparation.
           </p>
           """ + callout(
             "The √κ advantage is the killer feature. Overdamped is the "
@@ -4409,8 +4405,7 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
         ("open", "Open Questions", r"""
           <ol>
             <li><strong>Scaling to d ≥ 64.</strong> The simulator
-              currently caps at d = 16 on CPU; GPU experiment (see
-              <code>~/Code/Ideas/cim/handoff.md</code>) is the next
+              currently caps at d = 16 on CPU; a GPU port is the next
               deliverable, including a wallclock benchmark vs scipy
               and torch.</li>
             <li><strong>Joint η-τ envelope</strong>: the additive
@@ -4447,16 +4442,12 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           "Bayesian regression is the end-to-end demo"]),
         ("sources", "Sources &amp; Further Reading", r"""
           <table class="refs">
-            <tr><td>Project</td><td><a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> — live repo: simulator, notebooks, hardware-noise-budget</td></tr>
-            <tr><td>Note</td><td><code>cim/notes/langevin_to_lyapunov.md</code> — Itô derivation</td></tr>
-            <tr><td>Note</td><td><code>cim/notes/cim_to_ou_rosetta.md</code> — three-line CIM → OU diff</td></tr>
-            <tr><td>Note</td><td><code>cim/notes/feedback_fidelity.md</code> — corrected (η, τ) envelope analysis</td></tr>
-            <tr><td>Note</td><td><code>cim/notes/hardware_noise_budget.md</code> — full QCi-actionable breakdown</td></tr>
-            <tr><td>Note</td><td><code>cim/handoff.md</code> — prioritized next steps for the GPU machine</td></tr>
-            <tr><td>Paper</td><td>Aifer, Duffield, Coles, et al., "Thermodynamic Linear Algebra", arXiv:2306.14740 (2023); npj Unconventional Computing (2024)</td></tr>
+            <tr><td>Project</td><td><a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a> — live repo: simulator, notebooks, experiments, hardware-envelope analysis</td></tr>
+            <tr><td>Paper</td><td>Aifer, Duffield, Coles, et al., "Thermodynamic Linear Algebra", arXiv:2306.14740 (2023); <em>npj Unconventional Computing</em> (2024)</td></tr>
             <tr><td>Paper</td><td>Aifer et al., 8-cell RLC SPU hardware demo, <em>Nat. Commun.</em> (2025)</td></tr>
-            <tr><td>Reference</td><td>Wiseman &amp; Milburn, <em>Quantum Measurement and Control</em>, Ch. 5</td></tr>
-            <tr><td>Project</td><td><code>~/Code/Ideas/TLA/direction_A_underdamped/</code> — underdamped √κ paper</td></tr>
+            <tr><td>Code</td><td><a href="https://github.com/mcmahon-lab/cim-optimizer">mcmahon-lab/cim-optimizer</a> — the AHC.py update step that the OU machine forks from</td></tr>
+            <tr><td>Reference</td><td>Wiseman &amp; Milburn, <em>Quantum Measurement and Control</em>, Ch. 5 (continuous measurement; underdamped envelope)</td></tr>
+            <tr><td>Project</td><td>Underdamped <em>Direction&nbsp;A</em> research — paper in preparation</td></tr>
           </table>
           <p class="pre-req">
             <strong>End of track.</strong> The seven notes above are
