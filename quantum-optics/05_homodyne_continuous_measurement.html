@@ -253,7 +253,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1195,6 +1233,51 @@
     border-color: var(--page-accent);
     color: var(--page-accent);
   }
+  /* Sidebar toggle: hides every .keypoints column on demand. */
+  body.sidebars-collapsed .section-shell {
+    grid-template-columns: 1fr !important;
+  }
+  body.sidebars-collapsed .section-side {
+    display: none !important;
+  }
+  /* When sidebars are hidden, let figures fill the wider main column.
+     Inline style max-width:720px on SVGs is overridden via !important. */
+  body.sidebars-collapsed figure > svg,
+  body.sidebars-collapsed figure > div,
+  body.sidebars-collapsed figure > img,
+  body.sidebars-collapsed figure > picture {
+    max-width: 100% !important;
+  }
+  /* Restructure top-nav so horizontal overflow lives inside an
+     inner .top-nav-links container; the toggle button sits as a
+     non-scrolling sibling, always visible at the right edge. */
+  .top-nav-shell {
+    overflow-x: visible !important;
+    align-items: center;
+  }
+  .top-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .toggle-sidebars {
+    margin-left: auto;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--page-rule);
+    background: transparent;
+    color: var(--page-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .toggle-sidebars:hover {
+    border-color: var(--page-accent);
+    color: var(--page-accent);
+  }
 </style>
   </head>
   <body>
@@ -1225,14 +1308,17 @@
 
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
-        <a href="#balanced-homodyne">Balanced Homodyne</a>
-<a href="#shot-noise">Shot Noise</a>
-<a href="#phase-vs-het">Phase vs Het.</a>
-<a href="#sub-shot">Sub-Shot-Noise</a>
-<a href="#homodyne-quadrature">Quadrature Lab</a>
-<a href="#sme">SME</a>
-<a href="#wm-feedback">Wiseman-Milburn</a>
-<a href="#sources">Sources</a>
+    <div class="top-nav-links">
+          <a href="#balanced-homodyne">Balanced Homodyne</a>
+  <a href="#shot-noise">Shot Noise</a>
+  <a href="#phase-vs-het">Phase vs Het.</a>
+  <a href="#sub-shot">Sub-Shot-Noise</a>
+  <a href="#homodyne-quadrature">Quadrature Lab</a>
+  <a href="#sme">SME</a>
+  <a href="#wm-feedback">Wiseman-Milburn</a>
+  <a href="#sources">Sources</a>
+    </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
   </div>
 </nav>
 
@@ -1272,7 +1358,7 @@
     \(\sqrt{2}\,\lvert\alpha_\mathrm{LO}\rvert\,X_\mathrm{sig}\) — the
     X-quadrature of the signal, amplified by the LO.
   </p>
-  <div class="callout">The LO acts as a phase reference and a noiseless gain. Because we subtract the two arms, the LO's classical amplitude noise cancels and we are left with the interference cross-term — which carries the signal quadrature times \(|\alpha_\mathrm{LO}|\).</div>
+  <div class="callout">The LO acts as a phase reference and a large coherent gain. In an ideal balanced detector, common-mode technical amplitude noise from the LO cancels in the subtraction, leaving the interference cross-term — which carries the signal quadrature times \(|\alpha_\mathrm{LO}|\).</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
@@ -1307,10 +1393,10 @@
   </p>
   <p>
     For our purposes (CIM/OU machine on a typical bench): with
-    a pulse train at GHz repetition rate, a per-pulse photon
-    flux \(\sim 10^9\) and integration time \(\sim 1\) ns gives
-    \(\sigma_\mathrm{meas} \sim 1\) (per shot, in units of
-    \(x_\mathrm{RMS}\)). This is the
+    a pulse train at GHz repetition rate, \(\sim 10^9\) LO
+    photons in a 1 ns integration window gives a shot-noise
+    scale of order \(\sqrt{10^9}\) photoelectrons; after
+    normalizing to quadrature units this is the
     <code>σ_meas</code> parameter in
     <a href="07_thermodynamic_la_ou_machine.html">Note 07</a>.
   </p>
@@ -1381,7 +1467,7 @@
     \(e^{-2r_\mathrm{eff}} = 0.05\) → 13 dB. Detection loss
     is the binding constraint, not the squeezer.
   </p>
-  <div class="callout">Squeezing alone is a constant-factor (in r) variance reduction on a homodyne measurement. For ill-conditioned linear-algebra problems where the variance has additional κ-dependence, the squeezing factor doesn't address the κ scaling. This was Direction B's killshot result for the OU machine.</div>
+  <div class="callout">Squeezing alone is a constant-factor (in r) variance reduction on a homodyne measurement. For ill-conditioned linear-algebra problems where the variance has additional κ-dependence, the squeezing factor doesn't address the κ scaling. This is the limiting result for the simple squeezing-only OU-machine improvement path.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
@@ -1389,7 +1475,7 @@
       <ul>
               <li>Squeezed input → e^(−2r) on photocurrent variance</li>
       <li>Detection loss caps usable r</li>
-      <li>No κ-dependence — Direction B's killshot</li>
+      <li>No κ-dependence — only a constant-factor variance reduction</li>
       </ul>
     </aside>
   </div>
@@ -1454,7 +1540,9 @@
         + \mathcal{D}[L]\rho_c\,dt
         + \mathcal{H}[L]\rho_c\,dW(t),
     \]
-    where \(L = \sqrt{2\kappa}\,a\), \(dW\) is a Wiener
+    in units with \(\hbar=1\), for ideal detection efficiency
+    and the measured quadrature phase absorbed into \(L\).
+    Here \(L = \sqrt{2\kappa}\,a\), \(dW\) is a Wiener
     increment, and \(\mathcal{H}[L]\rho = L\rho + \rho L^\dagger
     - \mathrm{Tr}(L\rho + \rho L^\dagger)\rho\) is the
     measurement-conditioning superoperator. Averaging over the
@@ -1600,6 +1688,29 @@
     } else {
       ensureMathRendered();
     }
+  })();
+</script>
+    <script>
+  (function () {
+    var KEY = 'quantum-notes-sidebars';
+    var btn = document.querySelector('.toggle-sidebars');
+    if (!btn) return;
+    function apply(hidden) {
+      document.body.classList.toggle('sidebars-collapsed', hidden);
+      btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      btn.setAttribute('aria-label',
+        hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+    }
+    // Default: sidebars hidden. Only an explicit 'visible' shows them.
+    var initial = true;
+    try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+    apply(initial);
+    btn.addEventListener('click', function () {
+      var next = !document.body.classList.contains('sidebars-collapsed');
+      apply(next);
+      try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+    });
   })();
 </script>
 <script>

@@ -253,7 +253,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1195,6 +1233,51 @@
     border-color: var(--page-accent);
     color: var(--page-accent);
   }
+  /* Sidebar toggle: hides every .keypoints column on demand. */
+  body.sidebars-collapsed .section-shell {
+    grid-template-columns: 1fr !important;
+  }
+  body.sidebars-collapsed .section-side {
+    display: none !important;
+  }
+  /* When sidebars are hidden, let figures fill the wider main column.
+     Inline style max-width:720px on SVGs is overridden via !important. */
+  body.sidebars-collapsed figure > svg,
+  body.sidebars-collapsed figure > div,
+  body.sidebars-collapsed figure > img,
+  body.sidebars-collapsed figure > picture {
+    max-width: 100% !important;
+  }
+  /* Restructure top-nav so horizontal overflow lives inside an
+     inner .top-nav-links container; the toggle button sits as a
+     non-scrolling sibling, always visible at the right edge. */
+  .top-nav-shell {
+    overflow-x: visible !important;
+    align-items: center;
+  }
+  .top-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .toggle-sidebars {
+    margin-left: auto;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--page-rule);
+    background: transparent;
+    color: var(--page-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .toggle-sidebars:hover {
+    border-color: var(--page-accent);
+    color: var(--page-accent);
+  }
 </style>
   </head>
   <body>
@@ -1206,7 +1289,7 @@
     <div class="header-grid">
       <div>
         <h1>Nonlinear Optics and Parametric Processes</h1>
-        <p class="header-subtitle">Where squeezing and entanglement are made. The χ⁽²⁾ and χ⁽³⁾ medium is the only place in the photonic stack where photon-photon interactions are non-trivial — and that is the entire source of quantumness in subsequent notes.</p>
+        <p class="header-subtitle">Where squeezing and entanglement are made in this track. The χ⁽²⁾ and χ⁽³⁾ medium is where the photonic stack gets effective photon-photon interactions, and it supplies the nonclassical resources used in subsequent notes.</p>
       </div>
       <aside class="header-card">
         <h2>What This Note Covers</h2>
@@ -1225,14 +1308,17 @@
 
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
-        <a href="#polarization">Polarization Expansion</a>
-<a href="#three-wave">Three-Wave Mixing</a>
-<a href="#pdc">Down-Conversion</a>
-<a href="#opa-opo">OPA / OPO</a>
-<a href="#squeezing-gen">Squeezing</a>
-<a href="#squeeze-trajectory">Squeeze Lab</a>
-<a href="#chi3">χ⁽³⁾ Effects</a>
-<a href="#sources">Sources</a>
+    <div class="top-nav-links">
+          <a href="#polarization">Polarization Expansion</a>
+  <a href="#three-wave">Three-Wave Mixing</a>
+  <a href="#pdc">Down-Conversion</a>
+  <a href="#opa-opo">OPA / OPO</a>
+  <a href="#squeezing-gen">Squeezing</a>
+  <a href="#squeeze-trajectory">Squeeze Lab</a>
+  <a href="#chi3">χ⁽³⁾ Effects</a>
+  <a href="#sources">Sources</a>
+    </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
   </div>
 </nav>
 
@@ -1253,13 +1339,16 @@
           + \chi^{(2)} E^2
           + \chi^{(3)} E^3 + \cdots\bigr).
     \]
-    \(\chi^{(2)}\) is allowed only in non-centrosymmetric crystals
-    (LiNbO\(_3\), KTP, BBO, periodically-poled LiNbO\(_3\)). \(\chi^{(3)}\)
-    exists in everything but is typically much smaller.
+    Bulk electric-dipole \(\chi^{(2)}\) vanishes in
+    centrosymmetric media, so useful \(\chi^{(2)}\) devices
+    use non-centrosymmetric crystals (LiNbO\(_3\), KTP, BBO,
+    periodically-poled LiNbO\(_3\)). \(\chi^{(3)}\) is allowed
+    much more broadly but is typically much smaller.
   </p>
   <p>
-    The numbers: in a good χ⁽²⁾ crystal, you start to see
-    three-wave-mixing effects at intensities of order
+    Order-of-magnitude numbers: in a good χ⁽²⁾ crystal, you
+    start to see appreciable three-wave-mixing effects at
+    intensities of order
     10\(^9\)–10\(^{12}\) W/m². Pulsed lasers focused into a few-mm
     crystal hit that comfortably. CW lasers need cavity
     enhancement (Note 06).
@@ -1292,9 +1381,10 @@
     <li><strong>Second-harmonic generation (SHG):</strong>
       \(\omega + \omega \to 2\omega\). Standard frequency-doubling.</li>
     <li><strong>Sum-frequency generation:</strong>
-      \(\omega_1 + \omega_2 \to \omega_1 + \omega_2\).</li>
+      two inputs at \(\omega_1,\omega_2\) drive a field at
+      \(\omega_1 + \omega_2\).</li>
     <li><strong>Difference-frequency generation:</strong>
-      \(\omega_1 - \omega_2 \to \omega_1 - \omega_2\).</li>
+      two inputs drive a field at \(\lvert\omega_1-\omega_2\rvert\).</li>
     <li><strong>Spontaneous parametric down-conversion (SPDC):</strong>
       \(\omega_p \to \omega_s + \omega_i\). The reverse of
       sum-frequency: a pump photon spontaneously decays into
@@ -1308,7 +1398,7 @@
     matching is the engineering constraint that decides which
     wavelengths and polarizations a given crystal can mix.
   </p>
-  <div class="callout">Phase matching is a 1D problem with three knobs: temperature, angle, and quasi-phase-matching grating period. Periodically poled LiNbO₃ (PPLN) — flipping the χ⁽²⁾ sign every coherence length — gave the field the room-temperature, normal-dispersion, any-wavelength flexibility that makes modern integrated OPOs possible.</div>
+  <div class="callout">Phase matching is often engineered with temperature, angle, waveguide dispersion, and quasi-phase-matching grating period. Periodically poled LiNbO₃ (PPLN) — flipping the χ⁽²⁾ sign every coherence length — gives a powerful way to compensate phase mismatch over designed wavelength bands and is a workhorse for modern integrated OPOs.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
@@ -1343,7 +1433,9 @@
     Hamiltonian becomes
     \(H = i\hbar(g\beta_p^* a^2 - g\beta_p (a^\dagger)^2)/2\).
     The unitary it generates is exactly the squeeze operator
-    \(S(r)\) with \(r = g\lvert\beta_p\rvert t\). <em>The physical
+    \(S(r)\), with \(r\) proportional to
+    \(g\lvert\beta_p\rvert t\) up to convention-dependent
+    factors and phases. <em>The physical
     mechanism that produces squeezing is degenerate SPDC.</em>
   </p>
 
@@ -1381,7 +1473,7 @@
     For degenerate (signal = idler), the output picks one of
     two phases (the <strong>DOPO</strong>, Note 06).
   </p>
-  <div class="callout">Below threshold: OPO output is squeezed vacuum. Above threshold: OPO output is a coherent state with a binary phase. The threshold pump power is the most physically important parameter of a parametric oscillator.</div>
+  <div class="callout">Below threshold: an OPO with vacuum input emits squeezed vacuum. Above threshold: a degenerate OPO develops a large coherent amplitude in one of two phase states, up to fluctuations and technical noise. The threshold pump power is the most physically important parameter of a parametric oscillator.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
@@ -1399,20 +1491,20 @@
     <h2>Squeezing Generation in Practice</h2>
 
   <p>
-    Hardware records: the world record for inferred squeezing
-    is \(\sim 15\) dB (Vahlbruch et al., <em>PRL</em> 2016) using a
+    A benchmark low-loss result is \(\sim 15\) dB measured
+    squeezing (Vahlbruch et al., <em>PRL</em> 2016) using a
     sub-threshold OPO with periodically-poled KTP. For
     usable-at-detector squeezing (after homodyne efficiency),
     10 dB is excellent; 5–6 dB is routine.
   </p>
   <p>
-    The chain of efficiency hits is:
+    The chain of efficiency hits is typically:
   </p>
   <ul>
-    <li>Crystal escape efficiency (intracavity loss): −0.5 dB</li>
-    <li>Optical path loss to detector: −0.5 to −1 dB</li>
-    <li>Detector quantum efficiency (e.g. 95%): −0.2 dB</li>
-    <li>LO mode-match: −0.5 dB</li>
+    <li>Crystal escape efficiency and intracavity loss</li>
+    <li>Optical path loss to detector</li>
+    <li>Detector quantum efficiency (e.g. 95%)</li>
+    <li>LO mode matching</li>
     <li>Excess phase noise: degrades anti-squeezing-into-squeezing leakage</li>
   </ul>
   <p>
@@ -1440,8 +1532,9 @@
     <h2>χ⁽³⁾ Effects, Briefly</h2>
 
   <p>
-    The cubic susceptibility χ⁽³⁾ exists in centrosymmetric
-    media — silica fiber, silicon waveguides, AlGaAs. It drives:
+    The cubic susceptibility χ⁽³⁾ is allowed in centrosymmetric
+    media and appears in platforms such as silica fiber,
+    silicon waveguides, and AlGaAs. It drives:
   </p>
   <ul>
     <li><strong>Self-phase modulation:</strong> intensity-dependent
@@ -1490,7 +1583,7 @@
           </p>
           <div class="widget-shell" id="squeeze-trajectory">
   <h4>Phase-space squeezed-vacuum ellipse</h4>
-  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide squeeze parameter <em>r</em> and angle <em>θ</em>. The unit-circle vacuum noise (dashed) is the reference; the squeezed ellipse (solid) shows the squeezed and anti-squeezed quadratures. The product Var(<em>X</em>) · Var(<em>P</em>) = ¼ holds: this is a minimum-uncertainty state.</p>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide squeeze parameter <em>r</em> and angle <em>θ</em>. The unit-circle vacuum noise (dashed) is the reference; the squeezed ellipse (solid) shows the squeezed and anti-squeezed quadratures. The product of the principal quadrature variances, equivalently det <em>V</em>, is ¼: this is a minimum-uncertainty state.</p>
   <div class="widget-controls">
         <label>
           <span>squeeze r</span>
@@ -1514,7 +1607,7 @@
               <ul>
                       <li>Squeeze ellipse: shrunk in one quadrature, stretched in other</li>
               <li>\(e^{-2r}\) variance reduction in dB: \(-8.7 r\)</li>
-              <li>Heisenberg saturation: Var(X)·Var(P) = ¼</li>
+              <li>Heisenberg saturation: principal-variance product = ¼</li>
               </ul>
             </aside>
           </div>
@@ -1597,6 +1690,29 @@
     } else {
       ensureMathRendered();
     }
+  })();
+</script>
+    <script>
+  (function () {
+    var KEY = 'quantum-notes-sidebars';
+    var btn = document.querySelector('.toggle-sidebars');
+    if (!btn) return;
+    function apply(hidden) {
+      document.body.classList.toggle('sidebars-collapsed', hidden);
+      btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      btn.setAttribute('aria-label',
+        hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+    }
+    // Default: sidebars hidden. Only an explicit 'visible' shows them.
+    var initial = true;
+    try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+    apply(initial);
+    btn.addEventListener('click', function () {
+      var next = !document.body.classList.contains('sidebars-collapsed');
+      apply(next);
+      try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+    });
   })();
 </script>
 <script>

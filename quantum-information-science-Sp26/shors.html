@@ -174,7 +174,45 @@
         margin: 0 auto;
         padding: 0.8rem 0;
         display: flex; gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
       .top-nav-shell a {
         white-space: nowrap;
@@ -619,23 +657,26 @@
 
     <nav class="top-nav" aria-label="Section navigation">
       <div class="top-nav-shell">
-        <a href="#factoring-problem">Factoring &amp; RSA</a>
-        <a href="#number-theory">Number Theory</a>
-        <a href="#period-reduction">Period Reduction</a>
-        <a href="#period-finding-lab">Period Lab</a>
-        <a href="#qft-intuition">QFT Intuition</a>
-        <a href="#qft-circuit">QFT Circuit</a>
-        <a href="#n15-walkthrough">N=15 Walkthrough</a>
-        <a href="#continued-fractions">Continued Fractions</a>
-        <a href="#q-squared">Why \(Q=\Theta(N^2)\)</a>
-        <a href="#failure-modes">Failure Modes</a>
-        <a href="#discrete-log">Discrete Log</a>
-        <a href="#hsp">HSP</a>
-        <a href="#complexity">Complexity</a>
-        <a href="#sota">SOTA</a>
-        <a href="#mastery">Mastery Map</a>
-        <a href="#faq">FAQ</a>
-        <a href="#sources">Sources</a>
+        <div class="top-nav-links">
+          <a href="#factoring-problem">Factoring &amp; RSA</a>
+          <a href="#number-theory">Number Theory</a>
+          <a href="#period-reduction">Period Reduction</a>
+          <a href="#period-finding-lab">Period Lab</a>
+          <a href="#qft-intuition">QFT Intuition</a>
+          <a href="#qft-circuit">QFT Circuit</a>
+          <a href="#n15-walkthrough">N=15 Walkthrough</a>
+          <a href="#continued-fractions">Continued Fractions</a>
+          <a href="#q-squared">Why \(Q=\Theta(N^2)\)</a>
+          <a href="#failure-modes">Failure Modes</a>
+          <a href="#discrete-log">Discrete Log</a>
+          <a href="#hsp">HSP</a>
+          <a href="#complexity">Complexity</a>
+          <a href="#sota">SOTA</a>
+          <a href="#mastery">Mastery Map</a>
+          <a href="#faq">FAQ</a>
+          <a href="#sources">Sources</a>
+        </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
       </div>
     </nav>
 
@@ -2726,6 +2767,28 @@
         } else {
           init();
         }
+      })();
+    </script>
+    <script>
+      (function () {
+        var KEY = 'quantum-notes-sidebars';
+        var btn = document.querySelector('.toggle-sidebars');
+        if (!btn) return;
+        function apply(hidden) {
+          document.body.classList.toggle('sidebars-collapsed', hidden);
+          btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+          btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+          btn.setAttribute('aria-label',
+            hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+        }
+        var initial = true;
+        try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+        apply(initial);
+        btn.addEventListener('click', function () {
+          var next = !document.body.classList.contains('sidebars-collapsed');
+          apply(next);
+          try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+        });
       })();
     </script>
   </body>

@@ -253,7 +253,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1195,6 +1233,51 @@
     border-color: var(--page-accent);
     color: var(--page-accent);
   }
+  /* Sidebar toggle: hides every .keypoints column on demand. */
+  body.sidebars-collapsed .section-shell {
+    grid-template-columns: 1fr !important;
+  }
+  body.sidebars-collapsed .section-side {
+    display: none !important;
+  }
+  /* When sidebars are hidden, let figures fill the wider main column.
+     Inline style max-width:720px on SVGs is overridden via !important. */
+  body.sidebars-collapsed figure > svg,
+  body.sidebars-collapsed figure > div,
+  body.sidebars-collapsed figure > img,
+  body.sidebars-collapsed figure > picture {
+    max-width: 100% !important;
+  }
+  /* Restructure top-nav so horizontal overflow lives inside an
+     inner .top-nav-links container; the toggle button sits as a
+     non-scrolling sibling, always visible at the right edge. */
+  .top-nav-shell {
+    overflow-x: visible !important;
+    align-items: center;
+  }
+  .top-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .toggle-sidebars {
+    margin-left: auto;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--page-rule);
+    background: transparent;
+    color: var(--page-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .toggle-sidebars:hover {
+    border-color: var(--page-accent);
+    color: var(--page-accent);
+  }
 </style>
   </head>
   <body>
@@ -1225,14 +1308,17 @@
 
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
-        <a href="#driven-cavity">Driven Cavity</a>
-<a href="#loss-as-bs">Loss as BS</a>
-<a href="#lindblad">Lindblad</a>
-<a href="#input-output">Input-Output</a>
-<a href="#langevin">Langevin</a>
-<a href="#classical-limit">Classical Limit</a>
-<a href="#cavity-decay">Decay Lab</a>
-<a href="#sources">Sources</a>
+    <div class="top-nav-links">
+          <a href="#driven-cavity">Driven Cavity</a>
+  <a href="#loss-as-bs">Loss as BS</a>
+  <a href="#lindblad">Lindblad</a>
+  <a href="#input-output">Input-Output</a>
+  <a href="#langevin">Langevin</a>
+  <a href="#classical-limit">Classical Limit</a>
+  <a href="#cavity-decay">Decay Lab</a>
+  <a href="#sources">Sources</a>
+    </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
   </div>
 </nav>
 
@@ -1247,11 +1333,12 @@
     \(a\), resonance frequency \(\omega_c\). Drive it with a
     classical coherent field at \(\omega_d\), with amplitude
     \(\varepsilon\). In the rotating frame at \(\omega_d\) the
-    Hamiltonian is
+    Hamiltonian, written in angular-frequency units
+    (\(H/\hbar\)), is
     \[
-      H = \Delta\, a^\dagger a
+      H/\hbar = \Delta\, a^\dagger a
         + i\bigl(\varepsilon a^\dagger - \varepsilon^* a\bigr)
-        + H_\mathrm{NL},
+        + H_\mathrm{NL}/\hbar,
     \]
     where \(\Delta = \omega_c - \omega_d\) is the detuning and
     \(H_\mathrm{NL}\) is whatever nonlinear term the χ⁽²⁾ or χ⁽³⁾
@@ -1268,7 +1355,7 @@
     <aside class="keypoints">
       <h3>Key takeaways</h3>
       <ul>
-              <li>\(H = \Delta a^\dagger a + i(\varepsilon a^\dagger - \varepsilon^* a) + H_\mathrm{NL}\)</li>
+              <li>\(H/\hbar = \Delta a^\dagger a + i(\varepsilon a^\dagger - \varepsilon^* a) + H_\mathrm{NL}/\hbar\)</li>
       <li>Detuning Δ controls resonance offset</li>
       <li>Drive ε is the classical coherent input</li>
       </ul>
@@ -1290,8 +1377,9 @@
     \]
     and the field that remains is
     \(r\, a_\mathrm{cav} + t\, a_\mathrm{vac}\). Each round
-    trip mixes a fraction \(r^2\) of vacuum into the cavity
-    field. In the continuous-time limit (\(t\) small,
+    trip mixes a fraction \(\lvert t\rvert^2\) of vacuum into
+    the cavity field. In the continuous-time limit
+    (\(\lvert t\rvert\) small,
     round-trip time \(\Delta t\)), this becomes
     \(da/dt = -\kappa\, a + \xi(t)\), where the cavity decay
     rate \(\kappa\) is set by the mirror transmittance and the
@@ -1329,10 +1417,13 @@
                 - \tfrac{1}{2}\bigl\{L^\dagger L, \rho\bigr\}.
             \]
             The "jump operators" \(L_k\) describe the irreversible
-            channels. For a leaky cavity with one output port:
+            channels. For a leaky cavity with one zero-temperature
+            output port in the convention used here:
             \(L_1 = \sqrt{2\kappa}\, a\). For multiple ports, add more
-            \(L_k\). For thermal-bath excitations at temperature
-            \(T > 0\): a second jump operator \(L_2 = \sqrt{2\kappa\bar n}\, a^\dagger\).
+            \(L_k\). For a thermal bath with mean occupation
+            \(\bar n\), the loss and excitation channels are
+            \(L_- = \sqrt{2\kappa(\bar n+1)}\,a\) and
+            \(L_+ = \sqrt{2\kappa\bar n}\,a^\dagger\).
           </p>
           <p>
             Three concrete uses of the Lindblad form in this track:
@@ -1340,10 +1431,11 @@
           <ul>
             <li><strong>OPO threshold dynamics</strong> (Note 06): full
               quantum description of the bifurcation, including
-              spontaneous-emission-driven phase selection.</li>
-            <li><strong>CIM full-quantum simulation</strong>: exact for
-              small networks (\(\le 4\) modes); requires Gaussian
-              approximations or trajectories above that.</li>
+              vacuum-noise-driven phase selection.</li>
+            <li><strong>CIM full-quantum simulation</strong>: feasible
+              for small networks with a Fock-space cutoff; larger
+              networks usually require Gaussian approximations,
+              phase-space methods, or trajectories.</li>
             <li><strong>OU machine cross-check</strong>: in the bright-field
               limit, the Heisenberg-Langevin equations reduce to
               classical SDEs, and the Lyapunov sampler of Note 07
@@ -1354,12 +1446,13 @@
 
     <p>
       Gorini–Kossakowski–Sudarshan and Lindblad (independently,
-      1976) proved that any time-local, completely positive,
-      trace-preserving map on a finite-dimensional Hilbert space
-      has a generator of exactly the above form — Hamiltonian
-      part plus a sum of "dissipator" terms. The structure is
-      not a modeling choice; it is forced by physical consistency
-      (positivity of probabilities, no signaling, …).
+      1976) proved that a Markovian quantum dynamical semigroup
+      on a finite-dimensional Hilbert space has a generator of
+      exactly the above form — Hamiltonian part plus a sum of
+      "dissipator" terms. Time-local CP-divisible dynamics has
+      the same structure with time-dependent rates. The
+      structure is forced by complete positivity and trace
+      preservation.
     </p>
 
 </details>
@@ -1370,7 +1463,7 @@
               <ul>
                       <li>GKSL form: \(\dot\rho = -i[H,\rho] + \sum_k \mathcal{D}[L_k]\rho\)</li>
               <li>Each jump operator \(L_k\) is one decoherence channel</li>
-              <li>Cavity loss: \(L = \sqrt{2\kappa} a\). Thermal: add \(L = \sqrt{2\kappa\bar n} a^\dagger\)</li>
+              <li>Cavity loss: \(L = \sqrt{2\kappa} a\). Thermal: add emission/absorption channels</li>
               </ul>
             </aside>
           </div>
@@ -1467,12 +1560,13 @@
     \]
     where \(\delta\mathbf{x} = (\delta X, \delta P)^T\),
     \(A_\mathrm{eff}\) is the linearized drift around the
-    classical attractor, and \(D\) is set by the vacuum input
-    (\(D = I\) for vacuum, \(D = e^{-2r}I\) along squeezed
-    quadrature). <em>This is the Langevin equation that the OU
+    classical attractor, and \(D\) is set by the input noise
+    (proportional to \(I\) for vacuum, anisotropic for
+    squeezed input, with principal variances scaled by
+    \(e^{-2r}\) and \(e^{+2r}\)). <em>This is the Langevin equation that the OU
     machine in Note 07 turns into a Lyapunov sampler.</em>
   </p>
-  <div class="callout">The bright-field limit is what makes optical computing feasible. We are working in the regime where the field amplitude is large enough that mean-field captures the dynamics, and small enough that quantum fluctuations are the dominant noise. This is the regime of every analog optical processor — CIM, OU machine, photonic Ising.</div>
+  <div class="callout">The bright-field limit is what makes optical computing feasible. We are working in the regime where the field amplitude is large enough that mean-field captures the dynamics, while quantum or technical fluctuations still supply the relevant noise source. This is the regime used by many analog optical processors — CIM, OU-machine-style samplers, and photonic Ising experiments.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
@@ -1492,13 +1586,14 @@
           <p class="lede">
             With drive turned off, an initial coherent state
             \(\lvert\alpha_0\rangle\) decays as
-            \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\) — a simple
+            \(\alpha(t) = \alpha_0 e^{-\kappa t}\) — a simple
             exponential ringdown. With drive, the cavity reaches a
-            non-zero steady state \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
+            non-zero resonant linear-cavity steady state
+            \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
           </p>
           <div class="widget-shell" id="cavity-decay">
   <h4>Driven cavity ringdown / steady-state</h4>
-  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide cavity decay <em>κ</em>, drive amplitude <em>ε</em>, and toggle the drive. Phase-space trajectory shows |α(t)|; the full curve is the analytic solution <em>α</em>(t) = (ε/κ)(1 − e<sup>−κt</sup>) + α₀ e<sup>−κt</sup>.</p>
+  <p style="margin: 0 0 0.6rem; font-size: 0.92rem;">Slide cavity decay <em>κ</em>, drive amplitude <em>ε</em>, and toggle the drive. Phase-space trajectory shows |α(t)|; the full curve is the resonant linear analytic solution <em>α</em>(t) = (ε/κ)(1 − e<sup>−κt</sup>) + α₀ e<sup>−κt</sup>.</p>
   <div class="widget-controls">
         <label>
           <span>decay κ</span>
@@ -1525,7 +1620,7 @@
             <aside class="keypoints">
               <h3>Key takeaways</h3>
               <ul>
-                      <li>Free decay: \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\)</li>
+                      <li>Free decay: \(\alpha(t) = \alpha_0 e^{-\kappa t}\)</li>
               <li>Driven steady state: \(\alpha_\mathrm{ss} = \varepsilon/\kappa\)</li>
               <li>Half-life: \(t_{1/2} = \ln 2 / \kappa\)</li>
               </ul>
@@ -1612,6 +1707,29 @@
     }
   })();
 </script>
+    <script>
+  (function () {
+    var KEY = 'quantum-notes-sidebars';
+    var btn = document.querySelector('.toggle-sidebars');
+    if (!btn) return;
+    function apply(hidden) {
+      document.body.classList.toggle('sidebars-collapsed', hidden);
+      btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      btn.setAttribute('aria-label',
+        hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+    }
+    // Default: sidebars hidden. Only an explicit 'visible' shows them.
+    var initial = true;
+    try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+    apply(initial);
+    btn.addEventListener('click', function () {
+      var next = !document.body.classList.contains('sidebars-collapsed');
+      apply(next);
+      try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+    });
+  })();
+</script>
 <script>
 
       // -- Widget: cavity decay (driven, exponential ringdown) ----------
@@ -1646,10 +1764,10 @@
           // SS line
           html += '<line x1="' + pad + '" y1="' + ypos(alpha_ss) + '" x2="' + (W-pad) + '" y2="' + ypos(alpha_ss) + '" stroke="#e8b96a" stroke-width="1" stroke-dasharray="4,3"/>';
           html += '<text x="' + (W-pad-8) + '" y="' + (ypos(alpha_ss)-4) + '" text-anchor="end" font-size="10" fill="#e8b96a">|α_ss| = ' + alpha_ss.toFixed(2) + '</text>';
-          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt/2}  (amplitude convention)
+          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt}  (with L = √(2κ)a convention)
           var pts = [];
           for (var t = 0; t <= TMAX; t += 0.05) {
-            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t/2);
+            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t);
             pts.push(xpos(t) + ',' + ypos(Math.abs(a)));
           }
           html += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#79c79f" stroke-width="2"/>';

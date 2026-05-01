@@ -253,7 +253,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1195,6 +1233,51 @@
     border-color: var(--page-accent);
     color: var(--page-accent);
   }
+  /* Sidebar toggle: hides every .keypoints column on demand. */
+  body.sidebars-collapsed .section-shell {
+    grid-template-columns: 1fr !important;
+  }
+  body.sidebars-collapsed .section-side {
+    display: none !important;
+  }
+  /* When sidebars are hidden, let figures fill the wider main column.
+     Inline style max-width:720px on SVGs is overridden via !important. */
+  body.sidebars-collapsed figure > svg,
+  body.sidebars-collapsed figure > div,
+  body.sidebars-collapsed figure > img,
+  body.sidebars-collapsed figure > picture {
+    max-width: 100% !important;
+  }
+  /* Restructure top-nav so horizontal overflow lives inside an
+     inner .top-nav-links container; the toggle button sits as a
+     non-scrolling sibling, always visible at the right edge. */
+  .top-nav-shell {
+    overflow-x: visible !important;
+    align-items: center;
+  }
+  .top-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .toggle-sidebars {
+    margin-left: auto;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--page-rule);
+    background: transparent;
+    color: var(--page-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .toggle-sidebars:hover {
+    border-color: var(--page-accent);
+    color: var(--page-accent);
+  }
 </style>
   </head>
   <body>
@@ -1224,13 +1307,16 @@
 
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
-        <a href="#two-mode-bs">2-Mode BS</a>
-<a href="#bs-mixer">BS Mixer Lab</a>
-<a href="#hom">Hong-Ou-Mandel</a>
-<a href="#mzi">Mach-Zehnder</a>
-<a href="#decompositions">Decompositions</a>
-<a href="#photonic-meshes">Meshes</a>
-<a href="#sources">Sources</a>
+    <div class="top-nav-links">
+          <a href="#two-mode-bs">2-Mode BS</a>
+  <a href="#bs-mixer">BS Mixer Lab</a>
+  <a href="#hom">Hong-Ou-Mandel</a>
+  <a href="#mzi">Mach-Zehnder</a>
+  <a href="#decompositions">Decompositions</a>
+  <a href="#photonic-meshes">Meshes</a>
+  <a href="#sources">Sources</a>
+    </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
   </div>
 </nav>
 
@@ -1251,15 +1337,17 @@
       \begin{pmatrix} 1 & i \\ i & 1 \end{pmatrix}
       \begin{pmatrix} a_1 \\ a_2 \end{pmatrix}.
     \]
-    More generally a beam splitter with reflectance \(r\) and
-    transmittance \(t = \sqrt{1-r^2}\) realizes
-    \(U_{\mathrm{BS}}(\theta)\) with
-    \(\theta = \arccos r\).
+    More generally, a lossless beam splitter has amplitude
+    transmissivity \(t\) and amplitude reflectivity \(r\) with
+    \(\lvert t\rvert^2 + \lvert r\rvert^2 = 1\). A common
+    parametrization is \(t = \cos\theta,\ r = i\sin\theta\);
+    the power transmittance is \(T=\lvert t\rvert^2\).
   </p>
   <p>
-    The crucial fact: this is a <em>unitary on the operator
-    algebra</em>, not on the wavefunction. It is the Heisenberg
-    picture of how vacuum and fields mix. A coherent state
+    The crucial fact: a physical unitary on the two-mode
+    Hilbert space induces this linear transformation on the
+    field operators. In the Heisenberg picture it is how
+    vacuum and fields mix. A coherent state
     \(\lvert\alpha\rangle\) on input 1 plus vacuum on input 2 emerges
     as a product
     \(\lvert\alpha/\sqrt{2}\rangle \otimes \lvert i\alpha/\sqrt{2}\rangle\)
@@ -1334,10 +1422,14 @@
 
   <p>
     Send two indistinguishable single photons into the two
-    inputs of a 50/50 BS:
-    \(\lvert 1, 1\rangle_{a_1 a_2} \to \tfrac{1}{2}
-    (\lvert 2, 0\rangle - \lvert 0, 2\rangle)
-    i^2 = -\tfrac{1}{2}(\lvert 2,0\rangle - \lvert 0,2\rangle)\).
+    inputs of a 50/50 BS. With the phase convention above,
+    \[
+      \lvert 1,1\rangle_{a_1a_2}
+      \to \frac{i}{\sqrt{2}}
+      \bigl(\lvert 2,0\rangle_{b_1b_2}
+            + \lvert 0,2\rangle_{b_1b_2}\bigr),
+    \]
+    up to an overall phase.
     The amplitude for the \(\lvert 1,1\rangle\) outcome —
     "one photon in each output" — is exactly zero by
     destructive interference. Both photons bunch together.
@@ -1407,11 +1499,12 @@
             interference of paths through the mesh.
           </p>
           <p>
-            For \(N=8\) this is 28 MZIs, plus 8 input-phase shifters.
-            For \(N=64\) it is 2,016 MZIs — the limit of current
-            silicon photonics in a single chip. The Clements layout is
-            depth-balanced (depth \(N\)) and is what most modern
-            photonic-processor chips use.
+            For \(N=8\) this is 28 MZIs, plus output phase shifters.
+            For \(N=64\) it is 2,016 MZIs, already a demanding
+            calibration and loss budget for a single chip. The Clements
+            layout is depth-balanced with \(O(N)\) optical depth and is
+            the standard layout in many modern photonic-processor
+            demonstrations.
           </p>
           <details class="math-details">
   <summary>Why the count is \(\binom{N}{2}\)</summary>
@@ -1450,7 +1543,8 @@
     <li><strong>Boson sampling</strong> (Aaronson &amp; Arkhipov 2011;
       Xanadu Borealis 2022): N-port unitary acting on
       indistinguishable single photons; output statistics
-      hard-to-classically-simulate when \(N \gtrsim 50\).</li>
+      hard-to-classically-simulate in the large-photon-number,
+      low-loss regime.</li>
     <li><strong>Photonic neural networks</strong> (Shen et al.
       <em>Nat. Photonics</em> 2017; Hamerly et al. <em>Sci. Adv.</em>
       2019): the mesh implements a linear layer; nonlinearity
@@ -1466,14 +1560,14 @@
       naturally generalize to optical-domain MVM via a Reck/
       Clements mesh — an active research direction.</li>
   </ul>
-  <div class="callout">Any unitary is realizable on a passive linear optical mesh. <em>Any nonunitary linear map</em> requires either loss (post-selection) or an extra ancilla mode. This is the structural reason photonic processors that run a non-unitary operation (e.g. solving Ax=b) need either feedback (CIM/OU) or auxiliary modes (HHL-style).</div>
+  <div class="callout">Any finite-dimensional unitary is realizable on a passive linear optical mesh. A general nonunitary linear map must be implemented as part of a larger unitary, with loss, ancilla modes, measurement, or feedback supplying the missing degrees of freedom. This is why photonic processors for operations such as solving Ax=b need more than a bare lossless mesh.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
       <h3>Key takeaways</h3>
       <ul>
               <li>MZI meshes underlie boson sampling, PNN, photonic QC</li>
-      <li>Pure unitaries are easy; nonunitary linear maps need feedback</li>
+      <li>Pure unitaries are natural; nonunitary maps need extra resources</li>
       <li>CIM-MVM is digital today, optical-MVM is the natural extension</li>
       </ul>
     </aside>
@@ -1557,6 +1651,29 @@
     } else {
       ensureMathRendered();
     }
+  })();
+</script>
+    <script>
+  (function () {
+    var KEY = 'quantum-notes-sidebars';
+    var btn = document.querySelector('.toggle-sidebars');
+    if (!btn) return;
+    function apply(hidden) {
+      document.body.classList.toggle('sidebars-collapsed', hidden);
+      btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      btn.setAttribute('aria-label',
+        hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+    }
+    // Default: sidebars hidden. Only an explicit 'visible' shows them.
+    var initial = true;
+    try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+    apply(initial);
+    btn.addEventListener('click', function () {
+      var next = !document.body.classList.contains('sidebars-collapsed');
+      apply(next);
+      try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+    });
   })();
 </script>
 <script>

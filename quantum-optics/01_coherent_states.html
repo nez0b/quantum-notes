@@ -253,7 +253,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1195,6 +1233,51 @@
     border-color: var(--page-accent);
     color: var(--page-accent);
   }
+  /* Sidebar toggle: hides every .keypoints column on demand. */
+  body.sidebars-collapsed .section-shell {
+    grid-template-columns: 1fr !important;
+  }
+  body.sidebars-collapsed .section-side {
+    display: none !important;
+  }
+  /* When sidebars are hidden, let figures fill the wider main column.
+     Inline style max-width:720px on SVGs is overridden via !important. */
+  body.sidebars-collapsed figure > svg,
+  body.sidebars-collapsed figure > div,
+  body.sidebars-collapsed figure > img,
+  body.sidebars-collapsed figure > picture {
+    max-width: 100% !important;
+  }
+  /* Restructure top-nav so horizontal overflow lives inside an
+     inner .top-nav-links container; the toggle button sits as a
+     non-scrolling sibling, always visible at the right edge. */
+  .top-nav-shell {
+    overflow-x: visible !important;
+    align-items: center;
+  }
+  .top-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .toggle-sidebars {
+    margin-left: auto;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--page-rule);
+    background: transparent;
+    color: var(--page-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .toggle-sidebars:hover {
+    border-color: var(--page-accent);
+    color: var(--page-accent);
+  }
 </style>
   </head>
   <body>
@@ -1225,16 +1308,19 @@
 
     <nav class="top-nav" aria-label="Section navigation">
   <div class="top-nav-shell">
-        <a href="#quantization">Quantization</a>
-<a href="#coherent">Coherent States</a>
-<a href="#quadratures">Quadratures</a>
-<a href="#wigner">Wigner</a>
-<a href="#wigner-explorer">Wigner Lab</a>
-<a href="#squeezing">Squeezing</a>
-<a href="#density">Density Ops</a>
-<a href="#photon-stats">Photon Stats</a>
-<a href="#classical-limit">Classical Limit</a>
-<a href="#sources">Sources</a>
+    <div class="top-nav-links">
+          <a href="#quantization">Quantization</a>
+  <a href="#coherent">Coherent States</a>
+  <a href="#quadratures">Quadratures</a>
+  <a href="#wigner">Wigner</a>
+  <a href="#wigner-explorer">Wigner Lab</a>
+  <a href="#squeezing">Squeezing</a>
+  <a href="#density">Density Ops</a>
+  <a href="#photon-stats">Photon Stats</a>
+  <a href="#classical-limit">Classical Limit</a>
+  <a href="#sources">Sources</a>
+    </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
   </div>
 </nav>
 
@@ -1389,10 +1475,13 @@
         \langle x+y\,\lvert\,\rho\,\rvert\,x-y\rangle.
     \]
     For Gaussian states (vacuum, coherent, squeezed, thermal), W
-    is a Gaussian and is everywhere non-negative — these states
-    behave classically in phase space. For Fock states with
-    \(n \ge 1\), W has negative regions: an unambiguous quantum
-    signature.
+    is a Gaussian and is everywhere non-negative. Positivity of
+    the Wigner function makes these states especially convenient
+    to model in phase space, but it is not the same thing as
+    optical classicality: squeezed states still have a singular
+    or non-positive Glauber-Sudarshan \(P\) representation. For
+    Fock states with \(n \ge 1\), W has negative regions; Wigner
+    negativity is a strong nonclassical signature.
   </p>
   <p>
     The vacuum Wigner function is
@@ -1402,15 +1491,15 @@
     functional form with a different mean \(\bar r\) and
     covariance \(\Sigma\).
   </p>
-  <div class="callout">Negative Wigner = nonclassicality. Coherent and squeezed states are <em>not</em> nonclassical in this technical sense — their Wigner functions are positive Gaussians. But squeezing is the first Gaussian state that has no classical electromagnetic-field analogue.</div>
+  <div class="callout">Negative Wigner is a sufficient nonclassicality witness, not a necessary one. Coherent and thermal states have positive regular phase-space descriptions; squeezed states have positive Wigner functions but are still nonclassical in the optical P-function sense.</div>
   </div>
   <div class="section-side">
     <aside class="keypoints">
       <h3>Key takeaways</h3>
       <ul>
               <li>Wigner W(x,p) = phase-space density for \(\rho\)</li>
-      <li>Gaussian states ↔ Gaussian Wigner ↔ classical-like</li>
-      <li>Negative Wigner ⇒ Fock-like \(n \ge 1\) state</li>
+      <li>Gaussian states ↔ Gaussian Wigner, but not automatically classical</li>
+      <li>Negative Wigner ⇒ strong nonclassicality witness</li>
       </ul>
     </aside>
   </div>
@@ -1498,9 +1587,12 @@
   <p>
     Real squeezed-light sources — sub-threshold optical
     parametric oscillators (Note 03), Kerr media, electro-optic
-    squeezers — typically deliver \(r \le 1\) reliably. Above
-    that, decoherence and detection-loss eat the squeezing
-    faster than the χ⁽²⁾ medium can produce it.
+    squeezers — can produce \(r\) of order unity on a routine
+    bench, with larger values demonstrated in optimized
+    low-loss experiments. Detection loss and phase noise mix
+    vacuum back into the measured quadrature, so the useful
+    squeezing at the detector is usually less than the
+    intracavity squeezing.
   </p>
 
   </div>
@@ -1533,8 +1625,9 @@
     <li><strong>Fock:</strong>
       \(\rho = \sum_n p_n \lvert n\rangle\langle n\rvert\) with
       \(p_n \ge 0,\ \sum_n p_n = 1\). Photon-number diagonal.
-      Thermal states have \(p_n = (1-\bar n^{-1})\bar n^{n}/(\bar n+1)^{n+1}\)
-      — well, almost; see exercises.</li>
+      Thermal states have
+      \(p_n = \bar n^{n}/(\bar n+1)^{n+1}\), a geometric
+      distribution with mean \(\bar n\).</li>
     <li><strong>Glauber-Sudarshan P:</strong>
       \(\rho = \int d^2\alpha\, P(\alpha)
       \lvert\alpha\rangle\langle\alpha\rvert\). For thermal and
@@ -1592,8 +1685,11 @@
           <p>
             The <strong>Mandel Q parameter</strong>
             \(Q = (\mathrm{Var}(N) - \bar N) / \bar N\) is the canonical
-            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian
-            (classical mixture), \(Q < 0\) sub-Poissonian (truly quantum).
+            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian,
+            \(Q < 0\) sub-Poissonian. Sub-Poissonian statistics are a
+            nonclassicality witness; super-Poissonian statistics alone
+            do not imply classicality (squeezed vacuum is the important
+            counterexample here).
           </p>
           <div class="widget-shell" id="photon-distribution">
   <h4>Interactive: photon-number distributions side-by-side</h4>
@@ -1636,7 +1732,7 @@
               <ul>
                       <li>Coherent ↔ Poisson, Q = 0</li>
               <li>Thermal ↔ super-Poissonian, Q > 0</li>
-              <li>Squeezed-vacuum ↔ even-only, can be sub-Poissonian</li>
+              <li>Squeezed-vacuum ↔ even-only and super-Poissonian</li>
               <li>Number state ↔ Q < 0, fully quantum</li>
               </ul>
             </aside>
@@ -1757,6 +1853,29 @@
     } else {
       ensureMathRendered();
     }
+  })();
+</script>
+    <script>
+  (function () {
+    var KEY = 'quantum-notes-sidebars';
+    var btn = document.querySelector('.toggle-sidebars');
+    if (!btn) return;
+    function apply(hidden) {
+      document.body.classList.toggle('sidebars-collapsed', hidden);
+      btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      btn.setAttribute('aria-label',
+        hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+    }
+    // Default: sidebars hidden. Only an explicit 'visible' shows them.
+    var initial = true;
+    try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+    apply(initial);
+    btn.addEventListener('click', function () {
+      var next = !document.body.classList.contains('sidebars-collapsed');
+      apply(next);
+      try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+    });
   })();
 </script>
 <script>

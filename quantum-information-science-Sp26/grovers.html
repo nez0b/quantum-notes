@@ -256,7 +256,45 @@
         padding: 0.8rem 0;
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
         overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      /* Sidebar toggle (shared with quantum-optics track). */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: var(--radius-sm, 4px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
       }
 
       .top-nav-shell a {
@@ -1046,21 +1084,24 @@
 
     <nav class="top-nav" aria-label="Section navigation">
       <div class="top-nav-shell">
-        <a href="#oracle">Oracle Model</a>
-        <a href="#diffusion">Diffusion Lab</a>
-        <a href="#multi-derivation">2D Rotation</a>
-        <a href="#circuit-construction">Circuit</a>
-        <a href="#alternate-view">Infinitesimal View</a>
-        <a href="#unknown-m">Unknown \(M\)</a>
-        <a href="#multi-marked">Side-by-Side N=8</a>
-        <a href="#random-subset">Multi-Marked Toolkit</a>
-        <a href="#composing-grover">Composing Grover</a>
-        <a href="#no-speedup">No-Speedup Cases</a>
-        <a href="#complexity">Complexity Theory</a>
-        <a href="#sota">SOTA (1996→2026)</a>
-        <a href="#mastery">Mastery Map</a>
-        <a href="#faq">FAQ</a>
-        <a href="#sources">Sources</a>
+        <div class="top-nav-links">
+          <a href="#oracle">Oracle Model</a>
+          <a href="#diffusion">Diffusion Lab</a>
+          <a href="#multi-derivation">2D Rotation</a>
+          <a href="#circuit-construction">Circuit</a>
+          <a href="#alternate-view">Infinitesimal View</a>
+          <a href="#unknown-m">Unknown \(M\)</a>
+          <a href="#multi-marked">Side-by-Side N=8</a>
+          <a href="#random-subset">Multi-Marked Toolkit</a>
+          <a href="#composing-grover">Composing Grover</a>
+          <a href="#no-speedup">No-Speedup Cases</a>
+          <a href="#complexity">Complexity Theory</a>
+          <a href="#sota">SOTA (1996→2026)</a>
+          <a href="#mastery">Mastery Map</a>
+          <a href="#faq">FAQ</a>
+          <a href="#sources">Sources</a>
+        </div>
+        <button type="button" class="toggle-sidebars" aria-pressed="false" aria-label="Hide key-takeaways sidebars">Hide sidebars</button>
       </div>
     </nav>
 
@@ -5366,6 +5407,28 @@
         } else {
           init();
         }
+      })();
+    </script>
+    <script>
+      (function () {
+        var KEY = 'quantum-notes-sidebars';
+        var btn = document.querySelector('.toggle-sidebars');
+        if (!btn) return;
+        function apply(hidden) {
+          document.body.classList.toggle('sidebars-collapsed', hidden);
+          btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+          btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+          btn.setAttribute('aria-label',
+            hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+        }
+        var initial = true;
+        try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+        apply(initial);
+        btn.addEventListener('click', function () {
+          var next = !document.body.classList.contains('sidebars-collapsed');
+          apply(next);
+          try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+        });
       })();
     </script>
   </body>

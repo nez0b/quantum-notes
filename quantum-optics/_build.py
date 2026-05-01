@@ -87,12 +87,23 @@ def page_header(*, eyebrow: str, h1: str, subtitle: str, covers: list[str]) -> s
 
 
 def top_nav(items: list[tuple[str, str]]) -> str:
-    """items: list of (anchor, label)."""
-    links = "\n".join(f'        <a href="#{a}">{label}</a>' for a, label in items)
+    """items: list of (anchor, label).
+
+    The links live inside a scrollable .top-nav-links container so that
+    horizontal overflow does not push the toggle button off-screen.
+    """
+    links = "\n".join(f'          <a href="#{a}">{label}</a>' for a, label in items)
+    toggle = ('        <button type="button" class="toggle-sidebars" '
+              'aria-pressed="false" '
+              'aria-label="Hide key-takeaways sidebars">'
+              'Hide sidebars</button>')
     return dedent(f"""\
         <nav class="top-nav" aria-label="Section navigation">
           <div class="top-nav-shell">
+            <div class="top-nav-links">
         {links}
+            </div>
+        {toggle}
           </div>
         </nav>""")
 
@@ -333,6 +344,51 @@ FOOTER_CSS = dedent("""\
         border-color: var(--page-accent);
         color: var(--page-accent);
       }
+      /* Sidebar toggle: hides every .keypoints column on demand. */
+      body.sidebars-collapsed .section-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body.sidebars-collapsed .section-side {
+        display: none !important;
+      }
+      /* When sidebars are hidden, let figures fill the wider main column.
+         Inline style max-width:720px on SVGs is overridden via !important. */
+      body.sidebars-collapsed figure > svg,
+      body.sidebars-collapsed figure > div,
+      body.sidebars-collapsed figure > img,
+      body.sidebars-collapsed figure > picture {
+        max-width: 100% !important;
+      }
+      /* Restructure top-nav so horizontal overflow lives inside an
+         inner .top-nav-links container; the toggle button sits as a
+         non-scrolling sibling, always visible at the right edge. */
+      .top-nav-shell {
+        overflow-x: visible !important;
+        align-items: center;
+      }
+      .top-nav-links {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .toggle-sidebars {
+        margin-left: auto;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--page-rule);
+        background: transparent;
+        color: var(--page-muted);
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+      }
+      .toggle-sidebars:hover {
+        border-color: var(--page-accent);
+        color: var(--page-accent);
+      }
     </style>""")
 
 
@@ -373,6 +429,32 @@ KATEX_INIT_SCRIPT = dedent("""\
     </script>""")
 
 
+SIDEBAR_TOGGLE_SCRIPT = dedent("""\
+    <script>
+      (function () {
+        var KEY = 'quantum-notes-sidebars';
+        var btn = document.querySelector('.toggle-sidebars');
+        if (!btn) return;
+        function apply(hidden) {
+          document.body.classList.toggle('sidebars-collapsed', hidden);
+          btn.textContent = hidden ? 'Show sidebars' : 'Hide sidebars';
+          btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+          btn.setAttribute('aria-label',
+            hidden ? 'Show key-takeaways sidebars' : 'Hide key-takeaways sidebars');
+        }
+        // Default: sidebars hidden. Only an explicit 'visible' shows them.
+        var initial = true;
+        try { initial = localStorage.getItem(KEY) !== 'visible'; } catch (_) {}
+        apply(initial);
+        btn.addEventListener('click', function () {
+          var next = !document.body.classList.contains('sidebars-collapsed');
+          apply(next);
+          try { localStorage.setItem(KEY, next ? 'hidden' : 'visible'); } catch (_) {}
+        });
+      })();
+    </script>""")
+
+
 def assemble(*, head: str, header: str, nav: str, main_html: str, footer_html: str) -> str:
     return f"""{head}\n  {FOOTER_CSS}\n  </head>\n  <body>\n    <a class="skip-link" href="#main-content">Skip to content</a>\n    {header}\n    {nav}\n    <main id="main-content">\n{main_html}\n    </main>\n    {footer_html}\n  </body>\n</html>\n"""
 
@@ -404,6 +486,7 @@ def assemble_proper(*, head: str, header: str, nav: str, main_html: str,
         + "    </main>\n\n"
         + "    " + footer_html + "\n\n"
         + "    " + KATEX_INIT_SCRIPT + "\n"
+        + "    " + SIDEBAR_TOGGLE_SCRIPT + "\n"
         + (extra_scripts + "\n" if extra_scripts else "")
         + "  </body>\n"
         + "</html>\n"
@@ -617,10 +700,13 @@ NOTE_01 = {
                 \langle x+y\,\lvert\,\rho\,\rvert\,x-y\rangle.
             \]
             For Gaussian states (vacuum, coherent, squeezed, thermal), W
-            is a Gaussian and is everywhere non-negative — these states
-            behave classically in phase space. For Fock states with
-            \(n \ge 1\), W has negative regions: an unambiguous quantum
-            signature.
+            is a Gaussian and is everywhere non-negative. Positivity of
+            the Wigner function makes these states especially convenient
+            to model in phase space, but it is not the same thing as
+            optical classicality: squeezed states still have a singular
+            or non-positive Glauber-Sudarshan \(P\) representation. For
+            Fock states with \(n \ge 1\), W has negative regions; Wigner
+            negativity is a strong nonclassical signature.
           </p>
           <p>
             The vacuum Wigner function is
@@ -631,15 +717,15 @@ NOTE_01 = {
             covariance \(\Sigma\).
           </p>
           """ + callout(
-            "Negative Wigner = nonclassicality. Coherent and squeezed "
-            "states are <em>not</em> nonclassical in this technical "
-            "sense — their Wigner functions are positive Gaussians. "
-            "But squeezing is the first Gaussian state that has no "
-            "classical electromagnetic-field analogue."
+            "Negative Wigner is a sufficient nonclassicality witness, "
+            "not a necessary one. Coherent and thermal states have "
+            "positive regular phase-space descriptions; squeezed states "
+            "have positive Wigner functions but are still nonclassical "
+            "in the optical P-function sense."
           ),
          ["Wigner W(x,p) = phase-space density for \\(\\rho\\)",
-          "Gaussian states ↔ Gaussian Wigner ↔ classical-like",
-          "Negative Wigner ⇒ Fock-like \\(n \\ge 1\\) state"]),
+          "Gaussian states ↔ Gaussian Wigner, but not automatically classical",
+          "Negative Wigner ⇒ strong nonclassicality witness"]),
         ("wigner-explorer", "Interactive: The Wigner Function for Gaussian States", r"""
           <p class="lede">
             Slide \(\Re\alpha\), \(\Im\alpha\), squeeze amplitude
@@ -706,9 +792,12 @@ NOTE_01 = {
           <p>
             Real squeezed-light sources — sub-threshold optical
             parametric oscillators (Note 03), Kerr media, electro-optic
-            squeezers — typically deliver \(r \le 1\) reliably. Above
-            that, decoherence and detection-loss eat the squeezing
-            faster than the χ⁽²⁾ medium can produce it.
+            squeezers — can produce \(r\) of order unity on a routine
+            bench, with larger values demonstrated in optimized
+            low-loss experiments. Detection loss and phase noise mix
+            vacuum back into the measured quadrature, so the useful
+            squeezing at the detector is usually less than the
+            intracavity squeezing.
           </p>
           """,
          ["Squeezing redistributes vacuum noise between X and P",
@@ -729,8 +818,9 @@ NOTE_01 = {
             <li><strong>Fock:</strong>
               \(\rho = \sum_n p_n \lvert n\rangle\langle n\rvert\) with
               \(p_n \ge 0,\ \sum_n p_n = 1\). Photon-number diagonal.
-              Thermal states have \(p_n = (1-\bar n^{-1})\bar n^{n}/(\bar n+1)^{n+1}\)
-              — well, almost; see exercises.</li>
+              Thermal states have
+              \(p_n = \bar n^{n}/(\bar n+1)^{n+1}\), a geometric
+              distribution with mean \(\bar n\).</li>
             <li><strong>Glauber-Sudarshan P:</strong>
               \(\rho = \int d^2\alpha\, P(\alpha)
               \lvert\alpha\rangle\langle\alpha\rvert\). For thermal and
@@ -776,8 +866,11 @@ NOTE_01 = {
           <p>
             The <strong>Mandel Q parameter</strong>
             \(Q = (\mathrm{Var}(N) - \bar N) / \bar N\) is the canonical
-            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian
-            (classical mixture), \(Q < 0\) sub-Poissonian (truly quantum).
+            signature: \(Q = 0\) Poisson, \(Q > 0\) super-Poissonian,
+            \(Q < 0\) sub-Poissonian. Sub-Poissonian statistics are a
+            nonclassicality witness; super-Poissonian statistics alone
+            do not imply classicality (squeezed vacuum is the important
+            counterexample here).
           </p>
           """ + widget_shell(
             anchor="photon-distribution",
@@ -819,7 +912,7 @@ NOTE_01 = {
           """),
          ["Coherent ↔ Poisson, Q = 0",
           "Thermal ↔ super-Poissonian, Q > 0",
-          "Squeezed-vacuum ↔ even-only, can be sub-Poissonian",
+          "Squeezed-vacuum ↔ even-only and super-Poissonian",
           "Number state ↔ Q < 0, fully quantum"]),
         ("classical-limit", "Where Coherent States Are Classical", r"""
           <p>
@@ -1093,15 +1186,17 @@ NOTE_02 = {
               \begin{pmatrix} 1 & i \\ i & 1 \end{pmatrix}
               \begin{pmatrix} a_1 \\ a_2 \end{pmatrix}.
             \]
-            More generally a beam splitter with reflectance \(r\) and
-            transmittance \(t = \sqrt{1-r^2}\) realizes
-            \(U_{\mathrm{BS}}(\theta)\) with
-            \(\theta = \arccos r\).
+            More generally, a lossless beam splitter has amplitude
+            transmissivity \(t\) and amplitude reflectivity \(r\) with
+            \(\lvert t\rvert^2 + \lvert r\rvert^2 = 1\). A common
+            parametrization is \(t = \cos\theta,\ r = i\sin\theta\);
+            the power transmittance is \(T=\lvert t\rvert^2\).
           </p>
           <p>
-            The crucial fact: this is a <em>unitary on the operator
-            algebra</em>, not on the wavefunction. It is the Heisenberg
-            picture of how vacuum and fields mix. A coherent state
+            The crucial fact: a physical unitary on the two-mode
+            Hilbert space induces this linear transformation on the
+            field operators. In the Heisenberg picture it is how
+            vacuum and fields mix. A coherent state
             \(\lvert\alpha\rangle\) on input 1 plus vacuum on input 2 emerges
             as a product
             \(\lvert\alpha/\sqrt{2}\rangle \otimes \lvert i\alpha/\sqrt{2}\rangle\)
@@ -1160,10 +1255,14 @@ NOTE_02 = {
         ("hom", "Hong-Ou-Mandel Interference", r"""
           <p>
             Send two indistinguishable single photons into the two
-            inputs of a 50/50 BS:
-            \(\lvert 1, 1\rangle_{a_1 a_2} \to \tfrac{1}{2}
-            (\lvert 2, 0\rangle - \lvert 0, 2\rangle)
-            i^2 = -\tfrac{1}{2}(\lvert 2,0\rangle - \lvert 0,2\rangle)\).
+            inputs of a 50/50 BS. With the phase convention above,
+            \[
+              \lvert 1,1\rangle_{a_1a_2}
+              \to \frac{i}{\sqrt{2}}
+              \bigl(\lvert 2,0\rangle_{b_1b_2}
+                    + \lvert 0,2\rangle_{b_1b_2}\bigr),
+            \]
+            up to an overall phase.
             The amplitude for the \(\lvert 1,1\rangle\) outcome —
             "one photon in each output" — is exactly zero by
             destructive interference. Both photons bunch together.
@@ -1209,11 +1308,12 @@ NOTE_02 = {
             interference of paths through the mesh.
           </p>
           <p>
-            For \(N=8\) this is 28 MZIs, plus 8 input-phase shifters.
-            For \(N=64\) it is 2,016 MZIs — the limit of current
-            silicon photonics in a single chip. The Clements layout is
-            depth-balanced (depth \(N\)) and is what most modern
-            photonic-processor chips use.
+            For \(N=8\) this is 28 MZIs, plus output phase shifters.
+            For \(N=64\) it is 2,016 MZIs, already a demanding
+            calibration and loss budget for a single chip. The Clements
+            layout is depth-balanced with \(O(N)\) optical depth and is
+            the standard layout in many modern photonic-processor
+            demonstrations.
           </p>
           """ + math_details("Why the count is \\(\\binom{N}{2}\\)", r"""
             <p>
@@ -1237,7 +1337,8 @@ NOTE_02 = {
             <li><strong>Boson sampling</strong> (Aaronson &amp; Arkhipov 2011;
               Xanadu Borealis 2022): N-port unitary acting on
               indistinguishable single photons; output statistics
-              hard-to-classically-simulate when \(N \gtrsim 50\).</li>
+              hard-to-classically-simulate in the large-photon-number,
+              low-loss regime.</li>
             <li><strong>Photonic neural networks</strong> (Shen et al.
               <em>Nat. Photonics</em> 2017; Hamerly et al. <em>Sci. Adv.</em>
               2019): the mesh implements a linear layer; nonlinearity
@@ -1254,15 +1355,16 @@ NOTE_02 = {
               Clements mesh — an active research direction.</li>
           </ul>
           """ + callout(
-            "Any unitary is realizable on a passive linear optical "
-            "mesh. <em>Any nonunitary linear map</em> requires either "
-            "loss (post-selection) or an extra ancilla mode. This is "
-            "the structural reason photonic processors that run a "
-            "non-unitary operation (e.g. solving Ax=b) need either "
-            "feedback (CIM/OU) or auxiliary modes (HHL-style)."
+            "Any finite-dimensional unitary is realizable on a passive "
+            "linear optical mesh. A general nonunitary linear map must "
+            "be implemented as part of a larger unitary, with loss, "
+            "ancilla modes, measurement, or feedback supplying the "
+            "missing degrees of freedom. This is why photonic processors "
+            "for operations such as solving Ax=b need more than a bare "
+            "lossless mesh."
           ),
          ["MZI meshes underlie boson sampling, PNN, photonic QC",
-          "Pure unitaries are easy; nonunitary linear maps need feedback",
+          "Pure unitaries are natural; nonunitary maps need extra resources",
           "CIM-MVM is digital today, optical-MVM is the natural extension"]),
         ("sources", "Sources &amp; Further Reading", r"""
           <table class="refs">
@@ -1359,7 +1461,7 @@ NOTE_03 = {
     "description": "χ⁽²⁾ and χ⁽³⁾ susceptibilities, three-wave mixing, parametric down-conversion, and where squeezed light comes from.",
     "eyebrow": "Quantum Optics · Nonlinear",
     "h1": "Nonlinear Optics and Parametric Processes",
-    "subtitle": "Where squeezing and entanglement are made. The χ⁽²⁾ and χ⁽³⁾ medium is the only place in the photonic stack where photon-photon interactions are non-trivial — and that is the entire source of quantumness in subsequent notes.",
+    "subtitle": "Where squeezing and entanglement are made in this track. The χ⁽²⁾ and χ⁽³⁾ medium is where the photonic stack gets effective photon-photon interactions, and it supplies the nonclassical resources used in subsequent notes.",
     "covers": [
         "Polarization expansion: \\(P = \\varepsilon_0(\\chi^{(1)}E + \\chi^{(2)}E^2 + \\chi^{(3)}E^3 + \\dots)\\)",
         "Three-wave mixing in χ⁽²⁾: SHG, sum/difference frequency",
@@ -1391,13 +1493,16 @@ NOTE_03 = {
                   + \chi^{(2)} E^2
                   + \chi^{(3)} E^3 + \cdots\bigr).
             \]
-            \(\chi^{(2)}\) is allowed only in non-centrosymmetric crystals
-            (LiNbO\(_3\), KTP, BBO, periodically-poled LiNbO\(_3\)). \(\chi^{(3)}\)
-            exists in everything but is typically much smaller.
+            Bulk electric-dipole \(\chi^{(2)}\) vanishes in
+            centrosymmetric media, so useful \(\chi^{(2)}\) devices
+            use non-centrosymmetric crystals (LiNbO\(_3\), KTP, BBO,
+            periodically-poled LiNbO\(_3\)). \(\chi^{(3)}\) is allowed
+            much more broadly but is typically much smaller.
           </p>
           <p>
-            The numbers: in a good χ⁽²⁾ crystal, you start to see
-            three-wave-mixing effects at intensities of order
+            Order-of-magnitude numbers: in a good χ⁽²⁾ crystal, you
+            start to see appreciable three-wave-mixing effects at
+            intensities of order
             10\(^9\)–10\(^{12}\) W/m². Pulsed lasers focused into a few-mm
             crystal hit that comfortably. CW lasers need cavity
             enhancement (Note 06).
@@ -1418,9 +1523,10 @@ NOTE_03 = {
             <li><strong>Second-harmonic generation (SHG):</strong>
               \(\omega + \omega \to 2\omega\). Standard frequency-doubling.</li>
             <li><strong>Sum-frequency generation:</strong>
-              \(\omega_1 + \omega_2 \to \omega_1 + \omega_2\).</li>
+              two inputs at \(\omega_1,\omega_2\) drive a field at
+              \(\omega_1 + \omega_2\).</li>
             <li><strong>Difference-frequency generation:</strong>
-              \(\omega_1 - \omega_2 \to \omega_1 - \omega_2\).</li>
+              two inputs drive a field at \(\lvert\omega_1-\omega_2\rvert\).</li>
             <li><strong>Spontaneous parametric down-conversion (SPDC):</strong>
               \(\omega_p \to \omega_s + \omega_i\). The reverse of
               sum-frequency: a pump photon spontaneously decays into
@@ -1435,12 +1541,13 @@ NOTE_03 = {
             wavelengths and polarizations a given crystal can mix.
           </p>
           """ + callout(
-            "Phase matching is a 1D problem with three knobs: temperature, "
-            "angle, and quasi-phase-matching grating period. Periodically "
+            "Phase matching is often engineered with temperature, "
+            "angle, waveguide dispersion, and quasi-phase-matching "
+            "grating period. Periodically "
             "poled LiNbO₃ (PPLN) — flipping the χ⁽²⁾ sign every coherence "
-            "length — gave the field the room-temperature, normal-dispersion, "
-            "any-wavelength flexibility that makes modern integrated "
-            "OPOs possible."
+            "length — gives a powerful way to compensate phase mismatch "
+            "over designed wavelength bands and is a workhorse for "
+            "modern integrated OPOs."
           ),
          ["χ⁽²⁾ media drive sum/difference/SHG/SPDC",
           "Energy + momentum conservation = phase matching",
@@ -1464,7 +1571,9 @@ NOTE_03 = {
             Hamiltonian becomes
             \(H = i\hbar(g\beta_p^* a^2 - g\beta_p (a^\dagger)^2)/2\).
             The unitary it generates is exactly the squeeze operator
-            \(S(r)\) with \(r = g\lvert\beta_p\rvert t\). <em>The physical
+            \(S(r)\), with \(r\) proportional to
+            \(g\lvert\beta_p\rvert t\) up to convention-dependent
+            factors and phases. <em>The physical
             mechanism that produces squeezing is degenerate SPDC.</em>
           </p>
           """,
@@ -1491,9 +1600,10 @@ NOTE_03 = {
             two phases (the <strong>DOPO</strong>, Note 06).
           </p>
           """ + callout(
-            "Below threshold: OPO output is squeezed vacuum. Above "
-            "threshold: OPO output is a coherent state with a binary "
-            "phase. The threshold pump power is the most physically "
+            "Below threshold: an OPO with vacuum input emits squeezed "
+            "vacuum. Above threshold: a degenerate OPO develops a "
+            "large coherent amplitude in one of two phase states, up "
+            "to fluctuations and technical noise. The threshold pump power is the most physically "
             "important parameter of a parametric oscillator."
           ),
          ["OPA: parametric gain, no cavity",
@@ -1501,20 +1611,20 @@ NOTE_03 = {
           "Below threshold: squeezing; above threshold: binary-phase oscillation"]),
         ("squeezing-gen", "Squeezing Generation in Practice", r"""
           <p>
-            Hardware records: the world record for inferred squeezing
-            is \(\sim 15\) dB (Vahlbruch et al., <em>PRL</em> 2016) using a
+            A benchmark low-loss result is \(\sim 15\) dB measured
+            squeezing (Vahlbruch et al., <em>PRL</em> 2016) using a
             sub-threshold OPO with periodically-poled KTP. For
             usable-at-detector squeezing (after homodyne efficiency),
             10 dB is excellent; 5–6 dB is routine.
           </p>
           <p>
-            The chain of efficiency hits is:
+            The chain of efficiency hits is typically:
           </p>
           <ul>
-            <li>Crystal escape efficiency (intracavity loss): −0.5 dB</li>
-            <li>Optical path loss to detector: −0.5 to −1 dB</li>
-            <li>Detector quantum efficiency (e.g. 95%): −0.2 dB</li>
-            <li>LO mode-match: −0.5 dB</li>
+            <li>Crystal escape efficiency and intracavity loss</li>
+            <li>Optical path loss to detector</li>
+            <li>Detector quantum efficiency (e.g. 95%)</li>
+            <li>LO mode matching</li>
             <li>Excess phase noise: degrades anti-squeezing-into-squeezing leakage</li>
           </ul>
           <p>
@@ -1530,8 +1640,9 @@ NOTE_03 = {
           "Squeezing alone doesn't break κ-scaling for OU sampler"]),
         ("chi3", "χ⁽³⁾ Effects, Briefly", r"""
           <p>
-            The cubic susceptibility χ⁽³⁾ exists in centrosymmetric
-            media — silica fiber, silicon waveguides, AlGaAs. It drives:
+            The cubic susceptibility χ⁽³⁾ is allowed in centrosymmetric
+            media and appears in platforms such as silica fiber,
+            silicon waveguides, and AlGaAs. It drives:
           </p>
           <ul>
             <li><strong>Self-phase modulation:</strong> intensity-dependent
@@ -1573,8 +1684,8 @@ NOTE_03 = {
               "Slide squeeze parameter <em>r</em> and angle <em>θ</em>. "
               "The unit-circle vacuum noise (dashed) is the reference; "
               "the squeezed ellipse (solid) shows the squeezed and "
-              "anti-squeezed quadratures. The product Var(<em>X</em>) · "
-              "Var(<em>P</em>) = ¼ holds: this is a minimum-uncertainty "
+              "anti-squeezed quadratures. The product of the principal "
+              "quadrature variances, equivalently det <em>V</em>, is ¼: this is a minimum-uncertainty "
               "state."
             ),
             controls_html=(
@@ -1594,7 +1705,7 @@ NOTE_03 = {
           """,
          ["Squeeze ellipse: shrunk in one quadrature, stretched in other",
           "\\(e^{-2r}\\) variance reduction in dB: \\(-8.7 r\\)",
-          "Heisenberg saturation: Var(X)·Var(P) = ¼"]),
+          "Heisenberg saturation: principal-variance product = ¼"]),
         ("sources", "Sources &amp; Further Reading", r"""
           <table class="refs">
             <tr><td>Lecture</td><td><a href="_lectures/nonlinear_optics.pdf">nonlinear_optics.pdf</a> — primary source</td></tr>
@@ -1707,11 +1818,12 @@ NOTE_04 = {
             \(a\), resonance frequency \(\omega_c\). Drive it with a
             classical coherent field at \(\omega_d\), with amplitude
             \(\varepsilon\). In the rotating frame at \(\omega_d\) the
-            Hamiltonian is
+            Hamiltonian, written in angular-frequency units
+            (\(H/\hbar\)), is
             \[
-              H = \Delta\, a^\dagger a
+              H/\hbar = \Delta\, a^\dagger a
                 + i\bigl(\varepsilon a^\dagger - \varepsilon^* a\bigr)
-                + H_\mathrm{NL},
+                + H_\mathrm{NL}/\hbar,
             \]
             where \(\Delta = \omega_c - \omega_d\) is the detuning and
             \(H_\mathrm{NL}\) is whatever nonlinear term the χ⁽²⁾ or χ⁽³⁾
@@ -1723,7 +1835,7 @@ NOTE_04 = {
             leak. We need to handle that systematically.
           </p>
           """,
-         ["\\(H = \\Delta a^\\dagger a + i(\\varepsilon a^\\dagger - \\varepsilon^* a) + H_\\mathrm{NL}\\)",
+         ["\\(H/\\hbar = \\Delta a^\\dagger a + i(\\varepsilon a^\\dagger - \\varepsilon^* a) + H_\\mathrm{NL}/\\hbar\\)",
           "Detuning Δ controls resonance offset",
           "Drive ε is the classical coherent input"]),
         ("loss-as-bs", "Photon Loss as a Beam-Splitter with Vacuum", r"""
@@ -1738,8 +1850,9 @@ NOTE_04 = {
             \]
             and the field that remains is
             \(r\, a_\mathrm{cav} + t\, a_\mathrm{vac}\). Each round
-            trip mixes a fraction \(r^2\) of vacuum into the cavity
-            field. In the continuous-time limit (\(t\) small,
+            trip mixes a fraction \(\lvert t\rvert^2\) of vacuum into
+            the cavity field. In the continuous-time limit
+            (\(\lvert t\rvert\) small,
             round-trip time \(\Delta t\)), this becomes
             \(da/dt = -\kappa\, a + \xi(t)\), where the cavity decay
             rate \(\kappa\) is set by the mirror transmittance and the
@@ -1771,10 +1884,13 @@ NOTE_04 = {
                 - \tfrac{1}{2}\bigl\{L^\dagger L, \rho\bigr\}.
             \]
             The "jump operators" \(L_k\) describe the irreversible
-            channels. For a leaky cavity with one output port:
+            channels. For a leaky cavity with one zero-temperature
+            output port in the convention used here:
             \(L_1 = \sqrt{2\kappa}\, a\). For multiple ports, add more
-            \(L_k\). For thermal-bath excitations at temperature
-            \(T > 0\): a second jump operator \(L_2 = \sqrt{2\kappa\bar n}\, a^\dagger\).
+            \(L_k\). For a thermal bath with mean occupation
+            \(\bar n\), the loss and excitation channels are
+            \(L_- = \sqrt{2\kappa(\bar n+1)}\,a\) and
+            \(L_+ = \sqrt{2\kappa\bar n}\,a^\dagger\).
           </p>
           <p>
             Three concrete uses of the Lindblad form in this track:
@@ -1782,10 +1898,11 @@ NOTE_04 = {
           <ul>
             <li><strong>OPO threshold dynamics</strong> (Note 06): full
               quantum description of the bifurcation, including
-              spontaneous-emission-driven phase selection.</li>
-            <li><strong>CIM full-quantum simulation</strong>: exact for
-              small networks (\(\le 4\) modes); requires Gaussian
-              approximations or trajectories above that.</li>
+              vacuum-noise-driven phase selection.</li>
+            <li><strong>CIM full-quantum simulation</strong>: feasible
+              for small networks with a Fock-space cutoff; larger
+              networks usually require Gaussian approximations,
+              phase-space methods, or trajectories.</li>
             <li><strong>OU machine cross-check</strong>: in the bright-field
               limit, the Heisenberg-Langevin equations reduce to
               classical SDEs, and the Lyapunov sampler of Note 07
@@ -1794,17 +1911,18 @@ NOTE_04 = {
           """ + math_details("Why the Lindblad form is the unique GKSL structure", r"""
             <p>
               Gorini–Kossakowski–Sudarshan and Lindblad (independently,
-              1976) proved that any time-local, completely positive,
-              trace-preserving map on a finite-dimensional Hilbert space
-              has a generator of exactly the above form — Hamiltonian
-              part plus a sum of "dissipator" terms. The structure is
-              not a modeling choice; it is forced by physical consistency
-              (positivity of probabilities, no signaling, …).
+              1976) proved that a Markovian quantum dynamical semigroup
+              on a finite-dimensional Hilbert space has a generator of
+              exactly the above form — Hamiltonian part plus a sum of
+              "dissipator" terms. Time-local CP-divisible dynamics has
+              the same structure with time-dependent rates. The
+              structure is forced by complete positivity and trace
+              preservation.
             </p>
           """),
          ["GKSL form: \\(\\dot\\rho = -i[H,\\rho] + \\sum_k \\mathcal{D}[L_k]\\rho\\)",
           "Each jump operator \\(L_k\\) is one decoherence channel",
-          "Cavity loss: \\(L = \\sqrt{2\\kappa} a\\). Thermal: add \\(L = \\sqrt{2\\kappa\\bar n} a^\\dagger\\)"]),
+          "Cavity loss: \\(L = \\sqrt{2\\kappa} a\\). Thermal: add emission/absorption channels"]),
         ("input-output", "Input-Output Formalism", r"""
           <p>
             Gardiner &amp; Collett (1985) made the bath-and-cavity
@@ -1870,18 +1988,20 @@ NOTE_04 = {
             \]
             where \(\delta\mathbf{x} = (\delta X, \delta P)^T\),
             \(A_\mathrm{eff}\) is the linearized drift around the
-            classical attractor, and \(D\) is set by the vacuum input
-            (\(D = I\) for vacuum, \(D = e^{-2r}I\) along squeezed
-            quadrature). <em>This is the Langevin equation that the OU
+            classical attractor, and \(D\) is set by the input noise
+            (proportional to \(I\) for vacuum, anisotropic for
+            squeezed input, with principal variances scaled by
+            \(e^{-2r}\) and \(e^{+2r}\)). <em>This is the Langevin equation that the OU
             machine in Note 07 turns into a Lyapunov sampler.</em>
           </p>
           """ + callout(
             "The bright-field limit is what makes optical computing "
             "feasible. We are working in the regime where the field "
             "amplitude is large enough that mean-field captures the "
-            "dynamics, and small enough that quantum fluctuations are "
-            "the dominant noise. This is the regime of every analog "
-            "optical processor — CIM, OU machine, photonic Ising."
+            "dynamics, while quantum or technical fluctuations still "
+            "supply the relevant noise source. This is the regime used "
+            "by many analog optical processors — CIM, OU-machine-style "
+            "samplers, and photonic Ising experiments."
           ),
          ["Mean field: \\(\\dot\\alpha\\) deterministic + nonlinearity",
           "Fluctuations: linear SDE driven by vacuum (or squeezed) noise",
@@ -1890,9 +2010,10 @@ NOTE_04 = {
           <p class="lede">
             With drive turned off, an initial coherent state
             \(\lvert\alpha_0\rangle\) decays as
-            \(\alpha(t) = \alpha_0 e^{-\kappa t/2}\) — a simple
+            \(\alpha(t) = \alpha_0 e^{-\kappa t}\) — a simple
             exponential ringdown. With drive, the cavity reaches a
-            non-zero steady state \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
+            non-zero resonant linear-cavity steady state
+            \(\alpha_\mathrm{ss} = \varepsilon/\kappa\).
           </p>
           """ + widget_shell(
             anchor="cavity-decay",
@@ -1900,7 +2021,7 @@ NOTE_04 = {
             blurb=(
               "Slide cavity decay <em>κ</em>, drive amplitude "
               "<em>ε</em>, and toggle the drive. Phase-space trajectory "
-              "shows |α(t)|; the full curve is the analytic solution "
+              "shows |α(t)|; the full curve is the resonant linear analytic solution "
               "<em>α</em>(t) = (ε/κ)(1 − e<sup>−κt</sup>) + α₀ e<sup>−κt</sup>."
             ),
             controls_html=(
@@ -1918,7 +2039,7 @@ NOTE_04 = {
             ),
           ) + r"""
           """,
-         ["Free decay: \\(\\alpha(t) = \\alpha_0 e^{-\\kappa t/2}\\)",
+         ["Free decay: \\(\\alpha(t) = \\alpha_0 e^{-\\kappa t}\\)",
           "Driven steady state: \\(\\alpha_\\mathrm{ss} = \\varepsilon/\\kappa\\)",
           "Half-life: \\(t_{1/2} = \\ln 2 / \\kappa\\)"]),
         ("sources", "Sources &amp; Further Reading", r"""
@@ -1972,10 +2093,10 @@ NOTE_04 = {
           // SS line
           html += '<line x1="' + pad + '" y1="' + ypos(alpha_ss) + '" x2="' + (W-pad) + '" y2="' + ypos(alpha_ss) + '" stroke="#e8b96a" stroke-width="1" stroke-dasharray="4,3"/>';
           html += '<text x="' + (W-pad-8) + '" y="' + (ypos(alpha_ss)-4) + '" text-anchor="end" font-size="10" fill="#e8b96a">|α_ss| = ' + alpha_ss.toFixed(2) + '</text>';
-          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt/2}  (amplitude convention)
+          // curve: α(t) = α_ss + (α₀ - α_ss) e^{-κt}  (with L = √(2κ)a convention)
           var pts = [];
           for (var t = 0; t <= TMAX; t += 0.05) {
-            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t/2);
+            var a = alpha_ss + (a0 - alpha_ss) * Math.exp(-k*t);
             pts.push(xpos(t) + ',' + ypos(Math.abs(a)));
           }
           html += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#79c79f" stroke-width="2"/>';
@@ -2068,11 +2189,11 @@ NOTE_05 = {
             X-quadrature of the signal, amplified by the LO.
           </p>
           """ + callout(
-            "The LO acts as a phase reference and a noiseless gain. "
-            "Because we subtract the two arms, the LO's classical "
-            "amplitude noise cancels and we are left with the "
-            "interference cross-term — which carries the signal "
-            "quadrature times \\(|\\alpha_\\mathrm{LO}|\\)."
+            "The LO acts as a phase reference and a large coherent "
+            "gain. In an ideal balanced detector, common-mode technical "
+            "amplitude noise from the LO cancels in the subtraction, "
+            "leaving the interference cross-term — which carries the "
+            "signal quadrature times \\(|\\alpha_\\mathrm{LO}|\\)."
           ),
          ["Balanced homodyne = signal + LO mixed on 50/50 BS",
           "Subtraction cancels LO classical noise",
@@ -2096,10 +2217,10 @@ NOTE_05 = {
           </p>
           <p>
             For our purposes (CIM/OU machine on a typical bench): with
-            a pulse train at GHz repetition rate, a per-pulse photon
-            flux \(\sim 10^9\) and integration time \(\sim 1\) ns gives
-            \(\sigma_\mathrm{meas} \sim 1\) (per shot, in units of
-            \(x_\mathrm{RMS}\)). This is the
+            a pulse train at GHz repetition rate, \(\sim 10^9\) LO
+            photons in a 1 ns integration window gives a shot-noise
+            scale of order \(\sqrt{10^9}\) photoelectrons; after
+            normalizing to quadrature units this is the
             <code>σ_meas</code> parameter in
             <a href="07_thermodynamic_la_ou_machine.html">Note 07</a>.
           </p>
@@ -2151,12 +2272,12 @@ NOTE_05 = {
             "reduction on a homodyne measurement. For ill-conditioned "
             "linear-algebra problems where the variance has additional "
             "κ-dependence, the squeezing factor doesn't address the "
-            "κ scaling. This was Direction B's killshot result for "
-            "the OU machine."
+            "κ scaling. This is the limiting result for the simple "
+            "squeezing-only OU-machine improvement path."
           ),
          ["Squeezed input → e^(−2r) on photocurrent variance",
           "Detection loss caps usable r",
-          "No κ-dependence — Direction B's killshot"]),
+          "No κ-dependence — only a constant-factor variance reduction"]),
         ("homodyne-quadrature", "Interactive: Homodyne Quadrature Selection", r"""
           <p class="lede">
             Slide LO phase \(\varphi\). The homodyne photocurrent
@@ -2206,7 +2327,9 @@ NOTE_05 = {
                 + \mathcal{D}[L]\rho_c\,dt
                 + \mathcal{H}[L]\rho_c\,dW(t),
             \]
-            where \(L = \sqrt{2\kappa}\,a\), \(dW\) is a Wiener
+            in units with \(\hbar=1\), for ideal detection efficiency
+            and the measured quadrature phase absorbed into \(L\).
+            Here \(L = \sqrt{2\kappa}\,a\), \(dW\) is a Wiener
             increment, and \(\mathcal{H}[L]\rho = L\rho + \rho L^\dagger
             - \mathrm{Tr}(L\rho + \rho L^\dagger)\rho\) is the
             measurement-conditioning superoperator. Averaging over the
@@ -2388,7 +2511,7 @@ NOTE_06 = {
         "Network of DOPOs with measurement feedback (Inagaki / Marandi)",
         "Mapping onto Ising minimization: the heuristic argument",
         "The discrete-time round-trip update equation, annotated",
-        "State of the art: 2k → 100k spins; what these machines actually solve",
+            "Selected hardware milestones: 2k → 100k spins; what these machines actually solve",
     ],
     "nav": [
         ("opo-basics", "OPO Basics"),
@@ -2424,8 +2547,9 @@ NOTE_06 = {
             the third is vacuum input from the output mirror.
           </p>
           <p>
-            Linear stability of the steady state \(a = 0\): the
-            characteristic exponents are \(\pm(g\lvert\beta_p\rvert - \kappa)\).
+            Linear stability of the steady state \(a = 0\): in the
+            amplified and de-amplified quadratures, the characteristic
+            exponents are \(-\kappa \pm g\lvert\beta_p\rvert\).
             For \(g\lvert\beta_p\rvert < \kappa\) (below threshold),
             both modes decay — the cavity is a squeezed-vacuum source.
             For \(g\lvert\beta_p\rvert > \kappa\) (above threshold),
@@ -2447,29 +2571,32 @@ NOTE_06 = {
           </p>
           <p>
             Linearizing the intracavity equations around \(a = 0\)
-            and solving for the steady-state output via input-output
-            (Note 04, Gardiner-Collett),
+            and solving for the zero-analysis-frequency output noise
+            via input-output (Note 04, Gardiner-Collett), a common
+            normalized result is
             \[
-              \langle X_\mathrm{out}^2 \rangle
-                = \frac{1}{4}\,\frac{1 - \eta\,\Lambda}{1 + \Lambda},
+              \frac{V_-}{V_\mathrm{vac}}
+                = 1 - \eta\,\frac{4p}{(1+p)^2},
               \qquad
-              \langle P_\mathrm{out}^2 \rangle
-                = \frac{1}{4}\,\frac{1 + \eta\,\Lambda}{1 - \Lambda},
+              \frac{V_+}{V_\mathrm{vac}}
+                = 1 + \eta\,\frac{4p}{(1-p)^2},
             \]
-            where \(\Lambda = (g\lvert\beta_p\rvert/\kappa)^2 = p^2\) and
-            \(\eta\) is the detection efficiency (1 for perfect
-            detection). At threshold \(p \to 1\), the squeezed
-            quadrature variance \(\to 0\) and the anti-squeezed
-            quadrature \(\to \infty\) — perfect EPR correlations are a
-            critical phenomenon of the OPO.
+            where \(p = g\lvert\beta_p\rvert/\kappa < 1\) is the
+            normalized pump and \(\eta\) is the total detection
+            efficiency. For \(\eta=1\), \(V_-/V_\mathrm{vac}
+            = ((1-p)/(1+p))^2\). At threshold \(p \to 1\), the ideal
+            squeezed quadrature tends to zero and the anti-squeezed
+            quadrature diverges; with any loss, the squeezed variance
+            bottoms out at the loss floor.
           </p>
           <p>
-            <em>State of the art</em>: 15 dB squeezing demonstrated by
+            <em>Benchmark experiment</em>: 15 dB squeezing demonstrated by
             Vahlbruch et al.\ 2016 with periodically-poled KTP at
             \(\eta \approx 0.99\), corresponding to
             \(\langle X_\mathrm{out}^2\rangle / (1/4) \approx 0.032\) —
-            a 30× variance reduction. This is the working substrate
-            for gravitational-wave squeezed-light injection in LIGO.
+            a 30× variance reduction. The same sub-threshold-OPO
+            technology underlies squeezed-light injection in
+            gravitational-wave detectors.
           </p>
           """ + callout(
             "Below-threshold OPO and above-threshold DOPO are <em>the same "
@@ -2480,7 +2607,7 @@ NOTE_06 = {
             "metrology vs.\\ Ising spins for optimization)."
           ),
          ["Below threshold: linearized Langevin = squeezed vacuum",
-          "Squeezed variance \\(\\to 0\\) as \\(p \\to 1\\) — critical",
+          "Ideal squeezed variance \\(\\to 0\\) as \\(p \\to 1\\); loss sets the floor",
           "Vahlbruch 2016: 15 dB demonstrated"]),
         ("dopo", "The DOPO Bifurcation", r"""
           <p>
@@ -2516,8 +2643,8 @@ NOTE_06 = {
             "device commits to is selected by the quantum-noise "
             "fluctuation that happens to be largest at the moment "
             "the system crosses threshold. This noise-driven phase "
-            "selection is the entire computational primitive of the "
-            "CIM."
+            "selection is the core symmetry-breaking primitive that "
+            "the CIM feedback network builds on."
           ) + math_details("Detailed math: pitchfork normal form from pump depletion", r"""
             <p>
               Start with the two-mode Hamiltonian for a degenerate
@@ -2636,8 +2763,9 @@ NOTE_06 = {
             '<em>&ldquo;no, on the problems tested so far&rdquo;</em>.'
           ) + r"""
           <p>
-            <em>Where does the line live numerically?</em> A useful rule
-            of thumb: the regime is operationally classical when
+            <em>Where does the line live numerically?</em> There is no
+            sharp photon-number boundary, but a useful rule of thumb is
+            that mean-field intuition becomes reliable when
             \(\langle n\rangle \gtrsim 10\)–\(30\) per pulse —
             i.e.\ when the signal-to-noise ratio
             \(\sqrt{\langle n\rangle}/1 \gtrsim 3\)–\(5\). Below that,
@@ -2675,25 +2803,26 @@ NOTE_06 = {
               feedback. Nonlinear terms in \(\delta a\) are suppressed
               by \(1/\lvert\alpha\rvert\). For
               \(\lvert\alpha\rvert^2 \gg 1\) (i.e.\ many photons per
-              pulse) those nonlinearities are a small perturbation, the
-              linearized Gaussian description is exact, and
-              <em>by a theorem of Mandel-Wolf</em> the dynamics is
-              exactly reproducible by a classical SDE with Gaussian
-              white noise of variance set by the vacuum.
+              pulse) those nonlinearities are a small perturbation, and
+              the linearized Gaussian description has a positive Wigner
+              representation. In that restricted Gaussian regime, the
+              same first and second moments can be reproduced by a
+              classical stochastic equation with Gaussian white noise
+              chosen to match the vacuum fluctuations.
             </p>
             <p>
               Below threshold, \(\lvert\alpha\rvert \to 0\), the
-              linearization is around the unstable fixed point and
-              \(M(\alpha)\) has positive eigenvalues for one quadrature
-              and negative for the other — so the Gaussian
-              approximation predicts squeezing (variance below the
-              vacuum floor). At threshold, \(M(\alpha)\) has a zero
-              eigenvalue and the linearization breaks down: cubic
+              origin is stable but the phase-sensitive gain reduces
+              damping in one quadrature and increases it in the other,
+              so the Gaussian approximation predicts squeezing
+              (variance below the vacuum floor). At threshold,
+              \(M(\alpha)\) has a zero eigenvalue and the linearization
+              becomes singular: cubic
               terms in \(\delta a\) become essential, and the dynamics
               is genuinely nonlinear.
             </p>
           """),
-         ["Above threshold: classical SDE (Mandel-Wolf)",
+         ["Above threshold: often well described by a classical SDE",
           "Below threshold: full Lindblad / squeezing",
           "At threshold: nonlinear amplification of \\(O(1)\\) events",
           "Crossover empirically near \\(\\langle n\\rangle \\sim 10\\)"]),
@@ -2738,8 +2867,8 @@ NOTE_06 = {
             Why time-multiplexed? You can fit \(N\) pulses
             (one per spin) into one fiber loop and the whole thing
             runs at the round-trip rate. The Honjo et al.\ 2021
-            machine has \(N = 100{,}144\) — over 100k spins on a
-            single fiber loop, all processed by one FPGA. The
+            machine reports 100,512 DOPO pulses and benchmarks
+            100,000-node MAX-CUT instances in a single fiber loop. The
             architecture is dimension-efficient in a way no
             spatially-multiplexed scheme is.
           </p>
@@ -2787,37 +2916,38 @@ NOTE_06 = {
             timing budget is what makes the architecture intelligible.
           </p>
           <p>
-            The Honjo-NTT 100k-spin machine uses a 5 km fiber ring
+            The Honjo-NTT 100k-spin machine reports a 100,512-pulse
+            CIM in a 5 km fiber ring
             (round-trip \(\tau_\mathrm{rt} \approx 25\,\mu\text{s}\))
-            with pulses spaced at 200 ps — that fits \(\sim\)125,000
-            time slots, of which 100,144 are used. The PPLN gain
+            with pulses spaced at about 200 ps — enough for about
+            100k occupied time slots. The PPLN gain
             crystal is traversed once per round-trip; each pulse picks
             up gain proportional to the current pump amplitude. The
-            FPGA budget per slot is a few ns (200 ps slot ⇒ FPGA must
-            finish its part of the MVM faster than the pulse leaves
-            the EOM zone).
+            feedback electronics must sustain the slot-rate throughput
+            and deliver the computed injection before the relevant
+            pulse's next feedback event; for large dense \(J\), that
+            throughput, memory bandwidth, and latency budget become
+            the limiting constraints.
           </p>
           """ + math_details("Detailed math: round-trip latency budget", r"""
             <p>
-              Per round-trip the FPGA does \(O(N^2)\) multiply-accumulates
-              for the dense Ising MVM, plus \(O(N)\) reads and writes
-              from homodyne and to EOM driver. With pulses spaced
-              \(\Delta\tau_\mathrm{slot}\) and total round-trip time
-              \(\tau_\mathrm{rt} = N \Delta\tau_\mathrm{slot}\), the FPGA
-              has \(\Delta\tau_\mathrm{slot}\) per spin to pipeline its
-              MVM contribution. For \(N = 10^5, \Delta\tau_\mathrm{slot}
-              = 200\) ps, that's \(2 \times 10^4\)
-              multiply-accumulates per spin in \(2 \times 10^{-10}\) s
-              — a sustained \(10^{14}\) MACS, hard but tractable on a
-              top-tier FPGA. <strong>The latency budget is the
-              load-bearing constraint of the entire architecture.</strong>
+              A dense all-to-all feedback matrix requires \(O(N^2)\)
+              multiply-accumulates per round trip, plus \(O(N)\) reads
+              and writes from homodyne and to the EOM driver. For
+              \(N=10^5\) and \(\tau_\mathrm{rt}\sim 25\,\mu\text{s}\),
+              a fully dense MVM would require order \(10^{10}\) MACs
+              per round trip, i.e. order \(10^{14}\)–\(10^{15}\) MAC/s.
+              That is beyond an ordinary serialized FPGA path and
+              requires sparsity, structure, or massive parallelism.
+              <strong>The feedback-throughput and latency budget is the
+              load-bearing constraint of the architecture.</strong>
             </p>
             <p>
-              The Honjo et al.\ paper reports their FPGA runs at 250
-              MHz clock with parallelism \(\approx\) 250 lanes,
-              giving \(6 \times 10^{10}\) MACS — they only achieve
-              this because the \(J\) matrix is a sparse graph,
-              not dense. Dense problems would saturate well below 100k.
+              The practical high-spin demonstrations therefore rely on
+              sparse or otherwise structured problem graphs. Dense
+              problems saturate the feedback hardware at much smaller
+              \(N\) unless the MVM is moved to a more parallel optical,
+              analog-electronic, or custom-digital implementation.
             </p>
           """) + callout(
             "Time-multiplexing trades spatial expense (one waveguide per "
@@ -2826,7 +2956,7 @@ NOTE_06 = {
             "round-trip rate — and that constraint is precisely what "
             "Note 07's OU machine inherits."
           ),
-         ["100k spins fit in one 5 km fiber ring",
+         ["~100k time-multiplexed DOPO pulses fit in one 5 km fiber ring",
           "Pulse slot \\(\\Delta\\tau \\approx 200\\,\\mathrm{ps}\\); RT \\(\\sim 25\\,\\mu\\)s",
           "FPGA latency = the load-bearing assumption"]),
         ("ising-mapping", "From Pulses to Ising Solutions", r"""
@@ -2887,9 +3017,11 @@ NOTE_06 = {
               C(z) = \tfrac{1}{4}\,s^T Q s + \tfrac{1}{4}\,(\mathbf{1}^T Q + Q\mathbf{1})\,s
                    + \tfrac{1}{4}\,\mathbf{1}^T Q \mathbf{1}.
             \]
-            The diagonal of \(Q\) becomes a linear field
-            \(h_i = \tfrac{1}{2}(\mathbf{1}^T Q)_i\); the off-diagonal
-            becomes \(J_{ij} = \tfrac{1}{4}(Q_{ij} + Q_{ji})\). One
+            In this polynomial form, the linear coefficient is
+            \(h_i = \tfrac{1}{4}[(Q+Q^T)\mathbf{1}]_i\); for symmetric
+            \(Q\), \(h_i = \tfrac{1}{2}(Q\mathbf{1})_i\). The quadratic
+            coefficient is \(\tfrac{1}{4}(Q_{ij}+Q_{ji})\), with the
+            sign convention adjusted to the Ising energy definition. One
             logical bit ↔ one physical spin: zero overhead.
           </p>
           <p>
@@ -2903,21 +3035,22 @@ NOTE_06 = {
           <p>
             <strong>Beyond Ising: 3-SAT, TSP, …</strong> Lucas (2014)
             catalogs reductions for ~30 NP problems. Most introduce
-            \(O(n)\)–\(O(n \log n)\) auxiliary spins per logical
+            auxiliary spins per logical
             variable to encode constraints (e.g.\ TSP needs
             \(n^2\) spins for an \(n\)-city tour: a one-hot
-            position-time matrix). For 3-SAT the overhead is roughly
-            quadratic. <em>The CIM's 100k-spin scale becomes only a
-            316-city TSP or a 100-variable 3-SAT instance after
+            position-time matrix). Depending on the problem and
+            penalty construction, the overhead can be linear,
+            quadratic, or worse. <em>The CIM's 100k-spin scale becomes
+            only a roughly 316-city TSP after the standard one-hot
             encoding.</em> This is the fine print on "100,000 spins".
           </p>
           """ + callout(
             "When CIM advocates and skeptics talk past each other, the "
             "encoding-overhead distinction is often the missing common "
-            "ground. <em>MAX-CUT on dense graphs at N=100k</em> is "
-            "genuinely impressive — but only a tiny minority of "
-            "real-world problems reduce to MAX-CUT without inflating "
-            "spin count by 100×."
+            "ground. Large MAX-CUT demonstrations are genuinely "
+            "impressive, but the spin count should be read alongside "
+            "graph density, feedback-hardware limits, and any encoding "
+            "overhead from the user's original problem."
           ),
          ["QUBO ↔ Ising: zero overhead",
           "MAX-CUT ↔ Ising: \\(J = -A\\), zero overhead",
@@ -2974,34 +3107,34 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           </p>
           <p>
             <strong>D-Wave (transverse-field Ising annealer)</strong>:
-            superconducting-flux qubits, ~5,000 qubits but with
-            chimera/pegasus connectivity (degree 6–15). The CIM has
-            <em>all-to-all</em> connectivity (FPGA can route any
-            \(J_{ij}\)) — a major win on dense problem instances.
-            For sparse problems matching D-Wave's native graph,
-            D-Wave is faster. For dense MAX-CUT at \(N \gtrsim 1000\),
-            CIM has demonstrated clearer wins.
+            superconducting-flux qubits on a sparse hardware graph.
+            The MFB-CIM can implement arbitrary logical couplings in
+            the feedback matrix, so it avoids minor-embedding overhead
+            on dense logical graphs; the price is that dense feedback
+            costs \(O(N^2)\) digital or optical MVM work. Which machine
+            wins depends on graph density, embedding overhead, hardware
+            generation, and time-to-solution metric.
           </p>
           <p>
             <strong>Simulated annealing on a top-tier CPU</strong>:
             implementing the CIM SDE on a GPU and running the same
             update Yamamoto-style is what Hamerly et al.\ 2018
             actually do — and they call it "noisy mean-field
-            annealing", and it solves the same instances at the same
-            wall-clock as the optical machine. <em>The classical
-            simulator is the dual</em>: when the CIM beats SA, it's
-            because the CIM hardware runs a particular SDE faster
-            than CPU SA runs Metropolis, not because of quantum
-            advantage.
+            annealing". Such classical simulators often track CIM
+            performance closely on benchmark instances. <em>The
+            classical simulator is the dual</em>: when the CIM beats a
+            CPU implementation, the conservative interpretation is that
+            the CIM hardware is running a particular analog SDE faster
+            than the CPU runs its chosen heuristic, not that a quantum
+            computational advantage has been established.
           </p>
           <p>
             <strong>Where the CIM <em>does</em> win</strong>:
-            \(O(\mu\)s\()\) round-trip latency per update on hardware
-            that scales O(N²) only at the FPGA level — the constant
-            factors in front of the asymptotic complexity are 2–3
-            orders of magnitude better than CPU SA. For dense large-N
-            problems where you care about wall-clock time-to-solution
-            (not asymptotic complexity), CIM is a serious contender.
+            fast round-trip updates on hardware that can exploit
+            parallel feedback, sparsity, or structure. For problem
+            classes where the feedback hardware is well matched to the
+            graph and the metric is wall-clock time-to-solution, CIM is
+            a serious contender.
           </p>
           """ + callout(
             "If you read one paper to calibrate your priors here, "
@@ -3013,7 +3146,7 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           ),
          ["All-to-all connectivity: CIM beats D-Wave on dense",
           "vs SA: same physics, different hardware constants",
-          "Wall-clock wins, asymptotic ties"]),
+          "Wall-clock comparisons depend on hardware and graph structure"]),
         ("scaling", "Scaling Demonstrated", r"""
           <p>
             What problem sizes have actually been solved by physical
@@ -3025,23 +3158,23 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
             <tr><td>2016</td><td>Inagaki et al.\ (NTT)</td><td>2,048</td><td>1 km fiber</td><td>complete-graph K₂₀₀₀</td></tr>
             <tr><td>2016</td><td>McMahon et al.\ (Stanford)</td><td>100</td><td>fiber + measurement-feedback</td><td>programmable J on hardware</td></tr>
             <tr><td>2018</td><td>Hamerly et al.\ (Stanford+NTT)</td><td>2,000</td><td>1 km fiber</td><td>head-to-head vs D-Wave</td></tr>
-            <tr><td>2021</td><td>Honjo et al.\ (NTT)</td><td>100,144</td><td>5 km fiber</td><td>sparse-graph MAX-CUT</td></tr>
-            <tr><td>2024+</td><td>Marandi (Caltech)</td><td>~100</td><td>integrated thin-film LiNbO₃</td><td>chip-scale DOPO networks</td></tr>
+            <tr><td>2021</td><td>Honjo et al.\ (NTT)</td><td>100,512 pulses</td><td>5 km fiber</td><td>100,000-node MAX-CUT demonstrations</td></tr>
+            <tr><td>2020s</td><td>Integrated-photonics groups</td><td>prototype scale</td><td>thin-film LiNbO₃ / nanophotonics</td><td>chip-scale DOPO-network research direction</td></tr>
           </table>
           <p>
-            The 2014 → 2021 progression is a 25,000× scaling in 7
-            years — limited by FPGA throughput and fiber length, not
-            by photonics. The Marandi nanophotonic effort is the
-            inflection: integrated DOPOs at ~5 mm scale would let one
-            chip do what a 5 km fiber loop currently does, with
-            \(10^4\)× lower latency. <em>That</em> would change the
-            economics — and is the substrate the OU machine in Note
-            07 inherits.
+            The 2014 → 2021 progression is a roughly 25,000× scaling
+            in physical pulse count. At large \(N\), the limiting
+            resources are not just photonics but also feedback
+            throughput, memory bandwidth, graph density, calibration,
+            and fiber length. Integrated DOPO networks are the natural
+            path toward lower latency, but they remain a research
+            direction rather than a drop-in replacement for the 5 km
+            fiber-loop demonstrations.
           </p>
           """,
-         ["2014 → 2021: 4 → 100k spin scaling",
-          "Limited by FPGA + fiber, not photonics",
-          "Marandi integrated path = the inflection"]),
+         ["2014 → 2021: 4 → 100k-node demonstrations",
+          "Limited by feedback throughput, graph density, calibration, and fiber",
+          "Integrated DOPO networks are the low-latency research path"]),
         ("open-questions", "Open Theoretical Questions", r"""
           <p class="lede">
             Five questions whose answers would change the field's
@@ -3049,13 +3182,13 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           </p>
           <ol>
             <li><strong>Is there a quantum-noise-driven advantage at
-              threshold?</strong> Bouland et al.\ have argued that
-              tunneling between spin configurations during the
-              bifurcation should give a polynomial speedup — but the
-              empirical evidence is mixed and depends sensitively on
-              how SA is tuned. <em>Settling this requires a problem
-              class where SA provably fails and CIM provably succeeds
-              with the same wall-clock budget.</em></li>
+              threshold?</strong> Some theory papers argue that
+              tunneling or critical dynamics during the bifurcation can
+              help on selected landscapes, but the empirical evidence
+              is mixed and depends sensitively on how classical
+              baselines are tuned. <em>Settling this requires benchmark
+              classes and time-to-solution protocols that classical
+              heuristics cannot match.</em></li>
             <li><strong>What does AHC/CAC actually correct?</strong>
               The corrections work empirically but have no first-principles
               derivation. They look suspiciously like they're
@@ -3087,16 +3220,15 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           "Embedding non-Ising: kills constant factors",
           "Threshold regime: theoretically under-characterized",
           "Same hardware, new tasks: Note 07 is one direction"]),
-        ("sota", "State of the Art (1996 → 2026)", r"""
+        ("sota", "Selected CIM Milestones", r"""
           <table class="refs">
-            <tr><td>1996</td><td>Yamamoto group: first DOPO Ising-machine concept</td></tr>
             <tr><td>2014</td><td>Wang et al.\ (Yamamoto): 4-spin demo, free-space</td></tr>
             <tr><td>2016</td><td>Inagaki et al., <em>Science</em>: 2,048-spin MFB-CIM at NTT</td></tr>
             <tr><td>2016</td><td>McMahon et al., <em>Science</em>: 100-spin programmable CIM at Stanford (the codebase we use)</td></tr>
             <tr><td>2018</td><td>Hamerly et al., <em>Sci. Adv.</em>: dual-polarization CIM scaling demo</td></tr>
             <tr><td>2019</td><td>Leleu et al., <em>PRL</em>: amplitude-heterogeneity-correction</td></tr>
-            <tr><td>2021</td><td>Honjo et al., <em>Sci. Adv.</em>: 100,144-spin CIM, single fiber loop</td></tr>
-            <tr><td>2025</td><td>Marandi group ongoing: integrated nanophotonic DOPO networks at Caltech</td></tr>
+            <tr><td>2021</td><td>Honjo et al., <em>Sci. Adv.</em>: 100,512-pulse CIM for 100,000-node MAX-CUT instances</td></tr>
+            <tr><td>2020s</td><td>Integrated and nanophotonic DOPO networks: active low-latency research direction</td></tr>
           </table>
           <p>
             What these machines actually solve: spin-glass instances,
@@ -3111,7 +3243,7 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
             etc.).
           </p>
           """,
-         ["1996–2025: 1 → 100k spins",
+         ["2014–2021: 4 → 100k-node demonstrations",
           "Heuristic Ising solvers, competitive with SA",
           "No rigorous quantum-advantage demonstration"]),
         ("sources", "Sources &amp; Further Reading", r"""
@@ -3243,7 +3375,7 @@ x += eps[t] * noise * (torch.rand(N) - 0.5)          # injected stochastic noise
           if (snr < 1) return {name: 'vacuum-fluctuation regime', color: '#7a9fd1', detail: 'Full Lindblad / squeezed-vacuum description.'};
           if (snr < 3) return {name: 'crossover (threshold)', color: '#e8b96a', detail: 'Linearization breaks down; nonlinear quantum noise.'};
           if (snr < 30) return {name: 'bright but quantum-influenced', color: '#79c79f', detail: 'Linearized Gaussian (mean-field + Langevin noise).'};
-          return {name: 'classical bright-field', color: '#79c79f', detail: 'Operationally classical; Mandel-Wolf says SDE suffices.'};
+          return {name: 'classical bright-field', color: '#79c79f', detail: 'Operationally classical; Gaussian SDE description suffices.'};
         }
         function draw() {
           var logn = parseFloat(nSlider.value);
@@ -3492,12 +3624,14 @@ NOTE_07 = {
           </p>
           <p>
             The hypothesis of this proposal: <em>the same primitive
-            runs on the MFB-CIM photonic substrate</em>, with two key
-            advantages: (i) per-round-trip MVM is O(1) latency in the
-            photonic loop, vs CPU's O(d²); (ii) the room-temperature
-            photonic noise floor is much lower than thermal Johnson
-            noise on RLC, so the precision per joule should be
-            substantially better.
+            runs on the MFB-CIM photonic substrate</em>. The plausible
+            advantage is hardware parallelism and bandwidth: the
+            feedback MVM can be pipelined through optical/electronic
+            hardware rather than executed as a serial CPU loop. The
+            precision-per-joule comparison with RLC hardware is an
+            engineering question, because optical shot noise, detector
+            loss, FPGA power, and Johnson noise are not directly
+            comparable by a single scalar.
           </p>
           """ + callout(
             'We are re-using the entire CIM hardware — pulse loop, '
@@ -3509,7 +3643,7 @@ NOTE_07 = {
           ),
          ["TLA: SDE stationary covariance ↔ algebraic primitive",
           "Aifer-Coles-Duffield 2023 (arXiv:2306.14740) — RLC version",
-          "Photonic re-implementation: same primitive, faster MVM, lower noise floor"]),
+          "Photonic re-implementation: same primitive, different hardware tradeoffs"]),
         ("tla-primitives", "Three TLA Primitives", r"""
           <p class="lede">
             Thermodynamic linear algebra is a family of algorithms — not
@@ -3519,12 +3653,16 @@ NOTE_07 = {
           </p>
           <ol>
             <li><strong>Linear systems / matrix inverse</strong>: solve
-              \(A v = b\) by reading \(2\hat\Sigma b\) from a sample
-              average. <em>This is the OU machine</em>. Symmetric PD
-              \(A\) and isotropic noise. Direct application: linear
+              \(A v = b\) either by driving the OU process with bias
+              \(b\) and reading its steady-state mean, or by estimating
+              \(\hat\Sigma\) and computing \(2\hat\Sigma b\).
+              <em>This is the OU machine</em>. Symmetric PD \(A\) and
+              isotropic diffusion. Direct application: linear
               regression, Gaussian-process inference, Newton steps.</li>
             <li><strong>Sampling from a Gaussian</strong>: draw samples
-              from \(\mathcal{N}(0, A^{-1})\). Same SDE; instead of
+              from \(\mathcal{N}(0, \tfrac{1}{2}A^{-1})\) for unit
+              diffusion, or rescale the diffusion to sample
+              \(\mathcal{N}(0,A^{-1})\). Same SDE; instead of
               averaging covariance you record trajectory points. Direct
               application: Bayesian posterior sampling, MCMC
               initialization, simulation.</li>
@@ -3535,23 +3673,25 @@ NOTE_07 = {
               constants for partition functions.</li>
           </ol>
           <p>
-            For the optical implementation, all three primitives share
-            the same hardware: <em>only the postprocessing changes</em>.
-            Linear systems read \(2\hat\Sigma b\); sampling reads
-            \(x(t)\) directly; determinant reads the cumulative work
-            done by the EOM. The economic argument is therefore: build
-            one optical SPU, get three primitives.
+            For the optical implementation, all three primitives can
+            share the same core hardware, though determinant estimation
+            also needs a controlled quasi-static schedule. Linear
+            systems read a mean or \(2\hat\Sigma b\); sampling reads
+            \(x(t)\) directly; determinant estimation reads cumulative
+            work done by the drive. The economic argument is therefore:
+            build one optical SPU substrate, get several related
+            primitives.
           </p>
           """ + callout(
-            "The hardware that does any one of these does all three. "
+            "The core hardware that does any one of these can support all three. "
             "The pitch to a hardware sponsor is therefore a portfolio "
             "bet: the OU machine de-risks the substrate; sampling and "
-            "determinant estimation come for free in firmware once the "
-            "substrate exists."
+            "determinant estimation become firmware/protocol extensions "
+            "rather than entirely new hardware projects."
           ),
          ["Three primitives, one substrate",
           "Linear systems / sampling / determinant",
-          "Postprocessing differs, hardware does not"]),
+          "Postprocessing and schedules differ; the core hardware is shared"]),
         ("langevin-lyapunov", "Langevin → Lyapunov", r"""
           <p>
             For the linear SDE
@@ -3595,52 +3735,69 @@ NOTE_07 = {
             simulator's trajectory.
           </p>
           <p>
-            For non-symmetric Hurwitz \(A\) the relation between
-            \(\Sigma\) and \(A^{-1}\) is more involved, but the
-            primitive still works — we just choose a different
-            estimator. See the Aifer-Coles-Duffield recipe table.
+            For non-symmetric Hurwitz \(A\), the covariance solves a
+            Lyapunov equation but no longer equals a simple multiple of
+            \(A^{-1}\). Using the primitive for nonsymmetric linear
+            solves requires an augmented construction or a different
+            estimator; it is not the same one-line SPD recipe.
           </p>
           """ + widget_shell(
             anchor="lyapunov-sampler",
-            title="Interactive: 4-D OU machine convergence",
+            title="Interactive: 2-D OU walk &mdash; sample &rarr; A&#8315;&#185;b and &frac12;A&#8315;&#185;",
             blurb=(
-              "Press <em>Run</em> to step a small (d=4) OU machine. The "
-              "trace plots Frobenius error "
-              "‖<em>Σ̂</em>(t) − ½<em>A</em>⁻¹‖_F as the empirical "
-              "covariance from running averages converges to the "
-              "Lyapunov solution. Convergence rate is "
-              "<em>T<sub>mix</sub></em> ∝ <em>κ</em> for the overdamped "
-              "OU machine (Note 07's central scaling result)."
+              "Drive the SDE \\(dx = (-A x + b)\\,dt + dW\\) for a "
+              "user-chosen 2&times;2 \\(A\\) and bias \\(b\\). "
+              "<strong>Blue</strong>: live trajectory \\(x(t)\\). "
+              "<strong>Black</strong>: running sample mean "
+              "\\(\\hat\\mu(t)\\), which converges to "
+              "\\(A^{-1}b\\) (red dot). <strong>Red ellipse</strong>: "
+              "theoretical 1&sigma; contour of "
+              "\\(\\Sigma_\\infty = \\tfrac12 A^{-1}\\) around "
+              "\\(A^{-1}b\\); the trail fills it. The readout reports "
+              "the empirical \\(\\hat\\Sigma\\) converging to "
+              "\\(\\tfrac12 A^{-1}\\) &mdash; the Lyapunov result that "
+              "lets the OU machine recover \\(A^{-1}\\) by sampling. "
+              "After Aifer-Coles-Duffield 2023, Fig.&nbsp;2 (left)."
             ),
             controls_html=(
-              slider(var="lya-kappa", label="κ = λ_max/λ_min", min_=1.5,
-                     max_=20, step=0.5, value=5, fmt="{:.1f}") + "\n" +
-              slider(var="lya-dt", label="step Δt", min_=0.005,
-                     max_=0.1, step=0.005, value=0.04, fmt="{:.3f}")
+              slider(var="lya-a11", label="A_(11)", min_=0.3,
+                     max_=3.0, step=0.05, value=1.0, fmt="{:.2f}") + "\n" +
+              slider(var="lya-a22", label="A_(22)", min_=0.3,
+                     max_=3.0, step=0.05, value=1.0, fmt="{:.2f}") + "\n" +
+              slider(var="lya-a12", label="A_(12) = A_(21)", min_=-1.5,
+                     max_=1.5, step=0.05, value=-0.5, fmt="{:+.2f}") + "\n" +
+              slider(var="lya-b1", label="b_(1)", min_=-2.0,
+                     max_=2.0, step=0.1, value=1.0, fmt="{:+.1f}") + "\n" +
+              slider(var="lya-b2", label="b_(2)", min_=-2.0,
+                     max_=2.0, step=0.1, value=0.5, fmt="{:+.1f}")
             ),
             buttons_html=(
               '<button id="lya-run">Run</button>'
               '<button id="lya-reset">Reset</button>'
             ),
-            canvas_html=svg_el("lyapunov-sampler", w=520, h=260),
+            canvas_html=svg_el("lyapunov-sampler", w=540, h=320),
             readout_html=(
-              '<div>Sample covariance error: <span id="lya-err">—</span></div>'
-              '<div>Step: <span id="lya-step">0</span> / 1500</div>'
+              '<div>Step: <span id="lya-step">0</span> &middot; samples: <span id="lya-n">0</span></div>'
+              '<div>Target \\(A^{-1}b\\) = <span id="lya-target">&mdash;</span> &middot; '
+              'empirical \\(\\hat\\mu\\) = <span id="lya-mu">&mdash;</span></div>'
+              '<div>Theory \\(\\tfrac12 A^{-1}\\) = <span id="lya-sigma-th">&mdash;</span></div>'
+              '<div>Empirical \\(\\hat\\Sigma\\) = <span id="lya-sigma-emp">&mdash;</span></div>'
+              '<div>Frobenius error \\(\\lVert\\hat\\Sigma - \\tfrac12 A^{-1}\\rVert_F\\) = <span id="lya-err">&mdash;</span></div>'
             ),
           ) + r"""
           """ + callout(
             "The Lyapunov equation <em>is</em> the algebraic content of "
             "what an OU process knows at stationarity. The hardware "
             "advantage of the OU machine is not that it computes a "
-            "different equation — it's that the matrix-vector "
-            "multiplication that lives at the heart of "
-            "<em>A</em>Σ + Σ<em>A</em>ᵀ = <em>D</em> can be evaluated "
-            "in O(1) photonic round-trip time, vs CPU's O(d²)."
+            "different equation — it is the possibility of evaluating "
+            "the matrix-vector multiplication at the heart of "
+            "<em>A</em>Σ + Σ<em>A</em>ᵀ = <em>D</em> with specialized, "
+            "parallel hardware rather than a serial CPU loop."
           ),
-         ["\\(\\dot x = -A x + \\sqrt{D}\\,\\xi \\Rightarrow A\\Sigma + \\Sigma A^T = D\\)",
-          "Symmetric PD \\(A\\) + \\(D = I\\) ⇒ \\(\\Sigma = \\tfrac{1}{2}A^{-1}\\)",
-          "\\(\\hat\\Sigma\\) from sample averaging gives \\(A^{-1}\\)",
-          "Mixing time \\(\\propto \\kappa\\) (overdamped)"]),
+         ["\\(dx = -A x\\,dt + dW \\Rightarrow A\\Sigma + \\Sigma A^T = I\\)",
+          "Symmetric PD \\(A\\) ⇒ \\(\\Sigma = \\tfrac12 A^{-1}\\) exactly",
+          "Drive with bias \\(b\\) ⇒ steady-state mean is \\(A^{-1}b\\)",
+          "Sample averaging recovers \\(A^{-1}\\) by reading \\(2\\hat\\Sigma\\)"]),
         ("three-machines", "Three Machines, One Substrate", r"""
           <p class="lede">
             The MFB-CIM hardware (Note 06) hosts <em>three</em> distinct
@@ -3702,9 +3859,9 @@ NOTE_07 = {
                     <td style="padding: 0.45rem 0.6rem;">\(T_\mathrm{mix} \propto \sqrt{\kappa}\) <span style="font-style: italic; color: var(--page-muted);">(theory; bench TBD)</span></td>
                   </tr>
                   <tr style="border-bottom: 1px solid var(--page-rule);">
-                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">η-imperfection enters as</td>
+                    <td style="padding: 0.45rem 0.6rem; color: var(--page-muted);">feedback-gain imperfection enters as</td>
                     <td style="padding: 0.45rem 0.6rem;">noise-on-J (heuristic)</td>
-                    <td style="padding: 0.45rem 0.6rem;">\(A_\mathrm{eff} = A_\mathrm{diag} + \eta A_\mathrm{off}\) <strong>exact</strong></td>
+                    <td style="padding: 0.45rem 0.6rem;">\(A_\mathrm{eff} = A_\mathrm{diag} + \eta_\mathrm{fb} A_\mathrm{off}\) for calibrated amplitude gain</td>
                     <td style="padding: 0.45rem 0.6rem;">\(f_\mathrm{eff} = \eta\, e^{-\gamma\tau}\) (Doherty-Jacobs)</td>
                   </tr>
                   <tr style="border-bottom: 1px solid var(--page-rule);">
@@ -3778,13 +3935,14 @@ NOTE_07 = {
               <p>
                 The overdamped Langevin equation
                 \[
-                  dx = -A x\,dt + \sqrt{2D}\,dW
+                  dx = -A x\,dt + D^{1/2}\,dW
                 \]
                 is a first-order SDE in \(x\) alone. There is no
                 conjugate momentum: \(\dot p\) does not appear because
                 the inertial term is taken to the high-friction limit
                 \(M \dot p \to 0\). Consequently, the steady-state
-                distribution \(\mathcal{N}(0, \tfrac{1}{2}A^{-1})\) is
+                distribution \(\mathcal{N}(0, \tfrac{1}{2}A^{-1})\) for
+                unit diffusion is
                 a function of position only. Reading off X̂ on every
                 pulse and accumulating \(\langle x_i x_j \rangle\)
                 gives the full posterior covariance.
@@ -3814,8 +3972,8 @@ NOTE_07 = {
                 via passive intensity modulation, and \(A_\mathrm{off}\)
                 as homodyne-FPGA-EOM injection on X̂. Neither path
                 tracks P̂; both paths are blind to whatever the cavity
-                P̂ does. The η-axis exactness
-                \(A_\mathrm{eff} = A_\mathrm{diag} + \eta A_\mathrm{off}\)
+                P̂ does. The calibrated feedback-gain relation
+                \(A_\mathrm{eff} = A_\mathrm{diag} + \eta_\mathrm{fb} A_\mathrm{off}\)
                 is a direct consequence (<a href="https://github.com/nez0b/cim-spu-optical-simulation/blob/main/notes/feedback_fidelity.md">notes/feedback_fidelity.md</a>
                 catches this; an earlier draft inherited the
                 \(f_\mathrm{eff} = \eta e^{-\gamma\tau}\) envelope from
@@ -3898,8 +4056,9 @@ NOTE_07 = {
                 <strong>None of this enters the overdamped story.</strong>
                 The overdamped machine has no P̂ dynamics to encode; the
                 symmetric-loss problem and the Wiseman-Milburn envelope
-                both belong to Direction A. The overdamped η-axis is
-                exact and additive, not multiplicative.
+                both belong to Direction A. The overdamped calibrated
+                feedback-gain effect is an additive drift change, not
+                the underdamped multiplicative envelope.
               </p>
             """
           ) + callout(
@@ -3937,75 +4096,90 @@ NOTE_07 = {
             object.
           </p>
           <figure style="margin: 1rem 0;">
-            <svg viewBox="0 0 720 410" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;background:var(--page-bg);border:1px solid var(--page-rule);border-radius:6px;">
-              <defs>
-                <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M0,0 L10,5 L0,10 z" fill="#7a9fd1"/>
-                </marker>
-                <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M0,0 L10,5 L0,10 z" fill="#79c79f"/>
-                </marker>
-              </defs>
-              <!-- Title strip -->
-              <text x="180" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="#7a9fd1">MFB-CIM (Note 06)</text>
-              <text x="540" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="#79c79f">Optical OU machine (Note 07)</text>
-              <line x1="360" y1="32" x2="360" y2="395" stroke="#444" stroke-width="0.5" stroke-dasharray="3,3"/>
-              <!-- LEFT (CIM) -->
-              <!-- Fiber loop drawn as ellipse -->
-              <ellipse cx="180" cy="170" rx="130" ry="60" fill="none" stroke="#888" stroke-width="1.4"/>
-              <text x="180" y="172" text-anchor="middle" font-size="10" fill="#888">fiber-loop pulses (1 per spin)</text>
-              <!-- pulses on the loop -->
-              <circle cx="100" cy="178" r="3" fill="#7a9fd1"/><circle cx="135" cy="124" r="3" fill="#7a9fd1"/>
-              <circle cx="200" cy="111" r="3" fill="#7a9fd1"/><circle cx="252" cy="146" r="3" fill="#7a9fd1"/>
-              <!-- PPLN gain crystal -->
-              <rect x="160" y="105" width="40" height="14" fill="#c879d1" stroke="#a55fa9" rx="2"/>
-              <text x="180" y="115" text-anchor="middle" font-size="9" fill="#fff">PPLN χ⁽²⁾</text>
-              <text x="180" y="100" text-anchor="middle" font-size="9" fill="#c879d1">gain (above threshold)</text>
-              <!-- tap → homodyne -->
-              <line x1="297" y1="190" x2="335" y2="245" stroke="#7a9fd1" stroke-width="1.6" marker-end="url(#arr)"/>
-              <rect x="55" y="245" width="280" height="38" fill="rgba(122,159,209,0.12)" stroke="#7a9fd1" rx="3"/>
-              <text x="80" y="263" font-size="10" fill="#7a9fd1">homodyne</text>
-              <text x="80" y="276" font-size="9" fill="#888">measures X_i</text>
-              <text x="160" y="263" font-size="10" fill="#7a9fd1">FPGA</text>
-              <text x="160" y="276" font-size="9" fill="#888">computes <tspan font-weight="600">J · x</tspan></text>
-              <text x="240" y="263" font-size="10" fill="#7a9fd1">EOM</text>
-              <text x="240" y="276" font-size="9" fill="#888">injects ε(t)·MVM</text>
-              <!-- back-to-loop arrow -->
-              <line x1="60" y1="245" x2="60" y2="200" stroke="#7a9fd1" stroke-width="1.6" marker-end="url(#arr)"/>
-              <!-- annotations: KaTeX-rendered update equation via foreignObject -->
-              <foreignObject x="10" y="292" width="340" height="105">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;font-size:10px;color:#888;line-height:1.5;">
-                  <div style="font-weight:600;margin-bottom:3px;">Update:</div>
-                  <div style="font-size:11px;">\(x \leftarrow x + dt\bigl[(r{-}1)x - \mu x^{3}\bigr] + \varepsilon(t)\,J x + \mathrm{noise}(t)\)</div>
-                  <div style="font-style:italic;margin-top:4px;">(cubic saturation; \(\varepsilon\) ramps; noise schedule)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; background: var(--page-bg); border: 1px solid var(--page-rule); border-radius: 6px; padding: 1rem;">
+              <!-- LEFT: MFB-CIM column -->
+              <div>
+                <div style="font-weight: 600; color: #7a9fd1; text-align: center; font-size: 0.95rem; margin-bottom: 0.4rem;">MFB-CIM (Note 06)</div>
+                <svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+                  <defs>
+                    <marker id="arr-cim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M0,0 L10,5 L0,10 z" fill="#7a9fd1"/>
+                    </marker>
+                  </defs>
+                  <!-- fiber loop -->
+                  <ellipse cx="170" cy="105" rx="125" ry="55" fill="none" stroke="#888" stroke-width="1.4"/>
+                  <text x="170" y="108" text-anchor="middle" font-size="10" fill="#888">fiber-loop pulses (1 per spin)</text>
+                  <!-- pulses on the loop -->
+                  <circle cx="92" cy="112" r="3" fill="#7a9fd1"/>
+                  <circle cx="125" cy="64" r="3" fill="#7a9fd1"/>
+                  <circle cx="190" cy="51" r="3" fill="#7a9fd1"/>
+                  <circle cx="240" cy="83" r="3" fill="#7a9fd1"/>
+                  <!-- PPLN crystal -->
+                  <text x="170" y="38" text-anchor="middle" font-size="9" fill="#c879d1">gain (above threshold)</text>
+                  <rect x="150" y="44" width="40" height="14" fill="#c879d1" stroke="#a55fa9" rx="2"/>
+                  <text x="170" y="54" text-anchor="middle" font-size="9" fill="#fff">PPLN χ⁽²⁾</text>
+                  <!-- tap arrow loop → strip -->
+                  <line x1="285" y1="125" x2="320" y2="180" stroke="#7a9fd1" stroke-width="1.6" marker-end="url(#arr-cim)"/>
+                  <!-- homodyne / FPGA / EOM strip -->
+                  <rect x="20" y="180" width="305" height="44" fill="rgba(122,159,209,0.12)" stroke="#7a9fd1" rx="3"/>
+                  <text x="48" y="198" font-size="10" fill="#7a9fd1">homodyne</text>
+                  <text x="48" y="211" font-size="9" fill="#888">measures X_i</text>
+                  <text x="148" y="198" font-size="10" fill="#7a9fd1">FPGA</text>
+                  <text x="148" y="211" font-size="9" fill="#888">computes <tspan font-weight="600">J · x</tspan></text>
+                  <text x="240" y="198" font-size="10" fill="#7a9fd1">EOM</text>
+                  <text x="240" y="211" font-size="9" fill="#888">injects ε(t)·MVM</text>
+                  <!-- back-to-loop arrow -->
+                  <line x1="30" y1="180" x2="30" y2="135" stroke="#7a9fd1" stroke-width="1.6" marker-end="url(#arr-cim)"/>
+                </svg>
+                <!-- HTML equation block (KaTeX-rendered) -->
+                <div style="background: rgba(122,159,209,0.10); border: 1px solid #7a9fd1; border-radius: 4px; padding: 0.55rem 0.75rem; margin-top: 0.55rem; font-size: 0.88rem;">
+                  <div style="color: #7a9fd1; font-weight: 600; margin-bottom: 0.25rem;">Update equation</div>
+                  <p style="margin: 0.15rem 0;">\(x \leftarrow x + dt\bigl[(r-1)x - \mu x^{3}\bigr] + \varepsilon(t)\,J x + \mathrm{noise}(t)\)</p>
+                  <p style="margin: 0.15rem 0; color: var(--page-muted); font-size: 0.84rem; font-style: italic;">cubic saturation; \(\varepsilon\) ramps; noise schedule</p>
                 </div>
-              </foreignObject>
-              <!-- RIGHT (OU) -->
-              <ellipse cx="540" cy="170" rx="130" ry="60" fill="none" stroke="#888" stroke-width="1.4"/>
-              <text x="540" y="172" text-anchor="middle" font-size="10" fill="#888">fiber-loop pulses (1 per dimension)</text>
-              <circle cx="460" cy="178" r="3" fill="#79c79f"/><circle cx="495" cy="124" r="3" fill="#79c79f"/>
-              <circle cx="560" cy="111" r="3" fill="#79c79f"/><circle cx="612" cy="146" r="3" fill="#79c79f"/>
-              <!-- PPLN at threshold or removed -->
-              <rect x="520" y="105" width="40" height="14" fill="#c879d1" stroke="#a55fa9" rx="2" opacity="0.4"/>
-              <text x="540" y="115" text-anchor="middle" font-size="9" fill="#fff" opacity="0.6">PPLN at thr.</text>
-              <text x="540" y="100" text-anchor="middle" font-size="9" fill="#c879d1" opacity="0.6">no bifurcation</text>
-              <line x1="657" y1="190" x2="695" y2="245" stroke="#79c79f" stroke-width="1.6" marker-end="url(#arr2)"/>
-              <rect x="415" y="245" width="280" height="38" fill="rgba(121,199,159,0.12)" stroke="#79c79f" rx="3"/>
-              <text x="440" y="263" font-size="10" fill="#79c79f">homodyne</text>
-              <text x="440" y="276" font-size="9" fill="#888">measures X_i</text>
-              <text x="520" y="263" font-size="10" fill="#79c79f">FPGA</text>
-              <text x="520" y="276" font-size="9" fill="#888">computes <tspan font-weight="600">−A_off · x</tspan></text>
-              <text x="600" y="263" font-size="10" fill="#79c79f">EOM</text>
-              <text x="600" y="276" font-size="9" fill="#888">injects ε·MVM + b</text>
-              <line x1="420" y1="245" x2="420" y2="200" stroke="#79c79f" stroke-width="1.6" marker-end="url(#arr2)"/>
-              <foreignObject x="370" y="292" width="340" height="105">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;font-size:10px;color:#888;line-height:1.5;">
-                  <div style="font-weight:600;margin-bottom:3px;">Update:</div>
-                  <div style="font-size:11px;">\(x \leftarrow x - dt\,A x + dt\,b + \sqrt{dt}\,D^{1/2}\,\xi\)</div>
-                  <div style="font-style:italic;margin-top:4px;">(linear damping; constant \(\varepsilon\); Gaussian noise)</div>
+              </div>
+              <!-- RIGHT: Optical OU column -->
+              <div>
+                <div style="font-weight: 600; color: #79c79f; text-align: center; font-size: 0.95rem; margin-bottom: 0.4rem;">Optical OU machine (Note 07)</div>
+                <svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+                  <defs>
+                    <marker id="arr-ou" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M0,0 L10,5 L0,10 z" fill="#79c79f"/>
+                    </marker>
+                  </defs>
+                  <!-- fiber loop -->
+                  <ellipse cx="170" cy="105" rx="125" ry="55" fill="none" stroke="#888" stroke-width="1.4"/>
+                  <text x="170" y="108" text-anchor="middle" font-size="10" fill="#888">fiber-loop pulses (1 per dimension)</text>
+                  <!-- pulses on the loop -->
+                  <circle cx="92" cy="112" r="3" fill="#79c79f"/>
+                  <circle cx="125" cy="64" r="3" fill="#79c79f"/>
+                  <circle cx="190" cy="51" r="3" fill="#79c79f"/>
+                  <circle cx="240" cy="83" r="3" fill="#79c79f"/>
+                  <!-- PPLN crystal at-or-below threshold (faded) -->
+                  <text x="170" y="38" text-anchor="middle" font-size="9" fill="#c879d1" opacity="0.6">no bifurcation</text>
+                  <rect x="150" y="44" width="40" height="14" fill="#c879d1" stroke="#a55fa9" rx="2" opacity="0.4"/>
+                  <text x="170" y="54" text-anchor="middle" font-size="9" fill="#fff" opacity="0.6">PPLN at thr.</text>
+                  <!-- tap arrow loop → strip -->
+                  <line x1="285" y1="125" x2="320" y2="180" stroke="#79c79f" stroke-width="1.6" marker-end="url(#arr-ou)"/>
+                  <!-- homodyne / FPGA / EOM strip -->
+                  <rect x="20" y="180" width="305" height="44" fill="rgba(121,199,159,0.12)" stroke="#79c79f" rx="3"/>
+                  <text x="48" y="198" font-size="10" fill="#79c79f">homodyne</text>
+                  <text x="48" y="211" font-size="9" fill="#888">measures X_i</text>
+                  <text x="148" y="198" font-size="10" fill="#79c79f">FPGA</text>
+                  <text x="148" y="211" font-size="9" fill="#888">computes <tspan font-weight="600">−A_off · x</tspan></text>
+                  <text x="240" y="198" font-size="10" fill="#79c79f">EOM</text>
+                  <text x="240" y="211" font-size="9" fill="#888">injects ε·MVM + b</text>
+                  <!-- back-to-loop arrow -->
+                  <line x1="30" y1="180" x2="30" y2="135" stroke="#79c79f" stroke-width="1.6" marker-end="url(#arr-ou)"/>
+                </svg>
+                <!-- HTML equation block (KaTeX-rendered) -->
+                <div style="background: rgba(121,199,159,0.10); border: 1px solid #79c79f; border-radius: 4px; padding: 0.55rem 0.75rem; margin-top: 0.55rem; font-size: 0.88rem;">
+                  <div style="color: #79c79f; font-weight: 600; margin-bottom: 0.25rem;">Update equation</div>
+                  <p style="margin: 0.15rem 0;">\(x \leftarrow x - dt\,A x + dt\,b + \sqrt{dt}\,D^{1/2}\,\xi\)</p>
+                  <p style="margin: 0.15rem 0; color: var(--page-muted); font-size: 0.84rem; font-style: italic;">linear damping; constant \(\varepsilon\); Gaussian noise</p>
                 </div>
-              </foreignObject>
-            </svg>
+              </div>
+            </div>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
               <strong>Fig.&nbsp;1.</strong> Architectural comparison: MFB-CIM (left) vs the <em>overdamped</em> optical OU machine (right). Same fiber-loop substrate; different FPGA firmware. The MFB-CIM lives above the DOPO threshold and uses cubic saturation to commit to ±1 spin states; the overdamped OU machine operates at or below threshold with linear damping, never committing to a discrete state. <strong>Both measure only the X̂ quadrature via balanced homodyne.</strong> The <em>underdamped</em> OU machine (Direction A; §<a href="#three-machines">three-machines</a>) tracks both X̂ and P̂ via Wiseman-Milburn feedback to buy a √κ speedup; it is not pictured here. The Yamamoto-NTT measurement-feedback CIM schematic (<a href="_lectures/classical_CIM_from_Yamamoto.png">classical_CIM_from_Yamamoto.png</a>) is the reference for the left side.
             </figcaption>
@@ -4026,9 +4200,10 @@ NOTE_07 = {
               of the user's drift matrix instead of an Ising coupling.</li>
             <li><strong>Uniform noise → Gaussian noise.</strong>
               \((\mathrm{rand}-0.5)\) is replaced by
-              \(\sqrt{2\,dt}\,D^{1/2}\xi\) with \(\xi \sim \mathcal{N}(0,I)\).
-              This is the formally-correct Langevin diffusion;
-              \(D^{1/2}\) is the Cholesky of the user's diffusion matrix.</li>
+              \(\sqrt{dt}\,D^{1/2}\xi\) with \(\xi \sim \mathcal{N}(0,I)\).
+              Here \(D\) denotes the diffusion covariance in
+              \(A\Sigma+\Sigma A^T=D\), and \(D^{1/2}\) is its
+              Cholesky factor.</li>
           </ol>
           <p>
             Critically, every passive optical element (fiber loop,
@@ -4050,9 +4225,11 @@ NOTE_07 = {
           """ + callout(
             "The OU machine is not faster than <code>scipy.linalg.solve</code> "
             "in software — our simulator is a Python loop. The claim is "
-            "about the optical hardware, where per-round-trip MVM is "
-            "O(d) latency in the optical loop vs CPU's O(d²) per "
-            "iteration plus O(d³) Cholesky. The simulator's role is to "
+            "about specialized hardware, where the MVM can be pipelined "
+            "and parallelized instead of run as a scalar Python loop. "
+            "Dense problems still require O(d²) multiply-accumulate "
+            "work somewhere; direct digital solvers add O(d³) "
+            "factorization costs. The simulator's role is to "
             "<em>verify</em> the dynamics, not race against LAPACK."
           ),
          ["Same fiber loop, homodyne, FPGA, EOM as MFB-CIM",
@@ -4167,7 +4344,7 @@ NOTE_07 = {
                 <text x="445" y="234" font-size="10" fill="#888">imposes drive b_i on pulse i each round-trip</text>
                 <rect x="430" y="285" width="270" height="34" fill="rgba(200,121,209,0.18)" stroke="#c879d1" rx="3"/>
                 <text x="445" y="302" font-size="11" fill="#c879d1" font-weight="600">Calibrated white-noise generator</text>
-                <text x="445" y="314" font-size="10" fill="#888">√(2 dt) · D^½ · ξᵢ injected via EOM</text>
+                <text x="445" y="314" font-size="10" fill="#888">√dt · D^½ · ξᵢ injected via EOM</text>
               </g>
             </svg>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
@@ -4181,8 +4358,8 @@ NOTE_07 = {
             the hardware decomposition is explicit:
           </p>
           <pre style="background: var(--page-panel); padding: 0.7rem; border-radius: 0.3rem; font-size: 0.82rem; overflow-x: auto;">
-self._A_diag = torch.diag(torch.diagonal(self._A))   # per-pulse loss (no η, no τ)
-self._A_off  = self._A - self._A_diag                # FPGA path (has η, τ)
+self._A_diag = torch.diag(torch.diagonal(self._A))   # per-pulse loss (no η_fb, no τ)
+self._A_off  = self._A - self._A_diag                # FPGA path (has η_fb, τ)
 ...
 drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
           </pre>
@@ -4219,10 +4396,11 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
             "The diagonal-vs-off-diagonal split is the single most "
             "important simplification of the hardware analysis. By "
             "putting <em>A_diag</em> on per-pulse local optics and only "
-            "<em>A_off</em> through the FPGA loop, η and τ imperfections "
+            "<em>A_off</em> through the FPGA loop, feedback-gain and delay imperfections "
             "affect only off-diagonal coupling — never the dominant "
-            "self-damping. The η-axis is therefore exact and additive: "
-            "<em>A_eff = A_diag + η&middot;A_off</em>, full stop. <strong>"
+            "self-damping. If η<sub>fb</sub> denotes the calibrated "
+            "amplitude transfer of that feedback path, the gain axis is "
+            "additive: <em>A_eff = A_diag + η<sub>fb</sub>&middot;A_off</em>. <strong>"
             "This exactness is a consequence of the overdamped framing "
             "(no momentum, X̂-only readout)</strong>; the underdamped "
             "Direction-A machine has both quadratures and inherits the "
@@ -4232,8 +4410,8 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
             "envelope by mistake and was corrected in cim/notes/"
             "feedback_fidelity.md."
           ),
-         ["A_diag → per-pulse loss (η, τ-immune)",
-          "A_off → FPGA RAM (η, τ-affected)",
+         ["A_diag → per-pulse loss (η_fb, τ-immune)",
+          "A_off → FPGA RAM (η_fb, τ-affected)",
           "b → EOM DC bias (linear-system mode)",
           "D → calibrated white-noise gain"]),
         ("readout-protocols", "Readout: Three Measurements, Three Primitives", r"""
@@ -4286,13 +4464,13 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
               </div>
             </div>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
-              <strong>Fig.&nbsp;3.</strong> Three readout protocols on one substrate. The dynamics is identical in all four cases — only the post-processing of the photocurrent stream differs.
+              <strong>Fig.&nbsp;3.</strong> Readout protocols on one substrate. The linear-solve, trace, and covariance modes use the same stationary OU dynamics with different post-processing; log-det estimation additionally requires a quasi-static schedule.
             </figcaption>
           </figure>
           <p>
             <strong>Mode 1 — Linear solve.</strong> The EOM imposes a
             constant DC bias \(b_i\) on each pulse per round-trip. The
-            full SDE is \(dx = (-Ax + b)\,dt + \sqrt{2D}\,dW\), whose
+            full SDE is \(dx = (-Ax + b)\,dt + D^{1/2}\,dW\), whose
             stationary mean is \(\langle x\rangle_\mathrm{ss} = A^{-1}b\)
             (set \(\dot{\langle x\rangle} = 0\)). Read off the
             time-averaged photocurrent on each pulse — that is the
@@ -4326,16 +4504,16 @@ drift = -x @ self._A_diag.T  -  self.eta * (x_delayed @ self._A_off.T)
             of an auxiliary parameter, integrate the work done by the
             feedback drive, and the cumulative work equals
             \(\frac{1}{2} \log\det A\) up to thermal-bath constants.
-            Same hardware, no extra components, just a careful
+            Same core hardware, but with a scheduled drive and careful
             calibration of the integrator.
           </p>
           """ + callout(
             "On the bench, you choose the readout mode by what you wire "
             "<em>after</em> the homodyne ADC, not by what the optics is "
-            "doing. All four modes can run in parallel on the same "
-            "trajectory if you have enough digital readout channels — "
-            "this is the deepest reason the OU machine is "
-            "<em>portfolio</em> hardware, not single-purpose."
+            "doing. The mean, variance, and covariance readouts can run "
+            "in parallel on the same stationary trajectory if you have "
+            "enough digital readout channels; log-det estimation is a "
+            "related scheduled protocol on the same substrate."
           ),
          ["Linear solve: drive with b, read mean → \\(A^{-1}b\\)",
           "Trace mode: per-pulse variance → \\(\\mathrm{Tr}(A^{-1})\\)",
@@ -4379,13 +4557,13 @@ def step(self, x: Tensor) -&gt; Tensor:
           </pre>
           <p>
             The <em>hardware-imperfect</em> version (cim/ou_machine.py:160)
-            adds the (η, τ, σ_meas) knobs and decomposes the drift to
+            adds the (η_fb, τ, σ_meas) knobs and decomposes the drift to
             mirror the diagonal-vs-off-diagonal split:
           </p>
           <pre style="background: var(--page-panel); padding: 0.7rem; border-radius: 0.3rem; font-size: 0.82rem; overflow-x: auto;">
 # In __init__:
 self._A_diag = torch.diag(torch.diagonal(self._A))         # per-pulse loss (immune)
-self._A_off  = self._A - self._A_diag                      # FPGA path (η, τ-affected)
+self._A_off  = self._A - self._A_diag                      # FPGA path (η_fb, τ-affected)
 
 # In the run loop:
 delay_buffer.append(x_seen)                                # FIFO of past measurements
@@ -4410,12 +4588,11 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           </pre>
           """ + math_details("Why this is the right discretization", r"""
             <p>
-              Discretizing \(dx = -A x\,dt + \sqrt{2D}\,dW\) by
+              Discretizing \(dx = -A x\,dt + D^{1/2}\,dW\) by
               explicit Euler-Maruyama gives
               \(x_{n+1} = x_n - A x_n \Delta t + \sqrt{\Delta t}\,B \xi_n\)
-              with \(B B^\mathrm{T} = 2D\) (we use \(B = \sqrt{2D}\)
-              symmetric). The continuous-time stationary covariance
-              \(\Sigma_\infty\) solves \(A\Sigma + \Sigma A^\mathrm{T} = 2D\);
+              with \(B B^\mathrm{T} = D\). The continuous-time stationary covariance
+              \(\Sigma_\infty\) solves \(A\Sigma + \Sigma A^\mathrm{T} = D\);
               the discrete-time stationary covariance solves an analogous
               equation with extra terms in \((A\Delta t)^2\). For
               \(\Delta t \cdot \lambda_\mathrm{max}(A) \ll 1\), the
@@ -4491,18 +4668,20 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             <tr><td>Encoding</td><td>passive analog (RC time constants set drift)</td><td>digital firmware on FPGA + optical loop</td></tr>
             <tr><td>Reconfigurability</td><td>Patch-board topology change for different \(A\)</td><td>FPGA firmware update</td></tr>
             <tr><td>Demonstrated d</td><td>8</td><td>32 (sim) / TBD on bench</td></tr>
-            <tr><td>Noise floor</td><td>thermal Johnson noise \(\sim k_B T R\)</td><td>vacuum shot noise \(\sim \hbar\omega\)</td></tr>
-            <tr><td>Power per MVM</td><td>~ pJ (passive, plus readout)</td><td>~ nJ (FPGA + optical loop)</td></tr>
-            <tr><td>Latency per MVM</td><td>~ μs (RC settling)</td><td>~ ns (round-trip)</td></tr>
-            <tr><td>Mature year</td><td>2024–2025</td><td>2026 + (in proposal)</td></tr>
+            <tr><td>Dominant noise</td><td>thermal Johnson noise plus readout noise</td><td>shot noise, optical loss, detector/electronics noise</td></tr>
+            <tr><td>Power per MVM</td><td>passive analog core plus readout/control overhead</td><td>optical loop plus FPGA/EOM/readout overhead</td></tr>
+            <tr><td>Latency per MVM</td><td>set by analog settling and readout bandwidth</td><td>set by loop length plus feedback throughput</td></tr>
+            <tr><td>Status</td><td>small hardware demo published</td><td>proposal / simulator stage</td></tr>
           </table>
           <p>
             The economic argument: <em>RLC is better in steady-state
-            energy efficiency; optical is better in latency per update,
-            and by 2–3 orders of magnitude</em>. For applications where
+            energy efficiency; optical may be better in latency per
+            update if the loop and feedback path are sufficiently
+            parallel and low-latency</em>. For applications where
             wall-clock matters (real-time Bayesian inference, online
-            learning), optical wins. For batch jobs where you can
-            wait microseconds per MVM, RLC is more efficient.
+            learning), optical is worth investigating. For batch jobs
+            where slower analog settling is acceptable, RLC may be
+            more efficient.
           </p>
           <p>
             <strong>Engineering risk inherited from CIM</strong>: the
@@ -4522,22 +4701,24 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             "thermodynamic-linear-algebra portfolio."
           ),
          ["RLC: better steady-state energy",
-          "Optical: better latency, 2-3 OOM",
-          "CIM heritage: low risk on hardware, high risk on regime"]),
+          "Optical: potential latency advantage if feedback is fast enough",
+          "CIM heritage lowers hardware risk; operating regime remains the risk"]),
         ("envelope", "Hardware Imperfection Envelope (η, τ, σ_meas)", r"""
           <p>
             Three knobs determine bench performance:
           </p>
           <ol>
-            <li><strong>Homodyne efficiency</strong> \(\eta\): the
-              detected fraction of the signal photocurrent. Reduces the
-              FPGA-implemented coupling. The drift matrix actually
+            <li><strong>Feedback amplitude transfer</strong>
+              \(\eta_\mathrm{fb}\): the calibrated gain from the
+              measured photocurrent to the EOM injection. It reduces
+              the FPGA-implemented coupling. The drift matrix actually
               realized is
-              \(A_\mathrm{eff} = A_\mathrm{diag} + \eta\,A_\mathrm{off}\)
-              (where \(A_\mathrm{off}\) is the off-diagonal part) —
-              <em>exactly</em>, no envelope-approximation. The
-              steady-state \(\hat\Sigma\) solves the Lyapunov equation
-              with this <em>wrong</em> matrix.</li>
+              \(A_\mathrm{eff} = A_\mathrm{diag} + \eta_\mathrm{fb}\,A_\mathrm{off}\)
+              (where \(A_\mathrm{off}\) is the off-diagonal part) for
+              this simple gain-error model. Detector quantum efficiency
+              also adds vacuum/shot noise; if \(\eta\) is used for
+              physical quantum efficiency, it should not be blindly
+              identified with \(\eta_\mathrm{fb}\).</li>
             <li><strong>Feedback delay</strong> \(\tau\): the time
               between the homodyne measurement and the EOM injection.
               Turns the dynamics into a delay-differential equation.
@@ -4545,7 +4726,8 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
               slope empirically.</li>
             <li><strong>Measurement shot noise</strong> \(\sigma_\mathrm{meas}\):
               additive Gaussian noise on the photocurrent. Inflates
-              the effective diffusion: \(D_\mathrm{eff} = D + (\eta\zeta\sigma_\mathrm{meas})^2\,A_\mathrm{off}A_\mathrm{off}^T\).
+              the effective diffusion:
+              \(D_\mathrm{eff} = D + (\eta_\mathrm{fb}\zeta\sigma_\mathrm{meas})^2\,A_\mathrm{off}A_\mathrm{off}^T\).
               Costs sample-efficiency, not encoding correctness.</li>
           </ol>
           <p>
@@ -4554,8 +4736,9 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             \(f_\mathrm{eff} = \eta\,e^{-\gamma\tau}\). That formula
             is the <em>underdamped</em> Wiseman-Milburn result and
             does not transfer to the overdamped case. For overdamped
-            OU, the η-axis is exact (not an envelope), the τ-axis is
-            sub-linear additive. The hardware-envelope experiment in
+            OU, the calibrated gain axis is additive in the drift
+            matrix, while the τ-axis is a delay correction. The
+            hardware-envelope experiment in
             the
             <a href="https://github.com/nez0b/cim-spu-optical-simulation">cim-spu-optical-simulation</a>
             repo caught this; the corrected story replaces the earlier
@@ -4563,9 +4746,9 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           </p>
           """ + widget_shell(
             anchor="eta-tau-envelope",
-            title="Interactive: (η, γτ) feasibility envelope",
+            title="Interactive: (η_fb, γτ) feasibility envelope",
             blurb=(
-              "2D envelope plot in the (homodyne-efficiency η, "
+              "2D envelope plot in the (feedback amplitude transfer η_fb, "
               "feedback-delay γτ) plane. Dot color shows expected "
               "Frobenius error in <em>Σ̂</em> vs the ideal Lyapunov "
               "solution. Click anywhere to read off the value. The "
@@ -4581,13 +4764,14 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           ) + r"""
           """ + math_details("Where these scaling expressions come from", r"""
             <p>
-              For the η-axis: the FPGA realises
-              \(J_\mathrm{eff} = \eta J\) on the off-diagonal coupling
-              (since the homodyne returns \(\eta x\) instead of \(x\)).
+              For the gain axis: the FPGA/EOM path realises
+              \(J_\mathrm{eff} = \eta_\mathrm{fb} J\) on the
+              off-diagonal coupling in the simplified calibrated-gain
+              model.
               Substituting back into the Euler step shows the dynamics
               has effective drift
-              \(A_\mathrm{eff}(\eta) = \mathrm{diag}(A) + \eta\,(A - \mathrm{diag}(A))\).
-              The steady-state \(\hat\Sigma(\eta)\) solves
+              \(A_\mathrm{eff}(\eta_\mathrm{fb}) = \mathrm{diag}(A) + \eta_\mathrm{fb}\,(A - \mathrm{diag}(A))\).
+              The steady-state \(\hat\Sigma(\eta_\mathrm{fb})\) solves
               \(A_\mathrm{eff}\hat\Sigma + \hat\Sigma A_\mathrm{eff}^T = D\)
               <em>exactly</em>: there is no perturbative envelope, just
               a different operator.
@@ -4612,7 +4796,7 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           "FPGA latency = the load-bearing wall"]),
         ("targets", "QCi-Actionable Target Table", r"""
           <table class="refs">
-            <tr><td><strong>Target</strong></td><td><strong>Encoding error</strong></td><td><strong>η</strong></td><td><strong>γτ</strong></td><td><strong>Realization</strong></td></tr>
+            <tr><td><strong>Target</strong></td><td><strong>Encoding error</strong></td><td><strong>η_fb</strong></td><td><strong>γτ</strong></td><td><strong>Realization</strong></td></tr>
             <tr><td>Stretch</td><td>≤ 5%</td><td>≥ 0.99</td><td>≤ 0.05</td><td>analog-RF hybrid; γ ≤ 50 MHz</td></tr>
             <tr><td>Practical</td><td>≤ 10%</td><td>≥ 0.95</td><td>≤ 0.20</td><td>SNSPD + sub-ns FPGA; γ = 200 MHz</td></tr>
             <tr><td>Loose</td><td>≤ 20%</td><td>≥ 0.85</td><td>≤ 0.50</td><td>commodity PIN diode + standard FPGA</td></tr>
@@ -4637,7 +4821,7 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             repository.
           </p>
           """,
-         ["Practical target: η ≥ 0.95, γτ ≤ 0.20, error ≤ 10%",
+         ["Practical target: η_fb ≥ 0.95, γτ ≤ 0.20, error ≤ 10%",
           "FPGA MVM latency is the structural bottleneck",
           "Analog-electronic feedback is the natural fallback"]),
         ("roadmap", "Roadmap: Overdamped → Underdamped √κ", r"""
@@ -4665,8 +4849,10 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             100×. <em>This is the headline result of Direction A.</em>
           </p>
           <p>
-            The hardware substrate is unchanged: still time-multiplexed
-            pulses, still homodyne + FPGA + EOM. Three changes are
+            The core substrate is shared: time-multiplexed pulses,
+            homodyne, FPGA, and EOM feedback. The underdamped version
+            also imposes stronger requirements, and in the Multi-Q
+            proposal adds extra cavity structure. Three changes are
             required relative to the overdamped firmware in this note:
           </p>
           <ol>
@@ -4674,15 +4860,17 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
               tracks <em>two</em> degrees of freedom per pulse — \(X_i\)
               and \(P_i\) — and integrates the symplectic update
               \(\dot X = P,\; \dot P = -A X - \gamma P + \sqrt{2\gamma}\,\xi\).
-              Below-threshold OPO operation is required so that \(P\)
-              is a well-defined quadrature and not an arbitrary
-              fluctuation around a saturated amplitude.</li>
+              Below-threshold or otherwise linearized operation is used
+              so both quadratures remain small Gaussian variables,
+              rather than fluctuations around a saturated above-threshold
+              amplitude.</li>
             <li><strong>Wiseman-Milburn measurement feedback.</strong>
-              \(\hat P\) is not directly measurable on a balanced
-              homodyne. The Wiseman-Milburn protocol uses the X̂
-              homodyne current as a noisy proxy and feeds it back
-              through a delay \(\tau\) at gain \(G\) to synthesise
-              the \(-A X\) drift on X̂. The leading-order envelope on
+              A balanced homodyne can measure one chosen quadrature at
+              a time; it does not give simultaneous noiseless \(X\) and
+              \(P\). The Wiseman-Milburn protocol uses the measured
+              homodyne current and feeds it back through a delay
+              \(\tau\) at gain \(G\) to synthesize the target drift.
+              The leading-order envelope on
               steady-state error is
               \(f_\mathrm{eff} = \eta \, e^{-\gamma\tau}\) — the Doherty-
               Jacobs simplification of the full SME. The bench needs
@@ -4708,18 +4896,19 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             are part of the underdamped <em>Direction&nbsp;A</em>
             research effort — paper in preparation. The relationship
             between the two machines is asymmetric: <em>everything
-            built for the overdamped machine carries over to the
-            underdamped machine</em> (substrate, calibration,
-            stochastic noise generators, η measurement, the
-            simulator&rsquo;s linear-system primitives), but the
-            converse is not true.
+            built for the overdamped machine informs the underdamped
+            machine</em> (substrate characterization, calibration,
+            stochastic noise generators, efficiency measurement, and
+            simulator infrastructure), but the underdamped version has
+            additional architecture and feedback requirements.
           </p>
           """ + callout(
-            "The √κ advantage is the killer feature. Overdamped is the "
-            "stepping-stone we de-risk on; underdamped is the asymptotic "
-            "win. They share hardware. <em>The right way to think about "
-            "this proposal is: the bench we build for overdamped <strong>is</strong> "
-            "the bench that runs underdamped, with a firmware update.</em>"
+            "The √κ scaling is the main asymptotic motivation. "
+            "Overdamped is the stepping-stone we de-risk on; "
+            "underdamped is the higher-payoff target. They share a "
+            "core substrate, but the underdamped machine should be "
+            "treated as an added architecture, not merely a firmware "
+            "toggle."
           ) + widget_shell(
             anchor="mixing-time-scaling",
             title="Interactive: T_mix vs κ scaling",
@@ -4774,8 +4963,8 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             <li><strong>Quantum advantage at threshold?</strong> The
               CIM literature (Note 06) has been arguing this for
               two decades. For the OU machine specifically, the
-              squeezing-advantage path is closed (Direction B
-              killshot); but the MFB-controlled below-threshold
+              squeezing-only advantage path appears to give only
+              constant-factor variance reduction; but the MFB-controlled below-threshold
               regime (where the dynamics is genuinely quantum) is
               not yet ruled out as a source of advantage on
               specific problem classes.</li>
@@ -4808,139 +4997,335 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
           "End of track — research continues in the cim repo"]),
     ],
     "scripts": script_block(r"""
-      // -- Widget: 4-D OU machine convergence ---------------------------
+      // -- Widget: 2-D OU walk (Aifer-style trajectory + ellipse) ------
       (function () {
         var svg = document.getElementById('lyapunov-sampler-svg');
         if (!svg) return;
-        var kappaS = document.getElementById('lya-kappa');
-        var dtS = document.getElementById('lya-dt');
-        var kappaV = document.getElementById('lya-kappa-val');
-        var dtV = document.getElementById('lya-dt-val');
-        var errSpan = document.getElementById('lya-err');
-        var stepSpan = document.getElementById('lya-step');
-        var runBtn = document.getElementById('lya-run');
-        var resetBtn = document.getElementById('lya-reset');
-        var d = 4;
-        var x = new Float64Array(d);
-        var sumX = new Float64Array(d);
-        var sumXX = new Float64Array(d*d);
-        var step = 0, MAX = 1500, raf = null;
-        var errHistory = [];
-        var A = null, Ainv = null;
+        var NS = 'http://www.w3.org/2000/svg';
+        function el(name, attrs, parent) {
+          var n = document.createElementNS(NS, name);
+          if (attrs) for (var k in attrs) n.setAttribute(k, String(attrs[k]));
+          if (parent) parent.appendChild(n);
+          return n;
+        }
+        function $id(id) { return document.getElementById(id); }
 
-        function buildA(kappa) {
-          // diagonal A with eigenvalues 1/kappa, ..., 1, normalized so λ_max=1
-          A = new Float64Array(d*d);
-          Ainv = new Float64Array(d*d);
-          for (var i = 0; i < d; i++) {
-            // eigenvalue: linspace from 1/kappa to 1
-            var lambda_i = (1.0/kappa) + (1 - 1/kappa) * (i / (d-1));
-            A[i*d + i] = lambda_i;
-            Ainv[i*d + i] = 1 / lambda_i;
+        // ---- Bind controls + readouts ----
+        var ctrls = {
+          a11: { i: $id('lya-a11'), v: $id('lya-a11-val'), fmt: function (x) { return x.toFixed(2); } },
+          a22: { i: $id('lya-a22'), v: $id('lya-a22-val'), fmt: function (x) { return x.toFixed(2); } },
+          a12: { i: $id('lya-a12'), v: $id('lya-a12-val'), fmt: function (x) { return (x>=0?'+':'') + x.toFixed(2); } },
+          b1:  { i: $id('lya-b1'),  v: $id('lya-b1-val'),  fmt: function (x) { return (x>=0?'+':'') + x.toFixed(1); } },
+          b2:  { i: $id('lya-b2'),  v: $id('lya-b2-val'),  fmt: function (x) { return (x>=0?'+':'') + x.toFixed(1); } }
+        };
+        var runBtn = $id('lya-run'), resetBtn = $id('lya-reset');
+        var stepSpan = $id('lya-step'), nSpan = $id('lya-n');
+        var targetSpan = $id('lya-target'), muSpan = $id('lya-mu');
+        var sigmaThSpan = $id('lya-sigma-th'), sigmaEmpSpan = $id('lya-sigma-emp'), errSpan = $id('lya-err');
+
+        // ---- Layout (viewBox 540x320) ----
+        var L = { x0: 42, y0: 12, w: 484, h: 296 };
+
+        // ---- State ----
+        var s = {
+          A: null, Ainv: null, b: null, target: null, sigma: null, eig: null,
+          view: { xmin: -3, xmax: 3, ymin: -3, ymax: 3 },
+          x: 0, y: 0,
+          sumX: 0, sumY: 0, sumXX: 0, sumXY: 0, sumYY: 0,
+          n: 0, step: 0,
+          trail: [], meanTrail: [],
+          running: false, raf: null,
+          dt: 0.04, MAX_TRAIL: 700
+        };
+
+        function f3(x) { return x.toFixed(3); }
+
+        function readSliders() {
+          var a11 = parseFloat(ctrls.a11.i.value);
+          var a22 = parseFloat(ctrls.a22.i.value);
+          var a12 = parseFloat(ctrls.a12.i.value);
+          var b1 = parseFloat(ctrls.b1.i.value);
+          var b2 = parseFloat(ctrls.b2.i.value);
+          // Enforce A positive-definite: a12^2 < a11*a22 (strict)
+          var detRaw = a11 * a22 - a12 * a12;
+          if (detRaw < 0.05) {
+            var maxAbs = 0.95 * Math.sqrt(Math.max(a11 * a22, 1e-6));
+            a12 = Math.max(-maxAbs, Math.min(maxAbs, a12));
+            ctrls.a12.i.value = a12;
           }
+          return { a11: a11, a22: a22, a12: a12, b1: b1, b2: b2 };
         }
-        function reset() {
-          step = 0;
-          for (var i = 0; i < d; i++) { x[i] = 0; sumX[i] = 0; }
-          for (var i = 0; i < d*d; i++) sumXX[i] = 0;
-          errHistory = [];
-          if (raf) { cancelAnimationFrame(raf); raf = null; }
-          buildA(parseFloat(kappaS.value));
-          render();
+
+        function recompute() {
+          var p = readSliders();
+          ctrls.a11.v.textContent = ctrls.a11.fmt(p.a11);
+          ctrls.a22.v.textContent = ctrls.a22.fmt(p.a22);
+          ctrls.a12.v.textContent = ctrls.a12.fmt(p.a12);
+          ctrls.b1.v.textContent = ctrls.b1.fmt(p.b1);
+          ctrls.b2.v.textContent = ctrls.b2.fmt(p.b2);
+          s.A = [[p.a11, p.a12], [p.a12, p.a22]];
+          s.b = [p.b1, p.b2];
+          var det = p.a11 * p.a22 - p.a12 * p.a12;
+          s.Ainv = [[p.a22 / det, -p.a12 / det], [-p.a12 / det, p.a11 / det]];
+          s.target = [
+            s.Ainv[0][0] * p.b1 + s.Ainv[0][1] * p.b2,
+            s.Ainv[1][0] * p.b1 + s.Ainv[1][1] * p.b2
+          ];
+          var sxx = s.Ainv[0][0] / 2, sxy = s.Ainv[0][1] / 2, syy = s.Ainv[1][1] / 2;
+          s.sigma = [[sxx, sxy], [sxy, syy]];
+          // Eigendecomp of Σ for ellipse axes & angle
+          var trS = sxx + syy;
+          var detS = sxx * syy - sxy * sxy;
+          var disc = Math.sqrt(Math.max(0, trS * trS / 4 - detS));
+          var ep = trS / 2 + disc, em = Math.max(0, trS / 2 - disc);
+          var theta;
+          if (Math.abs(sxy) < 1e-9) theta = sxx >= syy ? 0 : Math.PI / 2;
+          else theta = Math.atan2(ep - sxx, sxy);
+          s.eig = { semiMaj: Math.sqrt(ep), semiMin: Math.sqrt(em), theta: theta };
+          // Viewport — encompass x(0)=origin and target ± 3·semiMaj, then square the aspect
+          var pad = 0.5;
+          var maxR = 3 * s.eig.semiMaj;
+          var xmin = Math.min(0, s.target[0] - maxR) - pad;
+          var xmax = Math.max(0, s.target[0] + maxR) + pad;
+          var ymin = Math.min(0, s.target[1] - maxR) - pad;
+          var ymax = Math.max(0, s.target[1] + maxR) + pad;
+          var dx = xmax - xmin, dy = ymax - ymin;
+          var aspect = L.w / L.h;
+          if (dx / dy < aspect) {
+            var midx = (xmin + xmax) / 2;
+            var halfx = aspect * dy / 2;
+            xmin = midx - halfx; xmax = midx + halfx;
+          } else {
+            var midy = (ymin + ymax) / 2;
+            var halfy = (dx / aspect) / 2;
+            ymin = midy - halfy; ymax = midy + halfy;
+          }
+          s.view = { xmin: xmin, xmax: xmax, ymin: ymin, ymax: ymax };
         }
+
+        function px(x) { return L.x0 + (x - s.view.xmin) / (s.view.xmax - s.view.xmin) * L.w; }
+        function py(y) { return L.y0 + L.h - (y - s.view.ymin) / (s.view.ymax - s.view.ymin) * L.h; }
+        function scale1(d) { return L.w / (s.view.xmax - s.view.xmin) * d; }
+
+        // ---- Drawing ----
+        var staticGrp = null, dynGrp = null;
+        var trailPath = null, meanPath = null, currentDot = null, currentCross = null;
+
+        function buildSvg() {
+          while (svg.firstChild) svg.removeChild(svg.firstChild);
+          el('rect', { x: L.x0 - 2, y: L.y0 - 2, width: L.w + 4, height: L.h + 4,
+                       fill: 'rgba(255,255,255,0.02)', stroke: '#bbb',
+                       'stroke-width': 0.6, rx: 3 }, svg);
+          staticGrp = el('g', null, svg);
+          dynGrp = el('g', null, svg);
+          trailPath = el('polyline', { fill: 'none', stroke: '#2c6fb8',
+                                       'stroke-width': 0.7, opacity: 0.55,
+                                       'stroke-linejoin': 'round' }, dynGrp);
+          meanPath = el('polyline', { fill: 'none', stroke: '#222',
+                                      'stroke-width': 1.5,
+                                      'stroke-linejoin': 'round' }, dynGrp);
+          currentCross = el('path', { stroke: '#222', 'stroke-width': 1.4, fill: 'none' }, dynGrp);
+          currentDot = el('circle', { r: 3.5, fill: '#2c6fb8', opacity: 0.9 }, dynGrp);
+        }
+
+        function drawStatic() {
+          while (staticGrp.firstChild) staticGrp.removeChild(staticGrp.firstChild);
+          var ox = px(0), oy = py(0);
+          var inX = ox >= L.x0 && ox <= L.x0 + L.w;
+          var inY = oy >= L.y0 && oy <= L.y0 + L.h;
+          // Origin axes
+          if (inX) el('line', { x1: ox, y1: L.y0, x2: ox, y2: L.y0 + L.h,
+                                stroke: '#aaa', 'stroke-width': 0.5,
+                                'stroke-dasharray': '2,3' }, staticGrp);
+          if (inY) el('line', { x1: L.x0, y1: oy, x2: L.x0 + L.w, y2: oy,
+                                stroke: '#aaa', 'stroke-width': 0.5,
+                                'stroke-dasharray': '2,3' }, staticGrp);
+          // Tick marks
+          var stride = (s.view.xmax - s.view.xmin) > 12 ? 2 : 1;
+          for (var i = Math.ceil(s.view.xmin); i <= Math.floor(s.view.xmax); i += stride) {
+            if (i === 0) continue;
+            var tx = px(i);
+            var ly = inY ? oy : (L.y0 + L.h);
+            el('line', { x1: tx, y1: ly - 2, x2: tx, y2: ly + 2,
+                         stroke: '#888', 'stroke-width': 0.5 }, staticGrp);
+            el('text', { x: tx, y: ly + 9, 'text-anchor': 'middle',
+                         'font-size': 8, fill: '#888' }, staticGrp).textContent = i;
+          }
+          for (var j = Math.ceil(s.view.ymin); j <= Math.floor(s.view.ymax); j += stride) {
+            if (j === 0) continue;
+            var ty = py(j);
+            var lx = inX ? ox : L.x0;
+            el('line', { x1: lx - 2, y1: ty, x2: lx + 2, y2: ty,
+                         stroke: '#888', 'stroke-width': 0.5 }, staticGrp);
+            el('text', { x: lx - 3, y: ty + 3, 'text-anchor': 'end',
+                         'font-size': 8, fill: '#888' }, staticGrp).textContent = j;
+          }
+          // Axis labels
+          el('text', { x: L.x0 + L.w - 6, y: (inY ? oy : L.y0 + L.h) - 4,
+                       'text-anchor': 'end', 'font-size': 10, 'font-style': 'italic',
+                       fill: '#444' }, staticGrp).textContent = 'x_1';
+          el('text', { x: (inX ? ox : L.x0) + 4, y: L.y0 + 11,
+                       'font-size': 10, 'font-style': 'italic',
+                       fill: '#444' }, staticGrp).textContent = 'x_2';
+          // Theoretical 1σ ellipse
+          var cx = px(s.target[0]), cy = py(s.target[1]);
+          var sX = scale1(1);
+          var rxPx = s.eig.semiMaj * sX, ryPx = s.eig.semiMin * sX;
+          var thetaDeg = -s.eig.theta * 180 / Math.PI;
+          var rotStr = 'rotate(' + thetaDeg.toFixed(2) + ' ' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ')';
+          el('ellipse', { cx: cx, cy: cy, rx: rxPx, ry: ryPx,
+                          transform: rotStr, fill: 'none',
+                          stroke: '#d0432c', 'stroke-width': 1.6 }, staticGrp);
+          el('ellipse', { cx: cx, cy: cy, rx: 2 * rxPx, ry: 2 * ryPx,
+                          transform: rotStr, fill: 'none',
+                          stroke: '#d0432c', 'stroke-width': 0.8,
+                          opacity: 0.4, 'stroke-dasharray': '3,3' }, staticGrp);
+          // Target dot A^{-1}b
+          el('circle', { cx: cx, cy: cy, r: 4, fill: '#d0432c' }, staticGrp);
+          el('text', { x: cx + 6, y: cy - 6, 'font-size': 9,
+                       fill: '#d0432c', 'font-style': 'italic' },
+                     staticGrp).textContent = 'A⁻¹b';
+          // x(0) origin marker
+          el('circle', { cx: ox, cy: oy, r: 4, fill: 'none',
+                         stroke: '#222', 'stroke-width': 1.3 }, staticGrp);
+          el('text', { x: ox - 6, y: oy - 6, 'text-anchor': 'end',
+                       'font-size': 9, fill: '#222',
+                       'font-style': 'italic' }, staticGrp).textContent = 'x(0)';
+          // Legend
+          var lx = L.x0 + 6, ly = L.y0 + 12;
+          el('line', { x1: lx, y1: ly, x2: lx + 16, y2: ly,
+                       stroke: '#2c6fb8', 'stroke-width': 1.5, opacity: 0.7 }, staticGrp);
+          el('text', { x: lx + 20, y: ly + 3, 'font-size': 9,
+                       fill: '#444' }, staticGrp).textContent = 'x(t) trajectory';
+          el('line', { x1: lx, y1: ly + 12, x2: lx + 16, y2: ly + 12,
+                       stroke: '#222', 'stroke-width': 1.5 }, staticGrp);
+          el('text', { x: lx + 20, y: ly + 15, 'font-size': 9,
+                       fill: '#444' }, staticGrp).textContent = 'running mean μ̂';
+          el('line', { x1: lx, y1: ly + 24, x2: lx + 16, y2: ly + 24,
+                       stroke: '#d0432c', 'stroke-width': 1.5 }, staticGrp);
+          el('text', { x: lx + 20, y: ly + 27, 'font-size': 9,
+                       fill: '#444' }, staticGrp).textContent = '1σ contour of ½A⁻¹';
+        }
+
+        function pointsString(arr) {
+          if (arr.length === 0) return '';
+          var parts = [];
+          for (var i = 0; i < arr.length; i += 2) {
+            parts.push(px(arr[i]).toFixed(2) + ',' + py(arr[i + 1]).toFixed(2));
+          }
+          return parts.join(' ');
+        }
+
+        function fmtMat(m) {
+          return '[[' + f3(m[0][0]) + ', ' + f3(m[0][1]) + '], [' +
+                  f3(m[1][0]) + ', ' + f3(m[1][1]) + ']]';
+        }
+
+        function redraw() {
+          drawStatic();
+          trailPath.setAttribute('points', pointsString(s.trail));
+          meanPath.setAttribute('points', pointsString(s.meanTrail));
+          var cx_ = px(s.x), cy_ = py(s.y);
+          currentDot.setAttribute('cx', cx_.toFixed(2));
+          currentDot.setAttribute('cy', cy_.toFixed(2));
+          if (s.n > 0) {
+            var muX = s.sumX / s.n, muY = s.sumY / s.n;
+            var mx = px(muX), my = py(muY);
+            currentCross.setAttribute('d',
+              'M' + (mx - 5).toFixed(1) + ',' + my.toFixed(1) +
+              ' L' + (mx + 5).toFixed(1) + ',' + my.toFixed(1) +
+              ' M' + mx.toFixed(1) + ',' + (my - 5).toFixed(1) +
+              ' L' + mx.toFixed(1) + ',' + (my + 5).toFixed(1));
+            muSpan.textContent = '(' + f3(muX) + ', ' + f3(muY) + ')';
+            var sxx = s.sumXX / s.n - muX * muX;
+            var sxy = s.sumXY / s.n - muX * muY;
+            var syy = s.sumYY / s.n - muY * muY;
+            sigmaEmpSpan.textContent = '[[' + f3(sxx) + ', ' + f3(sxy) +
+                                       '], [' + f3(sxy) + ', ' + f3(syy) + ']]';
+            var dxx = sxx - s.sigma[0][0], dxy = sxy - s.sigma[0][1], dyy = syy - s.sigma[1][1];
+            errSpan.textContent = f3(Math.sqrt(dxx * dxx + 2 * dxy * dxy + dyy * dyy));
+          } else {
+            currentCross.setAttribute('d', '');
+            muSpan.textContent = '—';
+            sigmaEmpSpan.textContent = '—';
+            errSpan.textContent = '—';
+          }
+          stepSpan.textContent = s.step;
+          nSpan.textContent = s.n;
+          targetSpan.textContent = '(' + f3(s.target[0]) + ', ' + f3(s.target[1]) + ')';
+          sigmaThSpan.textContent = fmtMat(s.sigma);
+        }
+
+        // ---- SDE step ----
+        var spareGauss = null;
         function gauss() {
-          var u = 0, v = 0;
-          while(u===0) u = Math.random();
-          while(v===0) v = Math.random();
-          return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+          if (spareGauss !== null) { var v = spareGauss; spareGauss = null; return v; }
+          var u1 = Math.random(), u2 = Math.random();
+          var r = Math.sqrt(-2 * Math.log(Math.max(u1, 1e-12)));
+          var t = 2 * Math.PI * u2;
+          spareGauss = r * Math.sin(t);
+          return r * Math.cos(t);
         }
-        function doStep() {
-          if (step >= MAX) return;
-          var dt = parseFloat(dtS.value);
-          // dx = -A x dt + sqrt(2 dt) ξ  (so D = 2I, Σ = A^{-1})
-          for (var i = 0; i < d; i++) {
-            var drift = 0;
-            for (var j = 0; j < d; j++) drift += A[i*d+j] * x[j];
-            x[i] += -drift * dt + Math.sqrt(2*dt) * gauss();
-          }
-          // accumulate covariance estimate
-          for (var i = 0; i < d; i++) {
-            sumX[i] += x[i];
-            for (var j = 0; j < d; j++) sumXX[i*d+j] += x[i] * x[j];
-          }
-          step++;
-          // Frobenius error of (Σ̂ − A^{-1}) every 5 steps; convention here
-          // D=2I so target is Σ = A^{-1} (not ½A^{-1}).
-          if (step % 5 === 0 || step === 1) {
-            var err = 0;
-            for (var i = 0; i < d; i++) {
-              for (var j = 0; j < d; j++) {
-                var sigma_hat = sumXX[i*d+j] / step - (sumX[i]/step)*(sumX[j]/step);
-                var target = Ainv[i*d+j];
-                err += (sigma_hat - target)*(sigma_hat - target);
-              }
-            }
-            err = Math.sqrt(err);
-            errHistory.push({s: step, e: err});
-          }
-          render();
+
+        function step() {
+          var A = s.A, b = s.b, dt = s.dt, sd = Math.sqrt(dt);
+          var x = s.x, y = s.y;
+          var dx = -(A[0][0] * x + A[0][1] * y) + b[0];
+          var dy = -(A[1][0] * x + A[1][1] * y) + b[1];
+          x += dx * dt + sd * gauss();
+          y += dy * dt + sd * gauss();
+          s.x = x; s.y = y; s.step++;
+          s.sumX += x; s.sumY += y;
+          s.sumXX += x * x; s.sumXY += x * y; s.sumYY += y * y;
+          s.n++;
+          s.trail.push(x, y);
+          if (s.trail.length > 2 * s.MAX_TRAIL) s.trail.splice(0, 2);
+          var muX = s.sumX / s.n, muY = s.sumY / s.n;
+          s.meanTrail.push(muX, muY);
+          if (s.meanTrail.length > 2 * s.MAX_TRAIL) s.meanTrail.splice(0, 2);
         }
-        function loop() {
-          for (var k = 0; k < 5; k++) doStep();
-          if (step < MAX && raf !== null) {
-            raf = requestAnimationFrame(loop);
-          } else {
-            raf = null;
-          }
+
+        function tick() {
+          if (!s.running) return;
+          for (var i = 0; i < 6; i++) step();
+          redraw();
+          s.raf = requestAnimationFrame(tick);
         }
-        function render() {
-          kappaV.textContent = parseFloat(kappaS.value).toFixed(1);
-          dtV.textContent = parseFloat(dtS.value).toFixed(3);
-          var W = 520, H = 260, pad = 50;
-          var inner_w = W - 2*pad, inner_h = H - 2*pad;
-          var html = '';
-          html += '<text x="' + (W/2) + '" y="' + (pad/2) + '" text-anchor="middle" font-size="11" fill="#888">Frobenius error vs steps (log scale)</text>';
-          html += '<line x1="' + pad + '" y1="' + (pad+inner_h) + '" x2="' + (W-pad) + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
-          html += '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (pad+inner_h) + '" stroke="#666"/>';
-          if (errHistory.length > 1) {
-            var maxE = -Infinity, minE = Infinity;
-            for (var k = 0; k < errHistory.length; k++) {
-              var le = Math.log10(Math.max(errHistory[k].e, 1e-3));
-              if (le > maxE) maxE = le;
-              if (le < minE) minE = le;
-            }
-            if (maxE - minE < 0.5) maxE = minE + 0.5;
-            var pts = errHistory.map(function (pt) {
-              var px = pad + (pt.s / MAX) * inner_w;
-              var le = Math.log10(Math.max(pt.e, 1e-3));
-              var py = pad + inner_h * (1 - (le - minE)/(maxE - minE));
-              return px + ',' + py;
-            }).join(' ');
-            html += '<polyline points="' + pts + '" fill="none" stroke="#79c79f" stroke-width="1.8"/>';
-            html += '<text x="' + (pad-4) + '" y="' + (pad+8) + '" text-anchor="end" font-size="10" fill="#888">10^' + maxE.toFixed(1) + '</text>';
-            html += '<text x="' + (pad-4) + '" y="' + (pad+inner_h) + '" text-anchor="end" font-size="10" fill="#888">10^' + minE.toFixed(1) + '</text>';
-            html += '<text x="' + (pad+inner_w) + '" y="' + (H-pad/2) + '" text-anchor="end" font-size="10" fill="#888">step ' + MAX + '</text>';
-          } else {
-            html += '<text x="' + (W/2) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888">press <em>Run</em> to begin</text>';
-          }
-          svg.innerHTML = html;
-          var lastErr = errHistory.length ? errHistory[errHistory.length-1].e : 0;
-          errSpan.textContent = lastErr.toFixed(4);
-          stepSpan.textContent = step;
+
+        function reset() {
+          s.x = 0; s.y = 0;
+          s.sumX = s.sumY = s.sumXX = s.sumXY = s.sumYY = 0;
+          s.n = 0; s.step = 0;
+          s.trail = []; s.meanTrail = [];
+          redraw();
         }
-        runBtn.addEventListener('click', function () {
-          if (step >= MAX) reset();
-          if (raf === null) { raf = requestAnimationFrame(loop); }
+
+        function setRunning(on) {
+          s.running = on;
+          runBtn.textContent = on ? 'Pause' : 'Run';
+          if (s.raf) { cancelAnimationFrame(s.raf); s.raf = null; }
+          if (on) tick();
+        }
+
+        // ---- Hook up ----
+        Object.keys(ctrls).forEach(function (k) {
+          ctrls[k].i.addEventListener('input', function () {
+            var was = s.running;
+            if (was) setRunning(false);
+            recompute();
+            reset();
+          });
         });
+        runBtn.addEventListener('click', function () { setRunning(!s.running); });
         resetBtn.addEventListener('click', reset);
-        kappaS.addEventListener('input', reset);
-        dtS.addEventListener('input', function () {
-          dtV.textContent = parseFloat(dtS.value).toFixed(3);
-        });
+
+        // ---- Init ----
+        buildSvg();
+        recompute();
         reset();
       })();
 
-      // -- Widget: (η, γτ) feasibility envelope -------------------------
+      // -- Widget: (η_fb, γτ) feasibility envelope ---------------------
       (function () {
         var svg = document.getElementById('eta-tau-envelope-svg');
         if (!svg) return;
@@ -4950,12 +5335,12 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
         function buildPlot(d_dim, click_eta, click_gtau) {
           var W = 520, H = 320, pad = 56;
           var inner_w = W - 2*pad, inner_h = H - 2*pad;
-          // η ∈ [0.5, 1], γτ ∈ [0, 12] log-ish; we'll use linear γτ for clarity
+          // η_fb ∈ [0.5, 1], γτ ∈ [0, 12] log-ish; use linear γτ for clarity
           var ETA_MIN = 0.5, ETA_MAX = 1.0;
           var GT_MIN = 0, GT_MAX = 12;
           var html = '';
           // background heatmap: error model
-          // err(η, γτ, d) ≈ 0.5*(1-η) + 0.04*γτ * sqrt(d/16)
+          // err(η_fb, γτ, d) ≈ 0.5*(1-η_fb) + 0.04*γτ * sqrt(d/16)
           var step = 12;
           for (var px = pad; px < W-pad; px += step) {
             for (var py = pad; py < H-pad; py += step) {
@@ -4986,7 +5371,7 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             html += '<line x1="' + (pad-5) + '" y1="' + gy + '" x2="' + pad + '" y2="' + gy + '" stroke="#888"/>';
             html += '<text x="' + (pad-8) + '" y="' + (gy+3) + '" text-anchor="end" font-size="10" fill="#888">' + gts[k] + '</text>';
           }
-          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">homodyne efficiency η</text>';
+          html += '<text x="' + (W/2) + '" y="' + (H-pad/2 + 12) + '" text-anchor="middle" font-size="11" fill="#888">feedback transfer η_fb</text>';
           html += '<text x="' + (pad/3) + '" y="' + (H/2) + '" text-anchor="middle" font-size="11" fill="#888" transform="rotate(-90 ' + (pad/3) + ' ' + (H/2) + ')">feedback delay γτ</text>';
           // target boxes
           function boxTarget(eta_min, gt_max, color, label) {
@@ -5012,7 +5397,7 @@ sigma_hat = M / (batch * (n_rounds - n_burn_in))           # ½ A⁻¹ for D=I
             html += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="none" stroke="#fff" stroke-width="2"/>';
             var err = 0.5*(1-click_eta) + 0.04*click_gtau * Math.sqrt(d_dim/16);
             html += '<text x="' + (cx + 10) + '" y="' + (cy + 4) + '" font-size="11" fill="#fff" font-weight="600">err ≈ ' + err.toFixed(3) + '</text>';
-            readout.innerHTML = '<strong>η = ' + click_eta.toFixed(3) + ', γτ = ' + click_gtau.toFixed(2) + '</strong> at d = ' + d_dim + ' &rarr; estimated Σ-error ≈ ' + err.toFixed(3) + ' (Frobenius)';
+            readout.innerHTML = '<strong>η_fb = ' + click_eta.toFixed(3) + ', γτ = ' + click_gtau.toFixed(2) + '</strong> at d = ' + d_dim + ' &rarr; estimated Σ-error ≈ ' + err.toFixed(3) + ' (Frobenius)';
           }
           svg.innerHTML = html;
           dV.textContent = d_dim;
