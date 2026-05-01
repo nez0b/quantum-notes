@@ -3687,10 +3687,14 @@ NOTE_07 = {
               <text x="240" y="276" font-size="9" fill="#888">injects ε(t)·MVM</text>
               <!-- back-to-loop arrow -->
               <line x1="60" y1="245" x2="60" y2="200" stroke="#7a9fd1" stroke-width="1.6" marker-end="url(#arr)"/>
-              <!-- annotations -->
-              <text x="20" y="305" font-size="10" fill="#888" font-weight="600">Update:</text>
-              <text x="20" y="320" font-size="10" fill="#888">x ← x + dt[(r−1)x − μx³] + ε(t)·J·x + noise(t)</text>
-              <text x="20" y="338" font-size="10" fill="#888" font-style="italic">(cubic saturation; ε ramps; noise schedule)</text>
+              <!-- annotations: KaTeX-rendered update equation via foreignObject -->
+              <foreignObject x="10" y="292" width="340" height="64">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;font-size:10px;color:#888;line-height:1.4;">
+                  <div style="font-weight:600;margin-bottom:2px;">Update:</div>
+                  <div style="font-size:11px;">\(x \leftarrow x + dt\bigl[(r{-}1)x - \mu x^{3}\bigr] + \varepsilon(t)\,J x + \mathrm{noise}(t)\)</div>
+                  <div style="font-style:italic;margin-top:2px;">(cubic saturation; \(\varepsilon\) ramps; noise schedule)</div>
+                </div>
+              </foreignObject>
               <!-- RIGHT (OU) -->
               <ellipse cx="540" cy="170" rx="130" ry="60" fill="none" stroke="#888" stroke-width="1.4"/>
               <text x="540" y="172" text-anchor="middle" font-size="10" fill="#888">fiber-loop pulses (1 per dimension)</text>
@@ -3709,9 +3713,13 @@ NOTE_07 = {
               <text x="600" y="263" font-size="10" fill="#79c79f">EOM</text>
               <text x="600" y="276" font-size="9" fill="#888">injects ε·MVM + b</text>
               <line x1="420" y1="245" x2="420" y2="200" stroke="#79c79f" stroke-width="1.6" marker-end="url(#arr2)"/>
-              <text x="380" y="305" font-size="10" fill="#888" font-weight="600">Update:</text>
-              <text x="380" y="320" font-size="10" fill="#888">x ← x − dt·A·x + dt·b + √(dt)·D^{½}·ξ</text>
-              <text x="380" y="338" font-size="10" fill="#888" font-style="italic">(linear damping; constant ε; Gaussian noise)</text>
+              <foreignObject x="370" y="292" width="340" height="64">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;font-size:10px;color:#888;line-height:1.4;">
+                  <div style="font-weight:600;margin-bottom:2px;">Update:</div>
+                  <div style="font-size:11px;">\(x \leftarrow x - dt\,A x + dt\,b + \sqrt{dt}\,D^{1/2}\,\xi\)</div>
+                  <div style="font-style:italic;margin-top:2px;">(linear damping; constant \(\varepsilon\); Gaussian noise)</div>
+                </div>
+              </foreignObject>
             </svg>
             <figcaption style="font-size: 0.85rem; color: var(--page-muted); margin-top: 0.4rem; text-align: center;">
               <strong>Fig.&nbsp;1.</strong> Architectural comparison. Same fiber-loop substrate; different FPGA firmware. The MFB-CIM lives above the DOPO threshold and uses cubic saturation to commit to ±1 spin states; the OU machine operates at or below threshold with linear damping, never committing to a discrete state. The Yamamoto-NTT measurement-feedback CIM schematic (<a href="_lectures/classical_CIM_from_Yamamoto.png">classical_CIM_from_Yamamoto.png</a>) is the reference for the left side.
